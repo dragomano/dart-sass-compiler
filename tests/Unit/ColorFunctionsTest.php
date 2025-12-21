@@ -96,6 +96,26 @@ it('throws exception for invalid rgba with out-of-range alpha', function () {
         ->toThrow(CompilationException::class);
 });
 
+it('throws exception for invalid hsl with out-of-range lightness', function () {
+    expect(fn() => $this->accessor->callProtectedMethod('parseColor', ['hsl(0, 100%, 150%)']))
+        ->toThrow(CompilationException::class);
+});
+
+it('throws exception for invalid hsla with out-of-range saturation', function () {
+    expect(fn() => $this->accessor->callProtectedMethod('parseColor', ['hsla(0, 150%, 50%, 0.5)']))
+        ->toThrow(CompilationException::class);
+});
+
+it('throws exception for invalid hsla with out-of-range lightness', function () {
+    expect(fn() => $this->accessor->callProtectedMethod('parseColor', ['hsla(0, 100%, 150%, 0.5)']))
+        ->toThrow(CompilationException::class);
+});
+
+it('throws exception for invalid hsla with out-of-range alpha', function () {
+    expect(fn() => $this->accessor->callProtectedMethod('parseColor', ['hsla(0, 100%, 50%, 1.5)']))
+        ->toThrow(CompilationException::class);
+});
+
 it('correctly formats rgb', function () {
     $colorData = ['r' => 255, 'g' => 0, 'b' => 0, 'a' => 1.0, 'format' => 'rgb'];
     $result = $this->accessor->callProtectedMethod('formatColor', [$colorData]);
@@ -148,6 +168,44 @@ it('correctly converts rgb to hwb', function () {
         ->and($hwb['bl'])->toBe(0.0);
 });
 
+it('correctly converts rgb to hwb when green component dominates', function () {
+    // Pure green color - G > R and G > B
+    $hwb = $this->accessor->callProtectedMethod('rgbToHwb', [0, 255, 0]);
+
+    expect($hwb['h'])->toBe(120.0)
+        ->and($hwb['w'])->toBe(0.0)
+        ->and($hwb['bl'])->toBe(0.0);
+});
+
+it('correctly converts rgb to hwb when blue component dominates', function () {
+    // Pure blue color - B > R and B > G
+    $hwb = $this->accessor->callProtectedMethod('rgbToHwb', [0, 0, 255]);
+
+    expect($hwb['h'])->toBe(240.0)
+        ->and($hwb['w'])->toBe(0.0)
+        ->and($hwb['bl'])->toBe(0.0);
+});
+
+it('correctly converts rgb to hwb with green dominance and mixed colors', function () {
+    // Green-dominant color - G is max, but R and B are not max
+    $hwb = $this->accessor->callProtectedMethod('rgbToHwb', [100, 200, 50]);
+
+    // Green should dominate with hue around 120 degrees
+    expect($hwb['h'])->toBeGreaterThan(90.0)->toBeLessThan(140.0)
+        ->and($hwb['w'])->toBeGreaterThan(0.0)
+        ->and($hwb['bl'])->toBeGreaterThan(0.0);
+});
+
+it('correctly converts rgb to hwb with blue dominance and mixed colors', function () {
+    // Blue-dominant color - B is max, but R and G are not max
+    $hwb = $this->accessor->callProtectedMethod('rgbToHwb', [50, 100, 200]);
+
+    // Blue should dominate with hue around 240 degrees
+    expect($hwb['h'])->toBeGreaterThan(200.0)->toBeLessThan(280.0)
+        ->and($hwb['w'])->toBeGreaterThan(0.0)
+        ->and($hwb['bl'])->toBeGreaterThan(0.0);
+});
+
 it('correctly converts hwb to rgb', function () {
     $rgb = $this->accessor->callProtectedMethod('hwbToRgb', [0, 100.0, 0]);
 
@@ -198,6 +256,11 @@ it('correctly adjusts color', function () {
     expect($result)->toBe('#cd0000');
 });
 
+it('throws exception for unknown adjustment parameter', function () {
+    expect(fn() => $this->colorFunctions->adjust('#ff0000', ['$unknown' => 10]))
+        ->toThrow(CompilationException::class, 'Unknown adjustment parameter');
+});
+
 it('correctly clamps value', function () {
     expect($this->accessor->callProtectedMethod('clamp', [15, 0, 10]))->toBe(10.0)
         ->and($this->accessor->callProtectedMethod('clamp', [5, 0, 10]))->toBe(5.0)
@@ -205,39 +268,73 @@ it('correctly clamps value', function () {
 });
 
 it('correctly scales color', function () {
-    $result = $this->colorFunctions->scale('#ff0000', ['$lightness' => 20]);
+    $result = $this->colorFunctions->scale('#ff0000', ['$red' => 50]);
 
-    expect($result)->toBe('#ff3333');
+    expect($result)->toBe('red');
+
+    $result = $this->colorFunctions->scale('#ff0000', ['$green' => 50]);
+
+    expect($result)->toBe('#ff8000');
+
+    $result = $this->colorFunctions->scale('#ff0000', ['$blue' => 50]);
+
+    expect($result)->toBe('#ff0080');
+
+    $result = $this->colorFunctions->scale('#ff0000', ['$hue' => 30]);
+
+    expect($result)->toBe('#33ff00');
 
     $result = $this->colorFunctions->scale('#ff0000', ['$saturation' => -50]);
 
     expect($result)->toBe('#bf4040');
 
-    $result = $this->colorFunctions->scale('#ff0000', ['$red' => 50]);
+    $result = $this->colorFunctions->scale('#ff0000', ['$lightness' => 20]);
 
-    expect($result)->toBe('red');
+    expect($result)->toBe('#ff3333');
 
-    $result = $this->colorFunctions->scale('#ff0000', ['$hue' => 30]);
+    $result = $this->colorFunctions->scale('#ffd700', ['$alpha' => 20]);
 
-    expect($result)->toBe('#33ff00');
+    expect($result)->toBe('gold');
+});
+
+it('throws exception for unknown scaling parameter', function () {
+  expect(fn() => $this->colorFunctions->scale('#ff0000', ['$unknown' => 10]))
+    ->toThrow(CompilationException::class, 'Unknown scaling parameter');
 });
 
 it('correctly changes color', function () {
-    $result = $this->colorFunctions->change('#ff0000', ['$lightness' => 50]);
+    $result = $this->colorFunctions->change('#ff0000', ['$red' => 128]);
 
-    expect($result)->toBe('red');
+    expect($result)->toBe('maroon');
+
+    $result = $this->colorFunctions->change('#ff0000', ['$green' => 128]);
+
+    expect($result)->toBe('#ff8000');
+
+    $result = $this->colorFunctions->change('#ff0000', ['$blue' => 128]);
+
+    expect($result)->toBe('#ff0080');
+
+    $result = $this->colorFunctions->change('#ff0000', ['$alpha' => 0.5]);
+
+    expect($result)->toBe('#ff000080');
 
     $result = $this->colorFunctions->change('#ff0000', ['$hue' => 120]);
 
     expect($result)->toBe('lime');
 
-    $result = $this->colorFunctions->change('#ff0000', ['$red' => 128]);
+    $result = $this->colorFunctions->change('#ff0000', ['$saturation' => 50]);
 
-    expect($result)->toBe('maroon');
+    expect($result)->toBe('#bf4040');
 
-    $result = $this->colorFunctions->change('#ff0000', ['$alpha' => 0.5]);
+    $result = $this->colorFunctions->change('#ff0000', ['$lightness' => 50]);
 
-    expect($result)->toBe('#ff000080');
+    expect($result)->toBe('red');
+});
+
+it('throws exception for unknown changing parameter', function () {
+  expect(fn() => $this->colorFunctions->change('#ff0000', ['$unknown' => 10]))
+    ->toThrow(CompilationException::class, 'Unknown changing parameter');
 });
 
 it('correctly creates hsl color', function () {
@@ -274,4 +371,142 @@ it('correctly creates hwb color', function () {
     $result = $this->colorFunctions->hwb(120, 20, 30);
 
     expect($result)->toBe('#33b333');
+});
+
+it('correctly adjusts color with whiteness parameter', function () {
+    $result = $this->colorFunctions->adjust('#ff0000', ['$whiteness' => 20]);
+
+    expect($result)->toBe('#ff3333');
+});
+
+it('correctly adjusts color with blackness parameter', function () {
+    $result = $this->colorFunctions->adjust('#ff0000', ['$blackness' => 20]);
+
+    expect($result)->toBe('#cc0000');
+});
+
+it('correctly adjusts color with x parameter', function () {
+    $result = $this->colorFunctions->adjust('#ff0000', ['$x' => 30, '$space' => 'xyz']);
+
+    expect($result)->toBe('#ff0023');
+});
+
+it('correctly adjusts color with y parameter', function () {
+    $result = $this->colorFunctions->adjust('#ff0000', ['$y' => 20, '$space' => 'xyz']);
+
+    expect($result)->toBe('#d9a500');
+});
+
+it('correctly adjusts color with z parameter', function () {
+    $result = $this->colorFunctions->adjust('#ff0000', ['$z' => 10, '$space' => 'xyz']);
+
+    expect($result)->toBe('#f90d5b');
+});
+
+it('correctly adjusts color with chroma parameter', function () {
+    $result = $this->colorFunctions->adjust('#ff0000', ['$chroma' => 20, '$space' => 'lch']);
+
+    expect($result)->toBe('#ff3333');
+});
+
+it('correctly combines multiple rgb adjustment parameters', function () {
+    $result = $this->colorFunctions->adjust('#ff0000', [
+        '$red'   => 15,
+        '$green' => 5,
+        '$blue'  => 25,
+    ]);
+
+    expect($result)->toBe('#ff0519');
+});
+
+it('correctly converts rgb to xyz', function () {
+    // Red color
+    $xyz = $this->accessor->callProtectedMethod('rgbToXyz', [255, 0, 0]);
+
+    $this->assertEqualsWithDelta(41.24, $xyz['x'], 0.01);
+    $this->assertEqualsWithDelta(21.26, $xyz['y'], 0.01);
+    $this->assertEqualsWithDelta(1.93, $xyz['z'], 0.01);
+
+    // White color
+    $xyz = $this->accessor->callProtectedMethod('rgbToXyz', [255, 255, 255]);
+
+    $this->assertEqualsWithDelta(95.05, $xyz['x'], 0.01);
+    $this->assertEqualsWithDelta(100.0, $xyz['y'], 0.01);
+    $this->assertEqualsWithDelta(108.9, $xyz['z'], 0.01);
+});
+
+it('correctly converts xyz to rgb', function () {
+    // Red color approximation
+    $rgb = $this->accessor->callProtectedMethod('xyzToRgb', [41.24, 21.26, 1.93]);
+
+    $this->assertEqualsWithDelta(255.0, $rgb['r'], 1.0);
+    $this->assertEqualsWithDelta(0.0, $rgb['g'], 1.0);
+    $this->assertEqualsWithDelta(0.0, $rgb['b'], 1.0);
+
+    // White color approximation
+    $rgb = $this->accessor->callProtectedMethod('xyzToRgb', [95.05, 100.0, 108.9]);
+
+    $this->assertEqualsWithDelta(255.0, $rgb['r'], 1.0);
+    $this->assertEqualsWithDelta(255.0, $rgb['g'], 1.0);
+    $this->assertEqualsWithDelta(255.0, $rgb['b'], 1.0);
+});
+
+it('correctly ensures rgb format from hwb', function () {
+    // HWB values w and bl are in percentage (0-100), not fractions (0-1)
+    $colorData = ['h' => 0, 'w' => 0.0, 'bl' => 50.0, 'a' => 1.0, 'format' => 'hwb'];
+    $result = $this->accessor->callProtectedMethod('ensureRgbFormat', [$colorData]);
+
+    expect($result['format'])->toBe('rgb')
+      ->and($result['a'])->toBe(1.0)
+      ->and($result['r'])->toBeGreaterThan(0)
+      ->and($result['g'])->toBe(0.0)
+      ->and($result['b'])->toBe(0.0);
+});
+
+it('correctly ensures rgb format from hwb with alpha', function () {
+    // HWB values w and bl are in percentage (0-100), not fractions (0-1)
+    $colorData = ['h' => 120, 'w' => 20.0, 'bl' => 30.0, 'a' => 0.75, 'format' => 'hwb'];
+    $result = $this->accessor->callProtectedMethod('ensureRgbFormat', [$colorData]);
+
+    expect($result['format'])->toBe('rgb')
+      ->and($result['a'])->toBe(0.75)
+      ->and($result['r'])->toBeGreaterThanOrEqual(0)->toBeLessThanOrEqual(255)
+      ->and($result['g'])->toBeGreaterThanOrEqual(0)->toBeLessThanOrEqual(255)
+      ->and($result['b'])->toBeGreaterThanOrEqual(0)->toBeLessThanOrEqual(255);
+});
+
+it('correctly ensures rgb format from hwb with maximum whiteness', function () {
+    // HWB values w and bl are in percentage (0-100), not fractions (0-1)
+    $colorData = ['h' => 0, 'w' => 100.0, 'bl' => 0.0, 'a' => 1.0, 'format' => 'hwb'];
+    $result = $this->accessor->callProtectedMethod('ensureRgbFormat', [$colorData]);
+
+    expect($result['format'])->toBe('rgb')
+        ->and($result['a'])->toBe(1.0)
+        ->and($result['r'])->toBe(255.0)
+        ->and($result['g'])->toBe(255.0)
+        ->and($result['b'])->toBe(255.0);
+});
+
+it('correctly ensures rgb format from hwb with maximum blackness', function () {
+    // HWB values w and bl are in percentage (0-100), not fractions (0-1)
+    $colorData = ['h' => 0, 'w' => 0.0, 'bl' => 100.0, 'a' => 1.0, 'format' => 'hwb'];
+    $result = $this->accessor->callProtectedMethod('ensureRgbFormat', [$colorData]);
+
+    expect($result['format'])->toBe('rgb')
+        ->and($result['a'])->toBe(1.0)
+        ->and($result['r'])->toBeLessThan(10)
+        ->and($result['g'])->toBeLessThan(10)
+        ->and($result['b'])->toBeLessThan(10);
+});
+
+it('correctly ensures rgb format from hwb with balanced whiteness and blackness', function () {
+    // HWB values w and bl are in percentage (0-100), not fractions (0-1)
+    $colorData = ['h' => 240, 'w' => 40.0, 'bl' => 40.0, 'a' => 0.9, 'format' => 'hwb'];
+    $result = $this->accessor->callProtectedMethod('ensureRgbFormat', [$colorData]);
+
+    expect($result['format'])->toBe('rgb')
+      ->and($result['a'])->toBe(0.9)
+      ->and($result['r'])->toBeLessThanOrEqual(255)
+      ->and($result['g'])->toBeLessThanOrEqual(255)
+      ->and($result['b'])->toBeLessThanOrEqual(255);
 });

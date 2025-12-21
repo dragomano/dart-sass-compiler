@@ -16,29 +16,6 @@ class ReflectionAccessor
         $this->object = $object;
     }
 
-    public function setProtectedProperty(mixed $property, mixed $value): void
-    {
-        $reflection = new ReflectionClass($this->object);
-
-        try {
-            $prop = $reflection->getProperty($property);
-            $prop->setValue($this->object, $value);
-        } catch (ReflectionException) {}
-    }
-
-    public function getProtectedProperty(mixed $property)
-    {
-        $reflection = new ReflectionClass($this->object);
-
-        try {
-            $prop = $reflection->getProperty($property);
-
-            return $prop->getValue($this->object);
-        } catch (ReflectionException $e) {
-            return $e->getMessage();
-        }
-    }
-
     public function callProtectedMethod(string $method, array $args = []): mixed
     {
         $reflection = new ReflectionClass($this->object);

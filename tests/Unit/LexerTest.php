@@ -1,7 +1,6 @@
 <?php declare(strict_types=1);
 
 use DartSass\Parsers\Lexer;
-use DartSass\Parsers\Syntax;
 
 describe('Lexer', function () {
     beforeEach(function () {
@@ -14,16 +13,17 @@ describe('Lexer', function () {
         expect($tokenStream->getTokens())->toHaveCount(8);
 
         $tokenTypes = array_map(fn($token) => $token->type, $tokenStream->getTokens());
-        expect($tokenTypes)->toBe(['operator', 'identifier', 'brace_open', 'identifier', 'colon', 'identifier', 'semicolon', 'brace_close']);
-    });
 
-    it('tokenizes basic SASS selectors', function () {
-        $tokenStream = $this->lexer->tokenize('.class
-  color: red', Syntax::SASS);
-
-        $tokenTypes = array_map(fn($token) => $token->type, $tokenStream->getTokens());
-        // In SASS, whitespace is preserved
-        expect($tokenTypes)->toBe(['operator', 'identifier', 'newline', 'whitespace', 'identifier', 'colon', 'whitespace', 'identifier']);
+        expect($tokenTypes)->toBe([
+          'operator',
+          'identifier',
+          'brace_open',
+          'identifier',
+          'colon',
+          'identifier',
+          'semicolon',
+          'brace_close',
+        ]);
     });
 
     it('tokenizes operators correctly', function () {
@@ -38,16 +38,6 @@ describe('Lexer', function () {
 
         $tokenTypes = array_map(fn($token) => $token->type, $tokenStream->getTokens());
         expect($tokenTypes)->toBe(['attribute_selector']);
-    });
-
-    it('tokenizes combinators with whitespace in SASS', function () {
-        $tokenStream = $this->lexer->tokenize('  > .child', Syntax::SASS);
-
-        $tokenTypes = array_map(fn($token) => $token->type, $tokenStream->getTokens());
-        expect($tokenTypes)->toBe(['whitespace', 'operator', 'whitespace', 'operator', 'identifier']);
-
-        $tokenValues = array_map(fn($token) => $token->value, $tokenStream->getTokens());
-        expect($tokenValues)->toBe(['  ', '>', ' ', '.', 'child']);
     });
 
     it('handles multiple selectors separated by comma', function () {

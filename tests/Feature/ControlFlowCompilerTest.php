@@ -3,10 +3,6 @@
 use DartSass\Compiler;
 use DartSass\Parsers\Syntax;
 
-beforeEach(function () {
-    $this->compiler = new Compiler();
-});
-
 dataset('control flow scss styles', [
     '@if directive' => [
         <<<'SCSS'
@@ -630,6 +626,10 @@ dataset('control flow sass styles', [
         CSS,
     ],
 ]);
+
+beforeEach(function () {
+  $this->compiler = new Compiler();
+});
 
 describe('SCSS', function () {
     it('compiles control flow styles', function (string $scss, string $expected) {

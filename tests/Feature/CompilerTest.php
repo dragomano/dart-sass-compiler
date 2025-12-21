@@ -8,11 +8,6 @@ use DartSass\Exceptions\SyntaxException;
 use DartSass\Loaders\LoaderInterface;
 use DartSass\Parsers\Syntax;
 
-beforeEach(function () {
-  $this->loader = mock(LoaderInterface::class);
-  $this->compiler = new Compiler(loader: $this->loader);
-});
-
 dataset('scss styles', [
   'basic SCSS' => [
     <<<'SCSS'
@@ -136,53 +131,6 @@ dataset('scss styles', [
   ],
 ]);
 
-describe('SCSS', function () {
-  it('compiles SCSS styles', function (string $scss, string $expected) {
-    expect($this->compiler->compileString($scss))
-      ->toEqualCss($expected);
-  })->with('scss styles');
-
-  it('compiles file input correctly (SCSS)', function () {
-    $scss = <<<'SCSS'
-    $color: #333;
-
-    body {
-      color: $color;
-    }
-    SCSS;
-
-    $expectedCss = <<<'CSS'
-    body {
-      color: #333;
-    }
-    CSS;
-
-    $this->loader
-      ->shouldReceive('load')
-      ->with('virtual.scss')
-      ->andReturn($scss);
-
-    expect($this->compiler->compileFile('virtual.scss'))
-      ->toEqualCss($expectedCss);
-  });
-
-  it('throws syntax error on invalid SCSS syntax', function () {
-    $scss = <<<'SCSS'
-    body {
-        color: #zzz;
-    }
-    SCSS;
-
-    expect(fn () => $this->compiler->compileString($scss))
-      ->toThrow(SyntaxException::class);
-  });
-
-  it('throws compilation error on missing SCSS file', function () {
-    expect(fn () => (new Compiler())->compileFile('nonexistent.scss'))
-      ->toThrow(CompilationException::class, 'File not found: nonexistent.scss');
-  });
-});
-
 dataset('sass styles', [
   'basic SASS' => [
     <<<'SASS'
@@ -296,6 +244,58 @@ dataset('sass styles', [
         CSS,
   ],
 ]);
+
+beforeEach(function () {
+  $this->loader = mock(LoaderInterface::class);
+  $this->compiler = new Compiler(loader: $this->loader);
+});
+
+describe('SCSS', function () {
+  it('compiles SCSS styles', function (string $scss, string $expected) {
+    expect($this->compiler->compileString($scss))
+      ->toEqualCss($expected);
+  })->with('scss styles');
+
+  it('compiles file input correctly (SCSS)', function () {
+    $scss = <<<'SCSS'
+    $color: #333;
+
+    body {
+      color: $color;
+    }
+    SCSS;
+
+    $expectedCss = <<<'CSS'
+    body {
+      color: #333;
+    }
+    CSS;
+
+    $this->loader
+      ->shouldReceive('load')
+      ->with('virtual.scss')
+      ->andReturn($scss);
+
+    expect($this->compiler->compileFile('virtual.scss'))
+      ->toEqualCss($expectedCss);
+  });
+
+  it('throws syntax error on invalid SCSS syntax', function () {
+    $scss = <<<'SCSS'
+    body {
+        color: #zzz;
+    }
+    SCSS;
+
+    expect(fn () => $this->compiler->compileString($scss))
+      ->toThrow(SyntaxException::class);
+  });
+
+  it('throws compilation error on missing SCSS file', function () {
+    expect(fn () => (new Compiler())->compileFile('nonexistent.scss'))
+      ->toThrow(CompilationException::class, 'File not found: nonexistent.scss');
+  });
+});
 
 describe('SASS', function () {
   it('compiles SASS styles', function (string $sass, string $expected) {

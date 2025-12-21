@@ -2,12 +2,11 @@
 
 use DartSass\Exceptions\SyntaxException;
 use DartSass\Parsers\Lexer;
-use DartSass\Parsers\Syntax;
 
 describe('TokenStream', function () {
     beforeEach(function () {
         $this->lexer = new Lexer();
-        $this->tokenStream = $this->lexer->tokenize('.class > .child { color: red; }', Syntax::SCSS);
+        $this->tokenStream = $this->lexer->tokenize('.class > .child { color: red; }');
     });
 
     it('provides access to current token', function () {
@@ -129,9 +128,8 @@ describe('TokenStream', function () {
     });
 
     it('skips whitespace tokens', function () {
-        $tokenStream = $this->lexer->tokenize('.class    >   .child', Syntax::SCSS);
+        $tokenStream = $this->lexer->tokenize('.class    >   .child');
 
-        // In SCSS, whitespace is ignored, so same token sequence
         expect($tokenStream->count())->toBe(5)
           ->and($tokenStream->getTokens()[2]->value)->toBe('>');
     });
@@ -147,7 +145,7 @@ describe('TokenStream', function () {
     });
 
     it('handles empty token stream', function () {
-        $emptyStream = $this->lexer->tokenize('', Syntax::SCSS);
+        $emptyStream = $this->lexer->tokenize('');
 
         expect($emptyStream->count())->toBe(0)
           ->and($emptyStream->isEnd())->toBeTrue()
