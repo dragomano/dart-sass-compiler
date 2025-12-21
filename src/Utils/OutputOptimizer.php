@@ -22,38 +22,38 @@ use function trim;
 readonly class OutputOptimizer
 {
     private const SAFE_PROPERTIES = [
-        'width'          => true,
-        'height'         => true,
-        'top'            => true,
-        'right'          => true,
-        'bottom'         => true,
-        'left'           => true,
-        'margin'         => true,
-        'margin-top'     => true,
-        'margin-right'   => true,
-        'margin-bottom'  => true,
-        'margin-left'    => true,
-        'padding'        => true,
-        'padding-top'    => true,
-        'padding-right'  => true,
-        'padding-bottom' => true,
-        'padding-left'   => true,
-        'border-width'   => true,
-        'border-radius'  => true,
-        'outline-width'  => true,
-        'flex-basis'     => true,
-        'text-indent'    => true,
-        'letter-spacing' => true,
-        'word-spacing'   => true,
+        'background'       => true,
+        'background-image' => true,
+        'width'            => true,
+        'height'           => true,
+        'top'              => true,
+        'right'            => true,
+        'bottom'           => true,
+        'left'             => true,
+        'margin'           => true,
+        'margin-top'       => true,
+        'margin-right'     => true,
+        'margin-bottom'    => true,
+        'margin-left'      => true,
+        'padding'          => true,
+        'padding-top'      => true,
+        'padding-right'    => true,
+        'padding-bottom'   => true,
+        'padding-left'     => true,
+        'border-width'     => true,
+        'border-radius'    => true,
+        'outline-width'    => true,
+        'flex-basis'       => true,
+        'text-indent'      => true,
+        'letter-spacing'   => true,
+        'word-spacing'     => true,
     ];
 
     private const UNSAFE_PROPERTIES = [
-        'background'       => true,
-        'background-image' => true,
-        'display'          => true,
-        'filter'           => true,
-        'clip-path'        => true,
-        'text-overflow'    => true,
+        'display'       => true,
+        'filter'        => true,
+        'clip-path'     => true,
+        'text-overflow' => true,
     ];
 
     private const ZERO_UNIT_REGEX = '/(?<![\w\-(])0(?:px|em|rem|pt|pc|in|cm|mm|vmin|vmax)(?=[;\s}]|$)/';
@@ -95,35 +95,40 @@ readonly class OutputOptimizer
         }
 
         if ($this->style === 'compressed') {
-            // Remove all comments first
+            // Remove /* comments */
             $css = preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', $css);
 
-            // Remove extra spaces and line breaks
+            // All whitespace → single space
             $css = preg_replace('/\s+/', ' ', $css);
 
-            // Remove spaces around specific characters
-            $css = str_replace(
-                ['; ', ': ', ' {', '} ', '{ ', ' ,', ', '],
-                [';', ':', '{', '}', '{', ',', ','],
-                $css
-            );
+            // Remove spaces around { } : ; ,
+            $css = preg_replace('/\s*([{}:;,])\s*/', '$1', $css);
 
+            // ,selector{ → ,selector{
             $css = preg_replace('/,([^}]*){/', ',$1{', $css);
+
+            // ;;;} → }
             $css = preg_replace('/;+\s*}/', '}', $css);
+
+            // Trim start/end spaces
             $css = trim($css);
         }
+
+        // Clean up multiple consecutive commas
+        $css = preg_replace('/,+/', ',', $css);
 
         return $this->optimizeZeroUnits($css);
     }
 
     private function optimizeZeroUnits(string $css): string
     {
+        // More flexible regex to handle properties with spaces and special characters
         return preg_replace_callback(
-            '/([a-zA-Z-]+)(\s*:\s*)([^;}]+)/',
+            '/([a-zA-Z-]+)(\s*:\s*)([^;{}]+)(?=[;}])/m',
             function ($matches) {
                 $prop = strtolower($matches[1]);
                 $sep  = $matches[2];
-                $val  = $matches[3];
+                $val  = trim($matches[3]);
 
                 if (isset(self::SAFE_PROPERTIES[$prop])) {
                     $val = preg_replace(self::ZERO_UNIT_REGEX, '0', $val);
@@ -147,10 +152,6 @@ readonly class OutputOptimizer
 
             if (str_ends_with($trimmed, '{')) {
                 if ($inBlock) {
-                    foreach ($buffer as $bufLine) {
-                        $resultLines[] = $bufLine;
-                    }
-
                     $buffer = [];
                 }
 
@@ -176,18 +177,7 @@ readonly class OutputOptimizer
             }
 
             if ($inBlock) {
-                if (str_contains($trimmed, '{') || str_contains($trimmed, '}')) {
-                    $optimizedBuffer = $this->optimizeBuffer($buffer);
-
-                    foreach ($optimizedBuffer as $bufLine) {
-                        $resultLines[] = $bufLine;
-                    }
-
-                    $buffer = [];
-                    $resultLines[] = $line;
-                } else {
-                    $buffer[] = $line;
-                }
+                $buffer[] = $line;
             } else {
                 $resultLines[] = $line;
             }
@@ -203,14 +193,8 @@ readonly class OutputOptimizer
 
         foreach ($buffer as $line) {
             $trimmed = trim($line);
-
-            if ($trimmed === '' || ! str_contains($trimmed, ':')) {
-                $final[] = $line;
-                continue;
-            }
-
-            $parts = explode(':', $trimmed, 2);
-            $prop  = trim($parts[0]);
+            $parts   = explode(':', $trimmed, 2);
+            $prop    = trim($parts[0]);
 
             if (isset(self::UNSAFE_PROPERTIES[$prop])) {
                 $final[] = $line;

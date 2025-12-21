@@ -42,10 +42,6 @@ class StateManager
 
     public function pop(): array
     {
-        if (empty($this->stateStack)) {
-            throw new RuntimeException('No state to pop');
-        }
-
         $state = array_pop($this->stateStack);
 
         $this->variableHandler->setVariables($state['variables']);

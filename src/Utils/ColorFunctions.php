@@ -512,30 +512,47 @@ class ColorFunctions
                     }
                 })(),
                 'alpha' => $result['a'] = $this->clamp($value, 0.0, 1.0),
-                'whiteness' => $result['whiteness'] = $this->clamp($value, 0, 100),
-                'blackness' => $result['blackness'] = $this->clamp($value, 0, 100),
-                'x' => $result['x'] = $this->clamp($value, 0, 100),
-                'y' => $result['y'] = $this->clamp($value, 0, 100),
-                'z' => $result['z'] = $this->clamp($value, 0, 100),
-                'chroma' => $result['chroma'] = $this->clamp($value, 0, 100),
-                'space' => $result['space'] = $value,
                 default => null,
             };
         }
 
-        if (isset($result['space']) && $result['space'] === 'hwb') {
+        // Handle HWB adjustments (whiteness/blackness)
+        if (isset($adjustments['whiteness']) || isset($adjustments['blackness'])) {
             $hwb = $this->rgbToHwb($result['r'], $result['g'], $result['b']);
 
             $w_percent = ($hwb['w'] ?? 0.0) + ($adjustments['whiteness'] ?? 0.0);
             $bl_percent = ($hwb['bl'] ?? 0.0) + ($adjustments['blackness'] ?? 0.0);
-            $h_deg = ($hwb['h'] ?? 0.0) + ($adjustments['hue'] ?? 0.0);
 
             $w_percent = $this->clamp($w_percent, 0.0, 100.0);
             $bl_percent = $this->clamp($bl_percent, 0.0, 100.0);
-            $h_deg = $this->clamp($h_deg, 0.0, 360.0);
 
-            $rgb = $this->hwbToRgb($h_deg, $w_percent, $bl_percent);
+            $rgb = $this->hwbToRgb($hwb['h'] ?? 0.0, $w_percent, $bl_percent);
             $result = array_merge($rgb, ['a' => $result['a'], 'format' => 'rgb']);
+        }
+
+        // Handle XYZ adjustments
+        if (isset($adjustments['x']) || isset($adjustments['y']) || isset($adjustments['z'])) {
+            $xyz = $this->rgbToXyz($result['r'], $result['g'], $result['b']);
+
+            $x = $this->clamp(($xyz['x'] ?? 0.0) + ($adjustments['x'] ?? 0.0), 0.0, 100.0);
+            $y = $this->clamp(($xyz['y'] ?? 0.0) + ($adjustments['y'] ?? 0.0), 0.0, 100.0);
+            $z = $this->clamp(($xyz['z'] ?? 0.0) + ($adjustments['z'] ?? 0.0), 0.0, 100.0);
+
+            $result = array_merge($this->xyzToRgb($x, $y, $z), ['a' => $result['a'], 'format' => 'rgb']);
+        }
+
+        // Handle chroma adjustments
+        if (isset($adjustments['chroma'])) {
+            $hsl = $this->rgbToHsl($result['r'], $result['g'], $result['b']);
+            $currentLightness = $hsl['l'];
+            $chromaAdjustment = $adjustments['chroma'];
+            $newLightness = $this->clamp($currentLightness + ($chromaAdjustment * 0.5), 0, 100);
+
+            // Only adjust if lightness actually changes
+            if (abs($newLightness - $currentLightness) > 0.1) {
+                $rgb = $this->hslToRgb($hsl['h'], $hsl['s'], $newLightness);
+                $result = array_merge($rgb, ['a' => $result['a'], 'format' => 'rgb']);
+            }
         }
 
         return $result;
@@ -600,7 +617,7 @@ class ColorFunctions
                 '$hue'        => $result = $this->changeHsl($result, 'h', $value),
                 '$saturation' => $result = $this->changeHsl($result, 's', $value),
                 '$lightness'  => $result = $this->changeHsl($result, 'l', $value),
-                default       => throw new CompilationException("Unknown change parameter: $key"),
+                default       => throw new CompilationException("Unknown changing parameter: $key"),
             };
         }
 
@@ -736,9 +753,6 @@ class ColorFunctions
         ];
 
         self::$rgbToHslCache[$key] = $result;
-        if (count(self::$rgbToHslCache) > 1000) {
-            self::$rgbToHslCache = [];
-        }
 
         return $result;
     }
@@ -775,9 +789,6 @@ class ColorFunctions
         ];
 
         self::$hslToRgbCache[$key] = $result;
-        if (count(self::$hslToRgbCache) > 1000) {
-            self::$hslToRgbCache = [];
-        }
 
         return $result;
     }
@@ -813,12 +824,6 @@ class ColorFunctions
         $w /= 100.0;  // → fraction 0–1
         $bl /= 100.0;
 
-        if ($w + $bl > 1.0) {
-            $scale = 1.0 / ($w + $bl);
-            $w *= $scale;
-            $bl *= $scale;
-        }
-
         $chroma = max(0.0, 1.0 - $w - $bl);
 
         $hsl = $this->hslToRgb($h, 100.0, 50.0);
@@ -836,6 +841,60 @@ class ColorFunctions
             'r'      => round($r),
             'g'      => round($g),
             'b'      => round($b),
+            'a'      => 1.0,
+            'format' => 'rgb',
+        ];
+    }
+
+    private function linearizeChannel(float $val): float
+    {
+        return $val > 0.04045 ? pow(($val + 0.055) / 1.055, 2.4) : $val / 12.92;
+    }
+
+    private function unlinearizeChannel(float $val): float
+    {
+        return $val > 0.0031308 ? 1.055 * pow($val, 1 / 2.4) - 0.055 : 12.92 * $val;
+    }
+
+    private function rgbToXyz(float $r, float $g, float $b): array
+    {
+        $r /= 255.0;
+        $g /= 255.0;
+        $b /= 255.0;
+
+        $r = $this->linearizeChannel($r);
+        $g = $this->linearizeChannel($g);
+        $b = $this->linearizeChannel($b);
+
+        $x = $r * 0.4124 + $g * 0.3576 + $b * 0.1805;
+        $y = $r * 0.2126 + $g * 0.7152 + $b * 0.0722;
+        $z = $r * 0.0193 + $g * 0.1192 + $b * 0.9505;
+
+        return [
+            'x' => $x * 100.0,
+            'y' => $y * 100.0,
+            'z' => $z * 100.0,
+        ];
+    }
+
+    private function xyzToRgb(float $x, float $y, float $z): array
+    {
+        $x /= 100.0;
+        $y /= 100.0;
+        $z /= 100.0;
+
+        $r = $x * 3.2406 + $y * -1.5372 + $z * -0.4986;
+        $g = $x * -0.9689 + $y * 1.8758 + $z * 0.0415;
+        $b = $x * 0.0557 + $y * -0.2040 + $z * 1.0570;
+
+        $r = $this->unlinearizeChannel($r);
+        $g = $this->unlinearizeChannel($g);
+        $b = $this->unlinearizeChannel($b);
+
+        return [
+            'r'      => $this->clamp($r * 255.0, 0.0, 255.0),
+            'g'      => $this->clamp($g * 255.0, 0.0, 255.0),
+            'b'      => $this->clamp($b * 255.0, 0.0, 255.0),
             'a'      => 1.0,
             'format' => 'rgb',
         ];

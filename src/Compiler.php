@@ -512,10 +512,6 @@ class Compiler
                 foreach ($lines as $line) {
                     $trimmedLine = trim($line);
 
-                    if ($trimmedLine === '') {
-                        continue;
-                    }
-
                     if (preg_match('/^[a-zA-Z.#-]/', $trimmedLine) && str_contains($trimmedLine, '{')) {
                         $inNestedRule = true;
                         $nestedPart .= $line . "\n";

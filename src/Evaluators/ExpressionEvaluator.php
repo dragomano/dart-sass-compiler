@@ -153,7 +153,7 @@ class ExpressionEvaluator
         return $value;
     }
 
-    private function evaluateFunctionExpression(AstNode $expr): mixed
+    private function evaluateFunctionExpression(AstNode $expr)
     {
         if ($expr->properties['name'] === 'if') {
             $result = $this->functionHandler->call('if', $expr->properties['args'] ?? []);

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace DartSass\Utils;
 
-use InvalidArgumentException;
-
 use function abs;
 use function implode;
 use function is_string;
@@ -14,7 +12,12 @@ use function usort;
 
 class SourceMapGenerator
 {
-    private const BASE64_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    private const BASE64_ALPHABET = [
+        'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P',
+        'Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f',
+        'g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v',
+        'w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/',
+    ];
 
     public function generate(array $mappings, string $sourceFile, string $outputFile, array $options = []): string
     {
@@ -38,77 +41,45 @@ class SourceMapGenerator
 
     private function generateMappings(array $mappings): string
     {
-        $lineGroups          = [];
-        $lastGeneratedLine   = 0;
-        $lastGeneratedColumn = 0;
-        $lastOriginalLine    = 0;
-        $lastOriginalColumn  = 0;
-        $lastSourceIndex     = 0;
-        $currentLineMappings = [];
+        usort($mappings, fn($a, $b): int =>
+            ($a['generated']['line'] ?? 0) <=> ($b['generated']['line'] ?? 0)
+                ?: ($a['generated']['column'] ?? 0) <=> ($b['generated']['column'] ?? 0)
+            );
 
-        usort($mappings, function ($a, $b) {
-            $lineDiff = ($a['generated']['line'] ?? 0) - ($b['generated']['line'] ?? 0);
-
-            return $lineDiff !== 0 ? $lineDiff : ($a['generated']['column'] ?? 0) - ($b['generated']['column'] ?? 0);
-        });
+        $lineGroups  = $currentLineMappings = [];
+        $lastGenLine = $lastGenCol = $lastOrigLine = $lastOrigCol = $lastSourceIdx = 0;
 
         foreach ($mappings as $mapping) {
-            if (! isset(
-                $mapping['generated']['line'],
-                $mapping['generated']['column'],
-                $mapping['original']['line'],
-                $mapping['original']['column']
-            )) {
-                throw new InvalidArgumentException('Invalid mapping format');
-            }
+            extract([
+                'generatedLine'   => $mapping['generated']['line'],
+                'generatedColumn' => $mapping['generated']['column'],
+                'originalLine'    => $mapping['original']['line'],
+                'originalColumn'  => $mapping['original']['column'],
+                'sourceIndex'     => $mapping['sourceIndex'] ?? 0,
+            ]);
 
-            $generatedLine   = $mapping['generated']['line'];
-            $generatedColumn = $mapping['generated']['column'];
-            $originalLine    = $mapping['original']['line'];
-            $originalColumn  = $mapping['original']['column'];
-            $sourceIndex     = $mapping['sourceIndex'] ?? 0;
-            $nameIndex       = $mapping['nameIndex'] ?? null;
-
-            if ($generatedLine < 0 || $generatedColumn < 0 || $originalLine < 0 || $originalColumn < 0) {
-                continue;
-            }
-
-            if ($generatedLine !== $lastGeneratedLine) {
-                if (! empty($currentLineMappings)) {
+            if ($generatedLine !== $lastGenLine) {
+                if ($currentLineMappings) {
                     $lineGroups[] = implode(',', $currentLineMappings);
                     $currentLineMappings = [];
                 }
 
-                $lastGeneratedColumn = 0;
-                $lastOriginalLine    = 0;
-                $lastOriginalColumn  = 0;
-                $lastSourceIndex     = 0;
-                $lastGeneratedLine   = $generatedLine;
+                [$lastGenCol, $lastOrigLine, $lastOrigCol, $lastSourceIdx, $lastGenLine] = [0, 0, 0, 0, $generatedLine];
             }
 
-            $columnDiff         = $generatedColumn - $lastGeneratedColumn;
-            $sourceIndexDiff    = $sourceIndex - $lastSourceIndex;
-            $originalLineDiff   = $originalLine - $lastOriginalLine;
-            $originalColumnDiff = $originalColumn - $lastOriginalColumn;
+            $segment = implode('', [
+                $this->encodeVLQ($generatedColumn - $lastGenCol),
+                $this->encodeVLQ($sourceIndex - $lastSourceIdx),
+                $this->encodeVLQ($originalLine - $lastOrigLine),
+                $this->encodeVLQ($originalColumn - $lastOrigCol)
+            ]);
 
-            $encodedSegment = $this->encodeVLQ($columnDiff) .
-                $this->encodeVLQ($sourceIndexDiff) .
-                $this->encodeVLQ($originalLineDiff) .
-                $this->encodeVLQ($originalColumnDiff);
-
-            if ($nameIndex !== null) {
-                $encodedSegment .= $this->encodeVLQ($nameIndex);
-            }
-
-            $currentLineMappings[] = $encodedSegment;
-
-            $lastGeneratedColumn = $generatedColumn;
-            $lastOriginalLine    = $originalLine;
-            $lastOriginalColumn  = $originalColumn;
-            $lastSourceIndex     = $sourceIndex;
+            $currentLineMappings[] = $segment;
+            [$lastGenCol, $lastOrigLine, $lastOrigCol, $lastSourceIdx] =
+                [$generatedColumn, $originalLine, $originalColumn, $sourceIndex];
         }
 
-        if (! empty($currentLineMappings)) {
+        if ($currentLineMappings) {
             $lineGroups[] = implode(',', $currentLineMappings);
         }
 
@@ -117,30 +88,15 @@ class SourceMapGenerator
 
     private function encodeVLQ(int $value): string
     {
-        $vlq = '';
-        $sign = $value < 0 ? 1 : 0;
+        $vlq   = '';
+        $sign  = $value < 0 ? 1 : 0;
         $value = abs($value) << 1 | $sign;
 
         do {
-            $digit = $value & 0x1F;
+            $vlq .= self::BASE64_ALPHABET[$value & 0x1F];
             $value >>= 5;
-
-            if ($value > 0) {
-                $digit |= 0x20; // Continuation bit
-            }
-
-            $vlq .= $this->base64Encode($digit);
         } while ($value > 0);
 
         return $vlq;
-    }
-
-    private function base64Encode(int $value): string
-    {
-        if ($value < 0 || $value > 63) {
-            throw new InvalidArgumentException('Value must be between 0 and 63');
-        }
-
-        return self::BASE64_ALPHABET[$value];
     }
 }
