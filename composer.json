@@ -1,0 +1,62 @@
+{
+  "name": "bugo/dart-sass-compiler",
+  "description": "PHP compiler for SCSS/Sass to CSS, fully compatible with modern Dart Sass",
+  "keywords": [
+    "scss php",
+    "sass php",
+    "scss compiler",
+    "sass compiler",
+    "dart sass php"
+  ],
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Bugo",
+      "email": "bugo@dragomano.ru"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "DartSass\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tests\\": "tests/"
+    }
+  },
+  "require": {
+    "php": "^8.2"
+  },
+  "require-dev": {
+    "bugo/sass-embedded-php": "dev-main",
+    "mockery/mockery": "^2.0.x-dev",
+    "pestphp/pest": "^3.8",
+    "rector/rector": "^2.2",
+    "scssphp/scssphp": "^2.1"
+  },
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/dragomano/sass-embedded-php"
+    }
+  ],
+  "scripts": {
+    "rector": "vendor/bin/rector process --clear-cache",
+    "check": "vendor/bin/rector process --dry-run --clear-cache",
+    "tests": "vendor/bin/pest --colors=always",
+    "tests-coverage": "vendor/bin/pest --colors=always --coverage --min=80",
+    "tests-coverage-clover": "vendor/bin/pest --colors=always --min=80 --coverage-clover coverage.xml",
+    "tests-coverage-html": "vendor/bin/pest --colors=always --min=80 --coverage-html coverage"
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "preferred-install": "dist",
+    "sort-packages": true,
+    "allow-plugins": {
+      "bugo/sass-embedded-php": true,
+      "pestphp/pest-plugin": true
+    }
+  }
+}
