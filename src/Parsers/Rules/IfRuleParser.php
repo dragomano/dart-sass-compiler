@@ -9,7 +9,6 @@ use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\ConditionNode;
 use DartSass\Parsers\Nodes\IfNode;
 use DartSass\Parsers\Nodes\OperationNode;
-use DartSass\Parsers\SassParser;
 
 use function array_merge;
 use function sprintf;
@@ -37,7 +36,7 @@ class IfRuleParser extends AtRuleParser
             $this->incrementTokenIndex();
         }
 
-        if (! ($this->parser instanceof SassParser) && ! $this->peek('brace_open')) {
+        if (! $this->peek('brace_open')) {
             $currentToken = $this->currentToken();
             $tokenInfo = $currentToken
                 ? sprintf('Token: type=%s, value=%s', $currentToken->type, $currentToken->value ?? 'null')
@@ -50,9 +49,7 @@ class IfRuleParser extends AtRuleParser
             );
         }
 
-        if (! ($this->parser instanceof SassParser)) {
-            $this->consume('brace_open');
-        }
+        $this->consume('brace_open');
 
         $block = $this->parser->parseBlock();
         $body = array_merge($block['declarations'], $block['nested']);
@@ -139,7 +136,7 @@ class IfRuleParser extends AtRuleParser
                 $this->incrementTokenIndex();
             }
 
-            if (! ($this->parser instanceof SassParser) && ! $this->peek('brace_open')) {
+            if (! $this->peek('brace_open')) {
                 throw new SyntaxException(
                     'Expected "{" to start @else if block',
                     $this->currentToken() ? $this->currentToken()->line : 0,
@@ -147,9 +144,7 @@ class IfRuleParser extends AtRuleParser
                 );
             }
 
-            if (! ($this->parser instanceof SassParser)) {
-                $this->consume('brace_open');
-            }
+            $this->consume('brace_open');
 
             $block = $this->parser->parseBlock();
             $body = array_merge($block['declarations'], $block['nested']);
@@ -158,7 +153,7 @@ class IfRuleParser extends AtRuleParser
 
             return [new IfNode($condition, $body, $nextElse)];
         } else {
-            if (! ($this->parser instanceof SassParser) && ! $this->peek('brace_open')) {
+            if (! $this->peek('brace_open')) {
                 throw new SyntaxException(
                     'Expected "{" to start @else block',
                     $this->currentToken() ? $this->currentToken()->line : 0,
@@ -166,9 +161,7 @@ class IfRuleParser extends AtRuleParser
                 );
             }
 
-            if (! ($this->parser instanceof SassParser)) {
-                $this->consume('brace_open');
-            }
+            $this->consume('brace_open');
 
             $block = $this->parser->parseBlock();
 

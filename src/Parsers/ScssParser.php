@@ -754,13 +754,8 @@ class ScssParser implements TokenAwareParserInterface
             $this->stream->advance();
         }
 
-        if ($this instanceof SassParser) {
-            // For SASS, parse block by indentation
-            $content = $this->parseBlock()['items'] ?? [];
-        } else {
-            $this->stream->consume('brace_open');
-            $content = $this->parseBody();
-        }
+        $this->stream->consume('brace_open');
+        $content = $this->parseBody();
 
         $content = array_filter($content, function ($node) {
             if (is_array($node)) {

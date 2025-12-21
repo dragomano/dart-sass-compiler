@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Patterns;
+namespace DartSass\Parsers;
 
-enum ScssTokenPattern: string
+use function array_column;
+use function implode;
+
+enum TokenPattern: string
 {
     case SELECTOR                  = '(?P<selector>
         (?:
@@ -22,7 +25,7 @@ enum ScssTokenPattern: string
             (?:[:]{1,2}[\w-]+(?:\([^)]*\))?)*
         )*
     )';
-    case HEX_COLOR                 = '(?P<hex_color>#[a-fA-F0-9]{3,6})';
+    case HEX_COLOR                 = '(?P<hex_color>#[0-9a-fA-F]{3,8})';
     case WHITESPACE                = '(?P<whitespace>\s+)';
     case STRING                    = '(?P<string>"[^"\\\\]*(?:\\\\.[^"\\\\]*)*"|\'[^\'\\\\]*(?:\\\\.[^\'\\\\]*)*\')';
     case COMMENT                   = '(?P<comment>\/\/.*?$|\/\*.*?\*\/)';
@@ -44,4 +47,16 @@ enum ScssTokenPattern: string
     case PAREN_CLOSE               = '(?P<paren_close>\))';
     case SEMICOLON                 = '(?P<semicolon>;)';
     case COLON                     = '(?P<colon>:)';
+
+    public static function getPatterns(): array
+    {
+        return array_column(self::cases(), 'value', 'name');
+    }
+
+    public static function buildRegexFromPatterns(): string
+    {
+        $patterns = self::getPatterns();
+
+        return '/(' . implode('|', $patterns) . ')/ms';
+    }
 }

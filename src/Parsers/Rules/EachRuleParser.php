@@ -8,8 +8,6 @@ use DartSass\Exceptions\SyntaxException;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\EachNode;
 
-use DartSass\Parsers\SassParser;
-
 use function array_merge;
 use function sprintf;
 
@@ -70,18 +68,14 @@ class EachRuleParser extends AtRuleParser
         }
 
         if (! $this->peek('brace_open')) {
-            if (! ($this->parser instanceof SassParser)) {
-                throw new SyntaxException(
-                    'Expected "{" to start @each block',
-                    $this->currentToken() ? $this->currentToken()->line : $token->line,
-                    $this->currentToken() ? $this->currentToken()->column : $token->column
-                );
-            }
+            throw new SyntaxException(
+                'Expected "{" to start @each block',
+                $this->currentToken() ? $this->currentToken()->line : $token->line,
+                $this->currentToken() ? $this->currentToken()->column : $token->column
+            );
         }
 
-        if (! ($this->parser instanceof SassParser)) {
-            $this->consume('brace_open');
-        }
+        $this->consume('brace_open');
 
         $block = $this->parser->parseBlock();
         $body = array_merge($block['declarations'], $block['nested']);

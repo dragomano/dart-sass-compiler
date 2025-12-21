@@ -18,17 +18,8 @@ class MediaRuleParser extends AtRuleParser
         $token = $this->consume('at_rule');
         $query = $this->parseMediaQuery();
 
-        // Handle both SCSS and SASS syntax
-        if ($this->peek('brace_open')) {
-            $this->consume('brace_open');
-            $body = $this->parseBlock();
-        } else {
-            while ($this->currentToken() && ($this->peek('whitespace') || $this->peek('newline'))) {
-                $this->incrementTokenIndex();
-            }
-
-            $body = $this->parseSassBlock();
-        }
+        $this->consume('brace_open');
+        $body = $this->parseBlock();
 
         return $this->createNode($query, $body, $token->line);
     }
@@ -72,59 +63,6 @@ class MediaRuleParser extends AtRuleParser
         }
 
         $this->consume('brace_close');
-
-        return ['declarations' => $declarations, 'nested' => $nested];
-    }
-
-    private function parseSassBlock(): array
-    {
-        $declarations = $nested = [];
-
-        while ($this->currentToken()) {
-            while ($this->peek('whitespace') || $this->peek('newline')) {
-                $this->incrementTokenIndex();
-            }
-
-            if ($this->currentToken() === null) {
-                break;
-            }
-
-            // Handle nested rules and declarations
-            if ($this->peek('selector')) {
-                // Use the base parser's parseRule method for nested rules
-                $nested[] = $this->parser->parseRule();
-            } elseif ($this->peek('operator') && in_array($this->currentToken()->value, ['&', '.', '#'])) {
-                $nested[] = $this->parser->parseRule();
-            } elseif ($this->peek('at_rule')) {
-                $nested[] = $this->parser->parseAtRule();
-            } elseif ($this->peek('variable')) {
-                $nested[] = $this->parser->parseVariable();
-            } elseif ($this->peek('colon')) {
-                // This is a CSS property at media level
-                $declarations[] = $this->parser->parseDeclaration();
-            } elseif ($this->peek('identifier')) {
-                // Check if this is a CSS property (identifier followed by colon)
-                $savedIndex = $this->getTokenIndex();
-                $this->incrementTokenIndex();
-
-                while ($this->peek('whitespace')) {
-                    $this->incrementTokenIndex();
-                }
-
-                if ($this->peek('colon')) {
-                    // This is a CSS property
-                    $this->setTokenIndex($savedIndex);
-                    $declarations[] = $this->parser->parseDeclaration();
-                } else {
-                    // This is a selector
-                    $this->setTokenIndex($savedIndex);
-                    $nested[] = $this->parser->parseRule();
-                }
-            } else {
-                // Skip unknown tokens
-                $this->incrementTokenIndex();
-            }
-        }
 
         return ['declarations' => $declarations, 'nested' => $nested];
     }

@@ -6,7 +6,6 @@ namespace DartSass\Parsers\Rules;
 
 use DartSass\Exceptions\SyntaxException;
 use DartSass\Parsers\Nodes\AstNode;
-
 use DartSass\Parsers\Nodes\ForwardNode;
 
 use function ltrim;

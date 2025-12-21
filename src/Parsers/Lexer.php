@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace DartSass\Parsers;
 
 use DartSass\Exceptions\SyntaxException;
-use DartSass\Patterns\PatternManager;
 
 use function preg_match;
 use function sprintf;
@@ -18,9 +17,9 @@ use function substr_count;
 
 class Lexer implements LexerInterface
 {
-    protected static array $cachedRegexes = [];
+    protected static array $cachedPatterns;
 
-    protected static array $cachedPatterns = [];
+    protected static string $cachedRegexes;
 
     private int $line = 1;
 
@@ -33,13 +32,11 @@ class Lexer implements LexerInterface
     /**
      * @throws SyntaxException
      */
-    public function tokenize(string $input, ?Syntax $syntax = null): TokenStreamInterface
+    public function tokenize(string $input): TokenStreamInterface
     {
-        $syntax ??= Syntax::SCSS;
-
         $this->resetState();
 
-        [$regex, $patterns] = $this->getTokenizerData($syntax);
+        [$regex, $patterns] = $this->getTokenizerData();
 
         $tokens = [];
         $inputLength = strlen($input);
@@ -62,10 +59,7 @@ class Lexer implements LexerInterface
                         $this->inBlock = false;
                     }
 
-                    if ($type === 'comment'
-                        || ($type === 'whitespace' && $syntax !== Syntax::SASS)
-                        || ($type === 'newline' && $syntax !== Syntax::SASS)
-                    ) {
+                    if (in_array($type, ['comment', 'whitespace', 'newline'])) {
                         $this->updatePosition($matchValue, $matchLength);
                         continue 2;
                     }
@@ -117,18 +111,16 @@ class Lexer implements LexerInterface
         $this->position += $length;
     }
 
-    protected function getTokenizerData(Syntax $syntax): array
+    protected function getTokenizerData(): array
     {
-        $key = $syntax->value;
-
-        if (! isset(self::$cachedRegexes[$key])) {
-            self::$cachedPatterns[$key] = PatternManager::getPatterns($key);
-            self::$cachedRegexes[$key]  = PatternManager::buildRegexFromPatterns($key);
+        if (! isset(self::$cachedRegexes)) {
+            self::$cachedPatterns = TokenPattern::getPatterns();
+            self::$cachedRegexes  = TokenPattern::buildRegexFromPatterns();
         }
 
         return [
-            self::$cachedRegexes[$key],
-            self::$cachedPatterns[$key]
+            self::$cachedRegexes,
+            self::$cachedPatterns
         ];
     }
 

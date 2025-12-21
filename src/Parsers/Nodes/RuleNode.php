@@ -11,21 +11,14 @@ final class RuleNode extends AstNode
         public array $declarations,
         public array $nested,
         public int $line,
-        public int $column = 0,
-        public ?int $indent = null
+        public int $column = 0
     ) {
-        $properties = [
+        parent::__construct('rule', [
             'selector'     => $selector,
             'declarations' => $declarations,
             'nested'       => $nested,
             'line'         => $line,
             'column'       => $column,
-        ];
-
-        if ($indent !== null) {
-            $properties['indent'] = $indent;
-        }
-
-        parent::__construct('rule', $properties);
+        ]);
     }
 }
