@@ -14,3 +14,9 @@ expect()->extend('toEqualCss', function (string $expected) {
 
   return expect($actualNorm)->toBe($expectedNorm);
 });
+
+expect()->extend('toBeCloseTo', function (float $expected, int $precision = 2) {
+    $delta = 0.5 * pow(10, -$precision);
+    
+    return abs($this->value - $expected) < $delta;
+});
