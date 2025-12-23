@@ -11,5 +11,6 @@ class Token
         public string $value,
         public int $line,
         public int $column
-    ) {}
+    ) {
+    }
 }

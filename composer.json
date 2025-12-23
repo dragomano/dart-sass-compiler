@@ -31,6 +31,7 @@
   },
   "require-dev": {
     "bugo/sass-embedded-php": "dev-main",
+    "friendsofphp/php-cs-fixer": "^3.92",
     "mockery/mockery": "^2.0.x-dev",
     "pestphp/pest": "^3.8",
     "rector/rector": "^2.2",
@@ -43,6 +44,8 @@
     }
   ],
   "scripts": {
+    "fix": "./vendor/bin/php-cs-fixer fix",
+    "test-fix": "./vendor/bin/php-cs-fixer check",
     "rector": "vendor/bin/rector process --clear-cache",
     "check": "vendor/bin/rector process --dry-run --clear-cache",
     "tests": "vendor/bin/pest --colors=always",

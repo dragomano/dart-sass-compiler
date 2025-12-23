@@ -44,7 +44,7 @@ class UseRuleParser extends AtRuleParser
                 $pathTokens[] = $this->consume($this->currentToken()->type);
             }
 
-            $path = trim(implode('', array_map(fn($t): string => $t->value, $pathTokens)));
+            $path = trim(implode('', array_map(fn ($t): string => $t->value, $pathTokens)));
 
             if ($this->currentToken() && $this->peek('as')) {
                 $this->consume('as');

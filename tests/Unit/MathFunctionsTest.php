@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 use DartSass\Utils\MathFunctions;
 use DartSass\Utils\ValueFormatter;
@@ -13,236 +15,236 @@ beforeEach(function () {
 
 describe('MathFunctions', function () {
     describe('ceil', function () {
-      it('rounds up positive number', function () {
-        $result = $this->mathFunctions->ceil([5.1]);
+        it('rounds up positive number', function () {
+            $result = $this->mathFunctions->ceil([5.1]);
 
-        expect($result)->toEqual(['value' => 6.0, 'unit' => '']);
-      });
+            expect($result)->toEqual(['value' => 6.0, 'unit' => '']);
+        });
 
-      it('rounds up negative number', function () {
-        $result = $this->mathFunctions->ceil([-5.9]);
+        it('rounds up negative number', function () {
+            $result = $this->mathFunctions->ceil([-5.9]);
 
-        expect($result)->toEqual(['value' => -5.0, 'unit' => '']);
-      });
+            expect($result)->toEqual(['value' => -5.0, 'unit' => '']);
+        });
 
-      it('rounds up number with unit', function () {
-        $result = $this->mathFunctions->ceil([['value' => 5.7, 'unit' => 'px']]);
+        it('rounds up number with unit', function () {
+            $result = $this->mathFunctions->ceil([['value' => 5.7, 'unit' => 'px']]);
 
-        expect($result)->toEqual(['value' => 6.0, 'unit' => 'px']);
-      });
+            expect($result)->toEqual(['value' => 6.0, 'unit' => 'px']);
+        });
 
-      it('leaves integer unchanged', function () {
-        $result = $this->mathFunctions->ceil([5]);
+        it('leaves integer unchanged', function () {
+            $result = $this->mathFunctions->ceil([5]);
 
-        expect($result)->toEqual(['value' => 5.0, 'unit' => '']);
-      });
+            expect($result)->toEqual(['value' => 5.0, 'unit' => '']);
+        });
 
-      it('throws exception for wrong argument count', function () {
-        expect(fn() => $this->mathFunctions->ceil([]))
-          ->toThrow(CompilationException::class, 'requires exactly one argument')
-          ->and(fn() => $this->mathFunctions->ceil([1, 2]))
-          ->toThrow(CompilationException::class, 'requires exactly one argument');
-      });
+        it('throws exception for wrong argument count', function () {
+            expect(fn () => $this->mathFunctions->ceil([]))
+                ->toThrow(CompilationException::class, 'requires exactly one argument')
+                ->and(fn () => $this->mathFunctions->ceil([1, 2]))
+                ->toThrow(CompilationException::class, 'requires exactly one argument');
+        });
 
-      it('throws exception for non-numeric argument', function () {
-        expect(fn() => $this->mathFunctions->ceil(['invalid']))
-          ->toThrow(CompilationException::class, 'argument must be a number');
-      });
+        it('throws exception for non-numeric argument', function () {
+            expect(fn () => $this->mathFunctions->ceil(['invalid']))
+                ->toThrow(CompilationException::class, 'argument must be a number');
+        });
     });
 
     describe('clamp', function () {
-      it('clamps value within range', function () {
-        $result = $this->mathFunctions->clamp([
-          ['value' => 5, 'unit' => 'px'],
-          ['value' => 10, 'unit' => 'px'],
-          ['value' => 15, 'unit' => 'px']
-        ]);
+        it('clamps value within range', function () {
+            $result = $this->mathFunctions->clamp([
+              ['value' => 5, 'unit' => 'px'],
+              ['value' => 10, 'unit' => 'px'],
+              ['value' => 15, 'unit' => 'px']
+            ]);
 
-        expect($result)->toEqual(['value' => 10, 'unit' => 'px']);
-      });
+            expect($result)->toEqual(['value' => 10, 'unit' => 'px']);
+        });
 
-      it('clamps value below minimum', function () {
-        $result = $this->mathFunctions->clamp([
-          ['value' => 3, 'unit' => 'px'],
-          ['value' => 10, 'unit' => 'px'],
-          ['value' => 15, 'unit' => 'px']
-        ]);
+        it('clamps value below minimum', function () {
+            $result = $this->mathFunctions->clamp([
+              ['value' => 3, 'unit' => 'px'],
+              ['value' => 10, 'unit' => 'px'],
+              ['value' => 15, 'unit' => 'px']
+            ]);
 
-        expect($result)->toEqual(['value' => 10, 'unit' => 'px']);
-      });
+            expect($result)->toEqual(['value' => 10, 'unit' => 'px']);
+        });
 
-      it('clamps value above maximum', function () {
-        $result = $this->mathFunctions->clamp([
-          ['value' => 20, 'unit' => 'px'],
-          ['value' => 5, 'unit' => 'px'],
-          ['value' => 15, 'unit' => 'px']
-        ]);
+        it('clamps value above maximum', function () {
+            $result = $this->mathFunctions->clamp([
+              ['value' => 20, 'unit' => 'px'],
+              ['value' => 5, 'unit' => 'px'],
+              ['value' => 15, 'unit' => 'px']
+            ]);
 
-        expect($result)->toEqual(['value' => 15, 'unit' => 'px']);
-      });
+            expect($result)->toEqual(['value' => 15, 'unit' => 'px']);
+        });
 
-      it('returns CSS function for incompatible units', function () {
-        $result = $this->mathFunctions->clamp([
-          ['value' => 5, 'unit' => 'px'],
-          ['value' => 10, 'unit' => 'em'],
-          ['value' => 15, 'unit' => 'px']
-        ]);
+        it('returns CSS function for incompatible units', function () {
+            $result = $this->mathFunctions->clamp([
+              ['value' => 5, 'unit' => 'px'],
+              ['value' => 10, 'unit' => 'em'],
+              ['value' => 15, 'unit' => 'px']
+            ]);
 
-        expect($result)->toBe('clamp(5px, 10em, 15px)');
-      });
+            expect($result)->toBe('clamp(5px, 10em, 15px)');
+        });
 
-      it('returns CSS function for non-numeric arguments', function () {
-        $result = $this->mathFunctions->clamp(['var(--min)', '10px', 'var(--max)']);
+        it('returns CSS function for non-numeric arguments', function () {
+            $result = $this->mathFunctions->clamp(['var(--min)', '10px', 'var(--max)']);
 
-        expect($result)->toBe('clamp(var(--min), 10px, var(--max))');
-      });
+            expect($result)->toBe('clamp(var(--min), 10px, var(--max))');
+        });
 
-      it('throws exception for wrong argument count', function () {
-        expect(fn() => $this->mathFunctions->clamp([5, 10]))
-          ->toThrow(CompilationException::class, 'requires exactly three arguments')
-          ->and(fn() => $this->mathFunctions->clamp([5, 10, 15, 20]))
-          ->toThrow(CompilationException::class, 'requires exactly three arguments');
-      });
+        it('throws exception for wrong argument count', function () {
+            expect(fn () => $this->mathFunctions->clamp([5, 10]))
+                ->toThrow(CompilationException::class, 'requires exactly three arguments')
+                ->and(fn () => $this->mathFunctions->clamp([5, 10, 15, 20]))
+                ->toThrow(CompilationException::class, 'requires exactly three arguments');
+        });
     });
 
     describe('floor', function () {
-      it('rounds down positive number', function () {
-        $result = $this->mathFunctions->floor([5.9]);
+        it('rounds down positive number', function () {
+            $result = $this->mathFunctions->floor([5.9]);
 
-        expect($result)->toEqual(['value' => 5.0, 'unit' => '']);
-      });
+            expect($result)->toEqual(['value' => 5.0, 'unit' => '']);
+        });
 
-      it('rounds down negative number', function () {
-        $result = $this->mathFunctions->floor([-5.9]);
+        it('rounds down negative number', function () {
+            $result = $this->mathFunctions->floor([-5.9]);
 
-        expect($result)->toEqual(['value' => -6.0, 'unit' => '']);
-      });
+            expect($result)->toEqual(['value' => -6.0, 'unit' => '']);
+        });
 
-      it('rounds down number with unit', function () {
-        $result = $this->mathFunctions->floor([['value' => 5.7, 'unit' => 'px']]);
+        it('rounds down number with unit', function () {
+            $result = $this->mathFunctions->floor([['value' => 5.7, 'unit' => 'px']]);
 
-        expect($result)->toEqual(['value' => 5.0, 'unit' => 'px']);
-      });
+            expect($result)->toEqual(['value' => 5.0, 'unit' => 'px']);
+        });
 
-      it('leaves integer unchanged', function () {
-        $result = $this->mathFunctions->floor([5]);
+        it('leaves integer unchanged', function () {
+            $result = $this->mathFunctions->floor([5]);
 
-        expect($result)->toEqual(['value' => 5.0, 'unit' => '']);
-      });
+            expect($result)->toEqual(['value' => 5.0, 'unit' => '']);
+        });
 
-      it('throws exception for wrong argument count', function () {
-        expect(fn() => $this->mathFunctions->floor([]))
-          ->toThrow(CompilationException::class, 'requires exactly one argument')
-          ->and(fn() => $this->mathFunctions->floor([1, 2]))
-          ->toThrow(CompilationException::class, 'requires exactly one argument');
-      });
+        it('throws exception for wrong argument count', function () {
+            expect(fn () => $this->mathFunctions->floor([]))
+                ->toThrow(CompilationException::class, 'requires exactly one argument')
+                ->and(fn () => $this->mathFunctions->floor([1, 2]))
+                ->toThrow(CompilationException::class, 'requires exactly one argument');
+        });
 
-      it('throws exception for non-numeric argument', function () {
-        expect(fn() => $this->mathFunctions->floor(['invalid']))
-          ->toThrow(CompilationException::class, 'argument must be a number');
-      });
+        it('throws exception for non-numeric argument', function () {
+            expect(fn () => $this->mathFunctions->floor(['invalid']))
+                ->toThrow(CompilationException::class, 'argument must be a number');
+        });
     });
 
     describe('max', function () {
-      it('returns maximum of simple numbers', function () {
-        $result = $this->mathFunctions->max([5, 3, 8, 1]);
+        it('returns maximum of simple numbers', function () {
+            $result = $this->mathFunctions->max([5, 3, 8, 1]);
 
-        expect($result)->toEqual(['value' => 8, 'unit' => '']);
-      });
+            expect($result)->toEqual(['value' => 8, 'unit' => '']);
+        });
 
-      it('returns maximum of numbers with same units', function () {
-        $result = $this->mathFunctions->max([
-          ['value' => 10, 'unit' => 'px'],
-          ['value' => 5, 'unit' => 'px'],
-          ['value' => 8, 'unit' => 'px']
-        ]);
+        it('returns maximum of numbers with same units', function () {
+            $result = $this->mathFunctions->max([
+              ['value' => 10, 'unit' => 'px'],
+              ['value' => 5, 'unit' => 'px'],
+              ['value' => 8, 'unit' => 'px']
+            ]);
 
-        expect($result)->toEqual(['value' => 10, 'unit' => 'px']);
-      });
+            expect($result)->toEqual(['value' => 10, 'unit' => 'px']);
+        });
 
-      it('returns maximum of mixed units as CSS function', function () {
-        $result = $this->mathFunctions->max([
-          ['value' => 10, 'unit' => 'px'],
-          ['value' => 5, 'unit' => 'em']
-        ]);
+        it('returns maximum of mixed units as CSS function', function () {
+            $result = $this->mathFunctions->max([
+              ['value' => 10, 'unit' => 'px'],
+              ['value' => 5, 'unit' => 'em']
+            ]);
 
-        expect($result)->toBe('max(10px, 5em)');
-      });
+            expect($result)->toBe('max(10px, 5em)');
+        });
 
-      it('returns CSS function for non-numeric arguments', function () {
-        $result = $this->mathFunctions->max(['var(--test)', 10]);
+        it('returns CSS function for non-numeric arguments', function () {
+            $result = $this->mathFunctions->max(['var(--test)', 10]);
 
-        expect($result)->toBe('max(var(--test), 10)');
-      });
+            expect($result)->toBe('max(var(--test), 10)');
+        });
 
-      it('throws exception for no arguments', function () {
-        expect(fn() => $this->mathFunctions->max([]))
-          ->toThrow(CompilationException::class, 'requires at least one argument');
-      });
+        it('throws exception for no arguments', function () {
+            expect(fn () => $this->mathFunctions->max([]))
+                ->toThrow(CompilationException::class, 'requires at least one argument');
+        });
     });
 
     describe('min', function () {
-      it('returns minimum of simple numbers', function () {
-        $result = $this->mathFunctions->min([5, 3, 8, 1]);
+        it('returns minimum of simple numbers', function () {
+            $result = $this->mathFunctions->min([5, 3, 8, 1]);
 
-        expect($result)->toEqual(['value' => 1, 'unit' => '']);
-      });
+            expect($result)->toEqual(['value' => 1, 'unit' => '']);
+        });
 
-      it('returns minimum of numbers with same units', function () {
-        $result = $this->mathFunctions->min([
-          ['value' => 10, 'unit' => 'px'],
-          ['value' => 5, 'unit' => 'px'],
-          ['value' => 8, 'unit' => 'px']
-        ]);
+        it('returns minimum of numbers with same units', function () {
+            $result = $this->mathFunctions->min([
+              ['value' => 10, 'unit' => 'px'],
+              ['value' => 5, 'unit' => 'px'],
+              ['value' => 8, 'unit' => 'px']
+            ]);
 
-        expect($result)->toEqual(['value' => 5, 'unit' => 'px']);
-      });
+            expect($result)->toEqual(['value' => 5, 'unit' => 'px']);
+        });
 
-      it('returns minimum of mixed units as CSS function', function () {
-        $result = $this->mathFunctions->min([
-          ['value' => 10, 'unit' => 'px'],
-          ['value' => 5, 'unit' => 'em']
-        ]);
+        it('returns minimum of mixed units as CSS function', function () {
+            $result = $this->mathFunctions->min([
+              ['value' => 10, 'unit' => 'px'],
+              ['value' => 5, 'unit' => 'em']
+            ]);
 
-        expect($result)->toBe('min(10px, 5em)');
-      });
+            expect($result)->toBe('min(10px, 5em)');
+        });
 
-      it('returns minimum when some values have no units', function () {
-        $result = $this->mathFunctions->min([5, ['value' => 3, 'unit' => 'px']]);
+        it('returns minimum when some values have no units', function () {
+            $result = $this->mathFunctions->min([5, ['value' => 3, 'unit' => 'px']]);
 
-        expect($result)->toEqual(['value' => 3, 'unit' => '']);
-      });
+            expect($result)->toEqual(['value' => 3, 'unit' => '']);
+        });
 
-      it('returns CSS function for non-numeric arguments', function () {
-        $result = $this->mathFunctions->min(['var(--test)', 10]);
+        it('returns CSS function for non-numeric arguments', function () {
+            $result = $this->mathFunctions->min(['var(--test)', 10]);
 
-        expect($result)->toBe('min(var(--test), 10)');
-      });
+            expect($result)->toBe('min(var(--test), 10)');
+        });
 
-      it('throws exception for no arguments', function () {
-        expect(fn() => $this->mathFunctions->min([]))
-          ->toThrow(CompilationException::class, 'requires at least one argument');
-      });
+        it('throws exception for no arguments', function () {
+            expect(fn () => $this->mathFunctions->min([]))
+                ->toThrow(CompilationException::class, 'requires at least one argument');
+        });
     });
 
     describe('round', function () {
-      it('rounds number', function () {
-        $result = $this->mathFunctions->round([5.7]);
+        it('rounds number', function () {
+            $result = $this->mathFunctions->round([5.7]);
 
-        expect($result)->toEqual(['value' => 6.0, 'unit' => '']);
-      });
+            expect($result)->toEqual(['value' => 6.0, 'unit' => '']);
+        });
 
-      it('throws exception for wrong argument count', function () {
-        expect(fn() => $this->mathFunctions->round([]))
-          ->toThrow(CompilationException::class, 'requires exactly one argument')
-          ->and(fn() => $this->mathFunctions->round([1, 2, 3]))
-          ->toThrow(CompilationException::class, 'requires exactly one argument');
-      });
+        it('throws exception for wrong argument count', function () {
+            expect(fn () => $this->mathFunctions->round([]))
+                ->toThrow(CompilationException::class, 'requires exactly one argument')
+                ->and(fn () => $this->mathFunctions->round([1, 2, 3]))
+                ->toThrow(CompilationException::class, 'requires exactly one argument');
+        });
 
-      it('throws exception for non-numeric first argument', function () {
-        expect(fn() => $this->mathFunctions->round(['invalid']))
-          ->toThrow(CompilationException::class, 'argument must be a number');
-      });
+        it('throws exception for non-numeric first argument', function () {
+            expect(fn () => $this->mathFunctions->round(['invalid']))
+                ->toThrow(CompilationException::class, 'argument must be a number');
+        });
     });
 
     describe('abs', function () {
@@ -271,48 +273,48 @@ describe('MathFunctions', function () {
         });
 
         it('throws exception for wrong argument count', function () {
-            expect(fn() => $this->mathFunctions->abs([]))
+            expect(fn () => $this->mathFunctions->abs([]))
                 ->toThrow(CompilationException::class, 'requires exactly one argument')
-                ->and(fn() => $this->mathFunctions->abs([1, 2]))
+                ->and(fn () => $this->mathFunctions->abs([1, 2]))
                 ->toThrow(CompilationException::class, 'requires exactly one argument');
         });
 
         it('throws exception for non-numeric argument', function () {
-            expect(fn() => $this->mathFunctions->abs(['invalid']))
+            expect(fn () => $this->mathFunctions->abs(['invalid']))
                 ->toThrow(CompilationException::class, 'argument must be a number');
         });
     });
 
     describe('hypot', function () {
-      it('returns hypotenuse for two positive numbers', function () {
-        $result = $this->mathFunctions->hypot([3, 4]);
+        it('returns hypotenuse for two positive numbers', function () {
+            $result = $this->mathFunctions->hypot([3, 4]);
 
-        expect($result)->toEqual(['value' => 5.0, 'unit' => '']);
-      });
+            expect($result)->toEqual(['value' => 5.0, 'unit' => '']);
+        });
 
-      it('returns input for single argument', function () {
-        $result = $this->mathFunctions->hypot([5]);
+        it('returns input for single argument', function () {
+            $result = $this->mathFunctions->hypot([5]);
 
-        expect($result)->toEqual(['value' => 5.0, 'unit' => '']);
-      });
+            expect($result)->toEqual(['value' => 5.0, 'unit' => '']);
+        });
 
-      it('handles negative numbers correctly', function () {
-        $result = $this->mathFunctions->hypot([-3, 4]);
+        it('handles negative numbers correctly', function () {
+            $result = $this->mathFunctions->hypot([-3, 4]);
 
-        expect($result)->toEqual(['value' => 5.0, 'unit' => '']);
-      });
+            expect($result)->toEqual(['value' => 5.0, 'unit' => '']);
+        });
 
-      it('preserves units for numbers with units', function () {
-        $result = $this->mathFunctions->hypot([['value' => 3, 'unit' => 'px'], ['value' => 4, 'unit' => 'px']]);
+        it('preserves units for numbers with units', function () {
+            $result = $this->mathFunctions->hypot([['value' => 3, 'unit' => 'px'], ['value' => 4, 'unit' => 'px']]);
 
-        expect($result)->toEqual(['value' => 5.0, 'unit' => 'px']);
-      });
+            expect($result)->toEqual(['value' => 5.0, 'unit' => 'px']);
+        });
 
-      it('handles zero values', function () {
-        $result = $this->mathFunctions->hypot([0, 0]);
+        it('handles zero values', function () {
+            $result = $this->mathFunctions->hypot([0, 0]);
 
-        expect($result)->toEqual(['value' => 0.0, 'unit' => '']);
-      });
+            expect($result)->toEqual(['value' => 0.0, 'unit' => '']);
+        });
     });
 
     describe('log', function () {
@@ -335,31 +337,31 @@ describe('MathFunctions', function () {
         });
 
         it('throws exception for wrong argument count', function () {
-            expect(fn() => $this->mathFunctions->log([]))
+            expect(fn () => $this->mathFunctions->log([]))
                 ->toThrow(CompilationException::class, 'requires one or two arguments')
-                ->and(fn() => $this->mathFunctions->log([1, 2, 3]))
+                ->and(fn () => $this->mathFunctions->log([1, 2, 3]))
                 ->toThrow(CompilationException::class, 'requires one or two arguments');
         });
 
         it('throws exception for non-numeric argument', function () {
-            expect(fn() => $this->mathFunctions->log(['invalid']))
+            expect(fn () => $this->mathFunctions->log(['invalid']))
                 ->toThrow(CompilationException::class, 'first argument must be a number');
         });
 
         it('throws exception for negative number', function () {
-            expect(fn() => $this->mathFunctions->log([-1]))
+            expect(fn () => $this->mathFunctions->log([-1]))
                 ->toThrow(CompilationException::class, 'first argument must be greater than zero');
         });
 
         it('throws exception for invalid base', function () {
-            expect(fn() => $this->mathFunctions->log([10, -1]))
+            expect(fn () => $this->mathFunctions->log([10, -1]))
                 ->toThrow(CompilationException::class, 'base must be greater than zero and not equal to one')
-                ->and(fn() => $this->mathFunctions->log([10, 1]))
+                ->and(fn () => $this->mathFunctions->log([10, 1]))
                 ->toThrow(CompilationException::class, 'base must be greater than zero and not equal to one');
         });
 
         it('throws exception for arguments with units', function () {
-            expect(fn() => $this->mathFunctions->log([['value' => 10, 'unit' => 'px']]))
+            expect(fn () => $this->mathFunctions->log([['value' => 10, 'unit' => 'px']]))
                 ->toThrow(CompilationException::class, 'arguments must be unitless');
         });
     });
@@ -378,25 +380,25 @@ describe('MathFunctions', function () {
         });
 
         it('throws exception for wrong argument count', function () {
-            expect(fn() => $this->mathFunctions->pow([]))
+            expect(fn () => $this->mathFunctions->pow([]))
                 ->toThrow(CompilationException::class, 'requires exactly two arguments')
-                ->and(fn() => $this->mathFunctions->pow([1]))
+                ->and(fn () => $this->mathFunctions->pow([1]))
                 ->toThrow(CompilationException::class, 'requires exactly two arguments')
-                ->and(fn() => $this->mathFunctions->pow([1, 2, 3]))
+                ->and(fn () => $this->mathFunctions->pow([1, 2, 3]))
                 ->toThrow(CompilationException::class, 'requires exactly two arguments');
         });
 
         it('throws exception for non-numeric arguments', function () {
-            expect(fn() => $this->mathFunctions->pow(['invalid', 2]))
+            expect(fn () => $this->mathFunctions->pow(['invalid', 2]))
                 ->toThrow(CompilationException::class, 'first argument must be a number')
-                ->and(fn() => $this->mathFunctions->pow([2, 'invalid']))
+                ->and(fn () => $this->mathFunctions->pow([2, 'invalid']))
                 ->toThrow(CompilationException::class, 'second argument must be a number');
         });
 
         it('throws exception for arguments with units', function () {
-            expect(fn() => $this->mathFunctions->pow([['value' => 2, 'unit' => 'px'], 3]))
+            expect(fn () => $this->mathFunctions->pow([['value' => 2, 'unit' => 'px'], 3]))
                 ->toThrow(CompilationException::class, 'arguments must be unitless')
-                ->and(fn() => $this->mathFunctions->pow([2, ['value' => 3, 'unit' => 'px']]))
+                ->and(fn () => $this->mathFunctions->pow([2, ['value' => 3, 'unit' => 'px']]))
                 ->toThrow(CompilationException::class, 'arguments must be unitless');
         });
     });
@@ -421,24 +423,24 @@ describe('MathFunctions', function () {
         });
 
         it('throws exception for wrong argument count', function () {
-            expect(fn() => $this->mathFunctions->sqrt([]))
+            expect(fn () => $this->mathFunctions->sqrt([]))
                 ->toThrow(CompilationException::class, 'requires exactly one argument')
-                ->and(fn() => $this->mathFunctions->sqrt([1, 2]))
+                ->and(fn () => $this->mathFunctions->sqrt([1, 2]))
                 ->toThrow(CompilationException::class, 'requires exactly one argument');
         });
 
         it('throws exception for non-numeric argument', function () {
-            expect(fn() => $this->mathFunctions->sqrt(['invalid']))
+            expect(fn () => $this->mathFunctions->sqrt(['invalid']))
                 ->toThrow(CompilationException::class, 'argument must be a number');
         });
 
         it('throws exception for negative numbers', function () {
-            expect(fn() => $this->mathFunctions->sqrt([-1]))
+            expect(fn () => $this->mathFunctions->sqrt([-1]))
                 ->toThrow(CompilationException::class, 'argument must be non-negative');
         });
 
         it('throws exception for arguments with units', function () {
-            expect(fn() => $this->mathFunctions->sqrt([['value' => 16, 'unit' => 'px']]))
+            expect(fn () => $this->mathFunctions->sqrt([['value' => 16, 'unit' => 'px']]))
                 ->toThrow(CompilationException::class, 'argument must be unitless');
         });
     });
@@ -466,19 +468,19 @@ describe('MathFunctions', function () {
             });
 
             it('throws exception for wrong argument count', function () {
-                expect(fn() => $this->mathFunctions->cos([]))
+                expect(fn () => $this->mathFunctions->cos([]))
                     ->toThrow(CompilationException::class, 'requires exactly one argument')
-                    ->and(fn() => $this->mathFunctions->cos([1, 2]))
+                    ->and(fn () => $this->mathFunctions->cos([1, 2]))
                     ->toThrow(CompilationException::class, 'requires exactly one argument');
             });
 
             it('throws exception for non-numeric argument', function () {
-                expect(fn() => $this->mathFunctions->cos(['invalid']))
+                expect(fn () => $this->mathFunctions->cos(['invalid']))
                     ->toThrow(CompilationException::class, 'argument must be a number');
             });
 
             it('throws exception for invalid units', function () {
-                expect(fn() => $this->mathFunctions->cos([['value' => 1, 'unit' => 'px']]))
+                expect(fn () => $this->mathFunctions->cos([['value' => 1, 'unit' => 'px']]))
                     ->toThrow(CompilationException::class, 'argument must be unitless, or have rad or deg units');
             });
         });
@@ -491,7 +493,7 @@ describe('MathFunctions', function () {
             });
 
             it('calculates sine with radians', function () {
-                $result = $this->mathFunctions->sin([['value' => pi()/2, 'unit' => 'rad']]);
+                $result = $this->mathFunctions->sin([['value' => pi() / 2, 'unit' => 'rad']]);
 
                 expect($result['value'])->toBeCloseTo(1.0, 10)
                     ->and($result['unit'])->toBe('');
@@ -505,19 +507,19 @@ describe('MathFunctions', function () {
             });
 
             it('throws exception for wrong argument count', function () {
-                expect(fn() => $this->mathFunctions->sin([]))
+                expect(fn () => $this->mathFunctions->sin([]))
                     ->toThrow(CompilationException::class, 'requires exactly one argument')
-                    ->and(fn() => $this->mathFunctions->sin([1, 2]))
+                    ->and(fn () => $this->mathFunctions->sin([1, 2]))
                     ->toThrow(CompilationException::class, 'requires exactly one argument');
             });
 
             it('throws exception for non-numeric argument', function () {
-                expect(fn() => $this->mathFunctions->sin(['invalid']))
+                expect(fn () => $this->mathFunctions->sin(['invalid']))
                     ->toThrow(CompilationException::class, 'argument must be a number');
             });
 
             it('throws exception for invalid units', function () {
-                expect(fn() => $this->mathFunctions->sin([['value' => 1, 'unit' => 'px']]))
+                expect(fn () => $this->mathFunctions->sin([['value' => 1, 'unit' => 'px']]))
                     ->toThrow(CompilationException::class, 'argument must be unitless, or have rad or deg units');
             });
         });
@@ -530,7 +532,7 @@ describe('MathFunctions', function () {
             });
 
             it('calculates tangent with radians', function () {
-                $result = $this->mathFunctions->tan([['value' => pi()/4, 'unit' => 'rad']]);
+                $result = $this->mathFunctions->tan([['value' => pi() / 4, 'unit' => 'rad']]);
 
                 expect($result['value'])->toBeCloseTo(1.0, 10)
                     ->and($result['unit'])->toBe('');
@@ -544,19 +546,19 @@ describe('MathFunctions', function () {
             });
 
             it('throws exception for wrong argument count', function () {
-                expect(fn() => $this->mathFunctions->tan([]))
+                expect(fn () => $this->mathFunctions->tan([]))
                     ->toThrow(CompilationException::class, 'requires exactly one argument')
-                    ->and(fn() => $this->mathFunctions->tan([1, 2]))
+                    ->and(fn () => $this->mathFunctions->tan([1, 2]))
                     ->toThrow(CompilationException::class, 'requires exactly one argument');
             });
 
             it('throws exception for non-numeric argument', function () {
-                expect(fn() => $this->mathFunctions->tan(['invalid']))
+                expect(fn () => $this->mathFunctions->tan(['invalid']))
                     ->toThrow(CompilationException::class, 'argument must be a number');
             });
 
             it('throws exception for invalid units', function () {
-                expect(fn() => $this->mathFunctions->tan([['value' => 1, 'unit' => 'px']]))
+                expect(fn () => $this->mathFunctions->tan([['value' => 1, 'unit' => 'px']]))
                     ->toThrow(CompilationException::class, 'argument must be unitless, or have rad or deg units');
             });
         });
@@ -578,26 +580,26 @@ describe('MathFunctions', function () {
             });
 
             it('throws exception for wrong argument count', function () {
-                expect(fn() => $this->mathFunctions->acos([]))
+                expect(fn () => $this->mathFunctions->acos([]))
                     ->toThrow(CompilationException::class, 'requires exactly one argument')
-                    ->and(fn() => $this->mathFunctions->acos([1, 2]))
+                    ->and(fn () => $this->mathFunctions->acos([1, 2]))
                     ->toThrow(CompilationException::class, 'requires exactly one argument');
             });
 
             it('throws exception for non-numeric argument', function () {
-                expect(fn() => $this->mathFunctions->acos(['invalid']))
+                expect(fn () => $this->mathFunctions->acos(['invalid']))
                     ->toThrow(CompilationException::class, 'argument must be a number');
             });
 
             it('throws exception for values outside domain', function () {
-                expect(fn() => $this->mathFunctions->acos([2]))
+                expect(fn () => $this->mathFunctions->acos([2]))
                     ->toThrow(CompilationException::class, 'argument must be between -1 and 1')
-                    ->and(fn() => $this->mathFunctions->acos([-2]))
+                    ->and(fn () => $this->mathFunctions->acos([-2]))
                     ->toThrow(CompilationException::class, 'argument must be between -1 and 1');
             });
 
             it('throws exception for arguments with units', function () {
-                expect(fn() => $this->mathFunctions->acos([['value' => 0, 'unit' => 'px']]))
+                expect(fn () => $this->mathFunctions->acos([['value' => 0, 'unit' => 'px']]))
                     ->toThrow(CompilationException::class, 'argument must be unitless');
             });
         });
@@ -617,26 +619,26 @@ describe('MathFunctions', function () {
             });
 
             it('throws exception for wrong argument count', function () {
-                expect(fn() => $this->mathFunctions->asin([]))
+                expect(fn () => $this->mathFunctions->asin([]))
                     ->toThrow(CompilationException::class, 'requires exactly one argument')
-                    ->and(fn() => $this->mathFunctions->asin([1, 2]))
+                    ->and(fn () => $this->mathFunctions->asin([1, 2]))
                     ->toThrow(CompilationException::class, 'requires exactly one argument');
             });
 
             it('throws exception for non-numeric argument', function () {
-                expect(fn() => $this->mathFunctions->asin(['invalid']))
+                expect(fn () => $this->mathFunctions->asin(['invalid']))
                     ->toThrow(CompilationException::class, 'argument must be a number');
             });
 
             it('throws exception for values outside domain', function () {
-                expect(fn() => $this->mathFunctions->asin([2]))
+                expect(fn () => $this->mathFunctions->asin([2]))
                     ->toThrow(CompilationException::class, 'argument must be between -1 and 1')
-                    ->and(fn() => $this->mathFunctions->asin([-2]))
+                    ->and(fn () => $this->mathFunctions->asin([-2]))
                     ->toThrow(CompilationException::class, 'argument must be between -1 and 1');
             });
 
             it('throws exception for arguments with units', function () {
-                expect(fn() => $this->mathFunctions->asin([['value' => 0, 'unit' => 'px']]))
+                expect(fn () => $this->mathFunctions->asin([['value' => 0, 'unit' => 'px']]))
                     ->toThrow(CompilationException::class, 'argument must be unitless');
             });
         });
@@ -656,19 +658,19 @@ describe('MathFunctions', function () {
             });
 
             it('throws exception for wrong argument count', function () {
-                expect(fn() => $this->mathFunctions->atan([]))
+                expect(fn () => $this->mathFunctions->atan([]))
                     ->toThrow(CompilationException::class, 'requires exactly one argument')
-                    ->and(fn() => $this->mathFunctions->atan([1, 2]))
+                    ->and(fn () => $this->mathFunctions->atan([1, 2]))
                     ->toThrow(CompilationException::class, 'requires exactly one argument');
             });
 
             it('throws exception for non-numeric argument', function () {
-                expect(fn() => $this->mathFunctions->atan(['invalid']))
+                expect(fn () => $this->mathFunctions->atan(['invalid']))
                     ->toThrow(CompilationException::class, 'argument must be a number');
             });
 
             it('throws exception for arguments with units', function () {
-                expect(fn() => $this->mathFunctions->atan([['value' => 0, 'unit' => 'px']]))
+                expect(fn () => $this->mathFunctions->atan([['value' => 0, 'unit' => 'px']]))
                     ->toThrow(CompilationException::class, 'argument must be unitless');
             });
         });
@@ -688,25 +690,25 @@ describe('MathFunctions', function () {
             });
 
             it('throws exception for wrong argument count', function () {
-                expect(fn() => $this->mathFunctions->atan2([]))
+                expect(fn () => $this->mathFunctions->atan2([]))
                     ->toThrow(CompilationException::class, 'requires exactly two arguments')
-                    ->and(fn() => $this->mathFunctions->atan2([1]))
+                    ->and(fn () => $this->mathFunctions->atan2([1]))
                     ->toThrow(CompilationException::class, 'requires exactly two arguments')
-                    ->and(fn() => $this->mathFunctions->atan2([1, 2, 3]))
+                    ->and(fn () => $this->mathFunctions->atan2([1, 2, 3]))
                     ->toThrow(CompilationException::class, 'requires exactly two arguments');
             });
 
             it('throws exception for non-numeric arguments', function () {
-                expect(fn() => $this->mathFunctions->atan2(['invalid', 1]))
+                expect(fn () => $this->mathFunctions->atan2(['invalid', 1]))
                     ->toThrow(CompilationException::class, 'first argument must be a number')
-                    ->and(fn() => $this->mathFunctions->atan2([1, 'invalid']))
+                    ->and(fn () => $this->mathFunctions->atan2([1, 'invalid']))
                     ->toThrow(CompilationException::class, 'second argument must be a number');
             });
 
             it('throws exception for arguments with units', function () {
-                expect(fn() => $this->mathFunctions->atan2([['value' => 1, 'unit' => 'px'], 1]))
+                expect(fn () => $this->mathFunctions->atan2([['value' => 1, 'unit' => 'px'], 1]))
                     ->toThrow(CompilationException::class, 'arguments must be unitless')
-                    ->and(fn() => $this->mathFunctions->atan2([1, ['value' => 1, 'unit' => 'px']]))
+                    ->and(fn () => $this->mathFunctions->atan2([1, ['value' => 1, 'unit' => 'px']]))
                     ->toThrow(CompilationException::class, 'arguments must be unitless');
             });
         });
@@ -748,18 +750,18 @@ describe('MathFunctions', function () {
             });
 
             it('throws exception for wrong argument count', function () {
-                expect(fn() => $this->mathFunctions->compatible([]))
+                expect(fn () => $this->mathFunctions->compatible([]))
                     ->toThrow(CompilationException::class, 'requires exactly two arguments')
-                    ->and(fn() => $this->mathFunctions->compatible([1]))
+                    ->and(fn () => $this->mathFunctions->compatible([1]))
                     ->toThrow(CompilationException::class, 'requires exactly two arguments')
-                    ->and(fn() => $this->mathFunctions->compatible([1, 2, 3]))
+                    ->and(fn () => $this->mathFunctions->compatible([1, 2, 3]))
                     ->toThrow(CompilationException::class, 'requires exactly two arguments');
             });
 
             it('throws exception for non-numeric arguments', function () {
-                expect(fn() => $this->mathFunctions->compatible(['invalid', 2]))
+                expect(fn () => $this->mathFunctions->compatible(['invalid', 2]))
                     ->toThrow(CompilationException::class, 'arguments must be numbers')
-                    ->and(fn() => $this->mathFunctions->compatible([1, 'invalid']))
+                    ->and(fn () => $this->mathFunctions->compatible([1, 'invalid']))
                     ->toThrow(CompilationException::class, 'arguments must be numbers');
             });
         });
@@ -778,14 +780,14 @@ describe('MathFunctions', function () {
             });
 
             it('throws exception for wrong argument count', function () {
-                expect(fn() => $this->mathFunctions->isUnitless([]))
+                expect(fn () => $this->mathFunctions->isUnitless([]))
                     ->toThrow(CompilationException::class, 'requires exactly one argument')
-                    ->and(fn() => $this->mathFunctions->isUnitless([1, 2]))
+                    ->and(fn () => $this->mathFunctions->isUnitless([1, 2]))
                     ->toThrow(CompilationException::class, 'requires exactly one argument');
             });
 
             it('throws exception for non-numeric argument', function () {
-                expect(fn() => $this->mathFunctions->isUnitless(['invalid']))
+                expect(fn () => $this->mathFunctions->isUnitless(['invalid']))
                     ->toThrow(CompilationException::class, 'argument must be a number');
             });
         });
@@ -804,14 +806,14 @@ describe('MathFunctions', function () {
             });
 
             it('throws exception for wrong argument count', function () {
-                expect(fn() => $this->mathFunctions->unit([]))
+                expect(fn () => $this->mathFunctions->unit([]))
                     ->toThrow(CompilationException::class, 'requires exactly one argument')
-                    ->and(fn() => $this->mathFunctions->unit([1, 2]))
+                    ->and(fn () => $this->mathFunctions->unit([1, 2]))
                     ->toThrow(CompilationException::class, 'requires exactly one argument');
             });
 
             it('throws exception for non-numeric argument', function () {
-                expect(fn() => $this->mathFunctions->unit(['invalid']))
+                expect(fn () => $this->mathFunctions->unit(['invalid']))
                     ->toThrow(CompilationException::class, 'argument must be a number');
             });
         });
@@ -860,23 +862,23 @@ describe('MathFunctions', function () {
             });
 
             it('throws exception for wrong argument count', function () {
-                expect(fn() => $this->mathFunctions->div([]))
+                expect(fn () => $this->mathFunctions->div([]))
                     ->toThrow(CompilationException::class, 'requires exactly two arguments')
-                    ->and(fn() => $this->mathFunctions->div([1]))
+                    ->and(fn () => $this->mathFunctions->div([1]))
                     ->toThrow(CompilationException::class, 'requires exactly two arguments')
-                    ->and(fn() => $this->mathFunctions->div([1, 2, 3]))
+                    ->and(fn () => $this->mathFunctions->div([1, 2, 3]))
                     ->toThrow(CompilationException::class, 'requires exactly two arguments');
             });
 
             it('throws exception for non-numeric arguments', function () {
-                expect(fn() => $this->mathFunctions->div(['invalid', 2]))
+                expect(fn () => $this->mathFunctions->div(['invalid', 2]))
                     ->toThrow(CompilationException::class, 'first argument must be a number')
-                    ->and(fn() => $this->mathFunctions->div([1, 'invalid']))
+                    ->and(fn () => $this->mathFunctions->div([1, 'invalid']))
                     ->toThrow(CompilationException::class, 'second argument must be a number');
             });
 
             it('throws exception for division by zero', function () {
-                expect(fn() => $this->mathFunctions->div([10, 0]))
+                expect(fn () => $this->mathFunctions->div([10, 0]))
                     ->toThrow(CompilationException::class, 'second argument must not be zero');
             });
         });
@@ -901,19 +903,19 @@ describe('MathFunctions', function () {
             });
 
             it('throws exception for wrong argument count', function () {
-                expect(fn() => $this->mathFunctions->percentage([]))
+                expect(fn () => $this->mathFunctions->percentage([]))
                     ->toThrow(CompilationException::class, 'requires exactly one argument')
-                    ->and(fn() => $this->mathFunctions->percentage([1, 2]))
+                    ->and(fn () => $this->mathFunctions->percentage([1, 2]))
                     ->toThrow(CompilationException::class, 'requires exactly one argument');
             });
 
             it('throws exception for non-numeric argument', function () {
-                expect(fn() => $this->mathFunctions->percentage(['invalid']))
+                expect(fn () => $this->mathFunctions->percentage(['invalid']))
                     ->toThrow(CompilationException::class, 'argument must be a number');
             });
 
             it('throws exception for arguments with units', function () {
-                expect(fn() => $this->mathFunctions->percentage([['value' => 0.5, 'unit' => 'px']]))
+                expect(fn () => $this->mathFunctions->percentage([['value' => 0.5, 'unit' => 'px']]))
                     ->toThrow(CompilationException::class, 'argument must be unitless');
             });
         });
@@ -939,24 +941,24 @@ describe('MathFunctions', function () {
             });
 
             it('throws exception for too many arguments', function () {
-                expect(fn() => $this->mathFunctions->random([1, 2]))
+                expect(fn () => $this->mathFunctions->random([1, 2]))
                     ->toThrow(CompilationException::class, 'requires zero or one argument');
             });
 
             it('throws exception for non-numeric argument', function () {
-                expect(fn() => $this->mathFunctions->random(['invalid']))
+                expect(fn () => $this->mathFunctions->random(['invalid']))
                     ->toThrow(CompilationException::class, 'argument must be a number');
             });
 
             it('throws exception for arguments with units', function () {
-                expect(fn() => $this->mathFunctions->random([['value' => 10, 'unit' => 'px']]))
+                expect(fn () => $this->mathFunctions->random([['value' => 10, 'unit' => 'px']]))
                     ->toThrow(CompilationException::class, 'argument must be unitless');
             });
 
             it('throws exception for non-positive limit', function () {
-                expect(fn() => $this->mathFunctions->random([0]))
+                expect(fn () => $this->mathFunctions->random([0]))
                     ->toThrow(CompilationException::class, 'argument must be greater than zero')
-                    ->and(fn() => $this->mathFunctions->random([-1]))
+                    ->and(fn () => $this->mathFunctions->random([-1]))
                     ->toThrow(CompilationException::class, 'argument must be greater than zero');
             });
         });

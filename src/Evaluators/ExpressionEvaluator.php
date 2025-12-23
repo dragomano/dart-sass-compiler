@@ -37,7 +37,8 @@ class ExpressionEvaluator
         private readonly ValueFormatter $valueFormatter,
         private readonly CalcFunctionEvaluator $calcEvaluator,
         private readonly InterpolationEvaluator $interpolationEvaluator
-    ) {}
+    ) {
+    }
 
     public function setEvaluateCallback(Closure $callback): void
     {
@@ -165,7 +166,7 @@ class ExpressionEvaluator
 
         if ($expr->properties['name'] === 'url') {
             $argString = implode(', ', array_map(
-                fn(mixed $arg): mixed => is_string($arg) && ! preg_match('/^[\'\"].*[\'\"]$/', $arg)
+                fn (mixed $arg): mixed => is_string($arg) && ! preg_match('/^[\'\"].*[\'\"]$/', $arg)
                     ? '"' . $arg . '"'
                     : (is_array($arg) && isset($arg['value']) ? $arg['value'] . ($arg['unit'] ?? '') : $arg),
                 $args
@@ -196,7 +197,7 @@ class ExpressionEvaluator
         ];
 
         if (in_array($name, $complexFunctions, true)) {
-            return new LazyValue(fn() => $this->functionHandler->call($name, $args));
+            return new LazyValue(fn () => $this->functionHandler->call($name, $args));
         }
 
         return $this->functionHandler->call($name, $args);

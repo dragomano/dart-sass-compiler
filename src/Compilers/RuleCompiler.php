@@ -23,7 +23,9 @@ use function trim;
 
 readonly class RuleCompiler
 {
-    public function __construct(private ValueFormatter $valueFormatter) {}
+    public function __construct(private ValueFormatter $valueFormatter)
+    {
+    }
 
     public function compileAtRule(
         AstNode $node,

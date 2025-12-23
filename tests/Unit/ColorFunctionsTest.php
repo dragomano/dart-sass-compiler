@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 use DartSass\Utils\ColorFunctions;
 use DartSass\Exceptions\CompilationException;
@@ -72,47 +74,47 @@ it('correctly parses named colors', function () {
 });
 
 it('throws exception for invalid color', function () {
-    expect(fn() => $this->accessor->callProtectedMethod('parseColor', ['invalid']))
+    expect(fn () => $this->accessor->callProtectedMethod('parseColor', ['invalid']))
         ->toThrow(CompilationException::class);
 });
 
 it('throws exception for invalid hex color', function () {
-    expect(fn() => $this->accessor->callProtectedMethod('parseColor', ['#ff']))
+    expect(fn () => $this->accessor->callProtectedMethod('parseColor', ['#ff']))
         ->toThrow(CompilationException::class);
 });
 
 it('throws exception for invalid rgb with negative values', function () {
-    expect(fn() => $this->accessor->callProtectedMethod('parseColor', ['rgb(-1, 0, 0)']))
+    expect(fn () => $this->accessor->callProtectedMethod('parseColor', ['rgb(-1, 0, 0)']))
         ->toThrow(CompilationException::class);
 });
 
 it('throws exception for invalid hsl with out-of-range saturation', function () {
-    expect(fn() => $this->accessor->callProtectedMethod('parseColor', ['hsl(0, 150%, 50%)']))
+    expect(fn () => $this->accessor->callProtectedMethod('parseColor', ['hsl(0, 150%, 50%)']))
         ->toThrow(CompilationException::class);
 });
 
 it('throws exception for invalid rgba with out-of-range alpha', function () {
-    expect(fn() => $this->accessor->callProtectedMethod('parseColor', ['rgba(255, 0, 0, 1.5)']))
+    expect(fn () => $this->accessor->callProtectedMethod('parseColor', ['rgba(255, 0, 0, 1.5)']))
         ->toThrow(CompilationException::class);
 });
 
 it('throws exception for invalid hsl with out-of-range lightness', function () {
-    expect(fn() => $this->accessor->callProtectedMethod('parseColor', ['hsl(0, 100%, 150%)']))
+    expect(fn () => $this->accessor->callProtectedMethod('parseColor', ['hsl(0, 100%, 150%)']))
         ->toThrow(CompilationException::class);
 });
 
 it('throws exception for invalid hsla with out-of-range saturation', function () {
-    expect(fn() => $this->accessor->callProtectedMethod('parseColor', ['hsla(0, 150%, 50%, 0.5)']))
+    expect(fn () => $this->accessor->callProtectedMethod('parseColor', ['hsla(0, 150%, 50%, 0.5)']))
         ->toThrow(CompilationException::class);
 });
 
 it('throws exception for invalid hsla with out-of-range lightness', function () {
-    expect(fn() => $this->accessor->callProtectedMethod('parseColor', ['hsla(0, 100%, 150%, 0.5)']))
+    expect(fn () => $this->accessor->callProtectedMethod('parseColor', ['hsla(0, 100%, 150%, 0.5)']))
         ->toThrow(CompilationException::class);
 });
 
 it('throws exception for invalid hsla with out-of-range alpha', function () {
-    expect(fn() => $this->accessor->callProtectedMethod('parseColor', ['hsla(0, 100%, 50%, 1.5)']))
+    expect(fn () => $this->accessor->callProtectedMethod('parseColor', ['hsla(0, 100%, 50%, 1.5)']))
         ->toThrow(CompilationException::class);
 });
 
@@ -257,7 +259,7 @@ it('correctly adjusts color', function () {
 });
 
 it('throws exception for unknown adjustment parameter', function () {
-    expect(fn() => $this->colorFunctions->adjust('#ff0000', ['$unknown' => 10]))
+    expect(fn () => $this->colorFunctions->adjust('#ff0000', ['$unknown' => 10]))
         ->toThrow(CompilationException::class, 'Unknown adjustment parameter');
 });
 
@@ -298,8 +300,8 @@ it('correctly scales color', function () {
 });
 
 it('throws exception for unknown scaling parameter', function () {
-  expect(fn() => $this->colorFunctions->scale('#ff0000', ['$unknown' => 10]))
-    ->toThrow(CompilationException::class, 'Unknown scaling parameter');
+    expect(fn () => $this->colorFunctions->scale('#ff0000', ['$unknown' => 10]))
+        ->toThrow(CompilationException::class, 'Unknown scaling parameter');
 });
 
 it('correctly changes color', function () {
@@ -333,8 +335,8 @@ it('correctly changes color', function () {
 });
 
 it('throws exception for unknown changing parameter', function () {
-  expect(fn() => $this->colorFunctions->change('#ff0000', ['$unknown' => 10]))
-    ->toThrow(CompilationException::class, 'Unknown changing parameter');
+    expect(fn () => $this->colorFunctions->change('#ff0000', ['$unknown' => 10]))
+        ->toThrow(CompilationException::class, 'Unknown changing parameter');
 });
 
 it('correctly creates hsl color', function () {
@@ -457,10 +459,10 @@ it('correctly ensures rgb format from hwb', function () {
     $result = $this->accessor->callProtectedMethod('ensureRgbFormat', [$colorData]);
 
     expect($result['format'])->toBe('rgb')
-      ->and($result['a'])->toBe(1.0)
-      ->and($result['r'])->toBeGreaterThan(0)
-      ->and($result['g'])->toBe(0.0)
-      ->and($result['b'])->toBe(0.0);
+        ->and($result['a'])->toBe(1.0)
+        ->and($result['r'])->toBeGreaterThan(0)
+        ->and($result['g'])->toBe(0.0)
+        ->and($result['b'])->toBe(0.0);
 });
 
 it('correctly ensures rgb format from hwb with alpha', function () {
@@ -469,10 +471,10 @@ it('correctly ensures rgb format from hwb with alpha', function () {
     $result = $this->accessor->callProtectedMethod('ensureRgbFormat', [$colorData]);
 
     expect($result['format'])->toBe('rgb')
-      ->and($result['a'])->toBe(0.75)
-      ->and($result['r'])->toBeGreaterThanOrEqual(0)->toBeLessThanOrEqual(255)
-      ->and($result['g'])->toBeGreaterThanOrEqual(0)->toBeLessThanOrEqual(255)
-      ->and($result['b'])->toBeGreaterThanOrEqual(0)->toBeLessThanOrEqual(255);
+        ->and($result['a'])->toBe(0.75)
+        ->and($result['r'])->toBeGreaterThanOrEqual(0)->toBeLessThanOrEqual(255)
+        ->and($result['g'])->toBeGreaterThanOrEqual(0)->toBeLessThanOrEqual(255)
+        ->and($result['b'])->toBeGreaterThanOrEqual(0)->toBeLessThanOrEqual(255);
 });
 
 it('correctly ensures rgb format from hwb with maximum whiteness', function () {
@@ -505,8 +507,8 @@ it('correctly ensures rgb format from hwb with balanced whiteness and blackness'
     $result = $this->accessor->callProtectedMethod('ensureRgbFormat', [$colorData]);
 
     expect($result['format'])->toBe('rgb')
-      ->and($result['a'])->toBe(0.9)
-      ->and($result['r'])->toBeLessThanOrEqual(255)
-      ->and($result['g'])->toBeLessThanOrEqual(255)
-      ->and($result['b'])->toBeLessThanOrEqual(255);
+        ->and($result['a'])->toBe(0.9)
+        ->and($result['r'])->toBeLessThanOrEqual(255)
+        ->and($result['g'])->toBeLessThanOrEqual(255)
+        ->and($result['b'])->toBeLessThanOrEqual(255);
 });

@@ -159,8 +159,8 @@ dataset('complex scenarios', [
     ],
 
     'keyframes keep units inside' => [
-        "@keyframes slideIn { 0% { transform: translateX(0px); } 100% { transform: translateX(100%); } }",
-        "@keyframes slideIn { 0% { transform: translateX(0px); } 100% { transform: translateX(100%); } }",
+        '@keyframes slideIn { 0% { transform: translateX(0px); } 100% { transform: translateX(100%); } }',
+        '@keyframes slideIn { 0% { transform: translateX(0px); } 100% { transform: translateX(100%); } }',
     ],
 
     'consecutive commas in selector' => [
@@ -214,12 +214,12 @@ it('initializes with different styles', function () {
     $compressedOptimizer = new OutputOptimizer('compressed');
 
     expect($expandedOptimizer)->toBeInstanceOf(OutputOptimizer::class)
-      ->and($compressedOptimizer)->toBeInstanceOf(OutputOptimizer::class);
+        ->and($compressedOptimizer)->toBeInstanceOf(OutputOptimizer::class);
 });
 
 it('preserves calc functions with zero units', function () {
-    $css = ".test { width: calc(100% - 0px); }";
-    $expected = ".test { width: calc(100% - 0px); }";
+    $css = '.test { width: calc(100% - 0px); }';
+    $expected = '.test { width: calc(100% - 0px); }';
     $optimizer = new OutputOptimizer('expanded');
     $result = $optimizer->optimize($css);
 
@@ -227,8 +227,8 @@ it('preserves calc functions with zero units', function () {
 });
 
 it('handles properties with complex values and zero units', function () {
-    $css = ".test { background: url(image.png) no-repeat 0px 0px; width: 0px; }";
-    $expected = ".test { background: url(image.png) no-repeat 0 0; width: 0; }";
+    $css = '.test { background: url(image.png) no-repeat 0px 0px; width: 0px; }';
+    $expected = '.test { background: url(image.png) no-repeat 0 0; width: 0; }';
     $optimizer = new OutputOptimizer('expanded');
     $result = $optimizer->optimize($css);
 

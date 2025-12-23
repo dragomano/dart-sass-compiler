@@ -20,7 +20,9 @@ use function uniqid;
 
 readonly class MixinCompiler
 {
-    public function __construct(private MixinHandler $mixinHandler, private ModuleHandler $moduleHandler) {}
+    public function __construct(private MixinHandler $mixinHandler, private ModuleHandler $moduleHandler)
+    {
+    }
 
     public function compile(
         IncludeNode $node,

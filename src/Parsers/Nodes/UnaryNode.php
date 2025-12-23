@@ -10,8 +10,7 @@ final class UnaryNode extends AstNode
         public string $operator,
         public AstNode $operand,
         public int $line
-    )
-    {
+    ) {
         parent::__construct('unary', [
             'operator' => $this->operator,
             'operand'  => $this->operand,

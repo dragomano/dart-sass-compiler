@@ -80,7 +80,7 @@ class ExtendHandler
             // Split by spaces to get individual selector parts
             $parts = array_map(trim(...), explode(' ', $sel));
             foreach ($parts as $part) {
-                if (! in_array($part, $this->definedSelectors)) {
+                if (! in_array($part, $this->definedSelectors, true)) {
                     $this->definedSelectors[] = $part;
                 }
             }

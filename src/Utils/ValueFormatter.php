@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace DartSass\Utils;
 
-use DartSass\Parsers\Nodes\AstNode;
-
 use function array_map;
 use function implode;
 use function is_array;
@@ -13,7 +11,6 @@ use function is_numeric;
 use function is_string;
 use function preg_replace;
 use function round;
-use function strtolower;
 
 class ValueFormatter
 {

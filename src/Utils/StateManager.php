@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DartSass\Utils;
 
-use RuntimeException;
 use DartSass\Handlers\ExtendHandler;
 use DartSass\Handlers\FunctionHandler;
 use DartSass\Handlers\MixinHandler;
@@ -24,7 +23,8 @@ class StateManager
         private readonly ModuleHandler $moduleHandler,
         private readonly ExtendHandler $extendHandler,
         private readonly PositionTracker $positionTracker
-    ) {}
+    ) {
+    }
 
     public function push(array $mappings, array $options): void
     {
