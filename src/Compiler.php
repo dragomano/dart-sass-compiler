@@ -157,7 +157,7 @@ class Compiler
 
             file_put_contents($this->options['sourceMapFilename'], $sourceMap);
 
-            $compiled .= "\n/*# sourceMappingURL=" . $this->options['sourceMapFilename'] . " */";
+            $compiled .= "\n/*# sourceMappingURL=" . $this->options['sourceMapFilename'] . ' */';
         }
 
         return $this->outputOptimizer->optimize($compiled);
@@ -528,7 +528,7 @@ class Compiler
                 $includesCss .= $declarationsPart;
                 $otherNestedCss .= $nestedPart;
             } elseif (
-                in_array($nestedItem->type, ['if', 'each', 'for', 'while'])
+                in_array($nestedItem->type, ['if', 'each', 'for', 'while'], true)
                 && preg_match('/^[a-zA-Z_-]/', $trimmedCss)
             ) {
                 $includesCss .= $itemCss;
@@ -605,7 +605,7 @@ class Compiler
 
         $properties = $this->moduleHandler->forwardModule(
             $path,
-            fn($expr): mixed => $this->evaluateExpression($expr),
+            fn ($expr): mixed => $this->evaluateExpression($expr),
             $namespace,
             $config,
             $hide,

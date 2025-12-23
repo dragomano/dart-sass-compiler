@@ -60,8 +60,7 @@ class MixinHandler
         ?Compiler $parentCompiler = null,
         string    $parentSelector = '',
         int       $nestingLevel = 0
-    ): string
-    {
+    ): string {
         if (! isset($this->mixins[$name])) {
             throw new CompilationException("Undefined mixin: $name");
         }

@@ -16,7 +16,9 @@ use function strlen;
 
 readonly class DeclarationCompiler
 {
-    public function __construct(private ValueFormatter $valueFormatter, private PositionTracker $positionTracker) {}
+    public function __construct(private ValueFormatter $valueFormatter, private PositionTracker $positionTracker)
+    {
+    }
 
     public function compile(
         array $declarations,

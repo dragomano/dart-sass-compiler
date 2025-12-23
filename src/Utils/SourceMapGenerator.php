@@ -41,10 +41,12 @@ class SourceMapGenerator
 
     private function generateMappings(array $mappings): string
     {
-        usort($mappings, fn($a, $b): int =>
+        usort(
+            $mappings,
+            fn ($a, $b): int =>
             ($a['generated']['line'] ?? 0) <=> ($b['generated']['line'] ?? 0)
                 ?: ($a['generated']['column'] ?? 0) <=> ($b['generated']['column'] ?? 0)
-            );
+        );
 
         $lineGroups  = $currentLineMappings = [];
         $lastGenLine = $lastGenCol = $lastOrigLine = $lastOrigCol = $lastSourceIdx = 0;

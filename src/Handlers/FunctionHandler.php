@@ -297,8 +297,8 @@ class FunctionHandler
             $falseValue = $args[2];
         } else {
             throw new CompilationException(
-                "if() expects either 3 positional arguments (condition, true-value, false-value)"
-                . " or named arguments (condition, then, else)"
+                'if() expects either 3 positional arguments (condition, true-value, false-value)'
+                . ' or named arguments (condition, then, else)'
             );
         }
 
@@ -374,9 +374,9 @@ class FunctionHandler
 
     private function handleMix(array $args): string
     {
-        $color1Arg = $args[0] ?? throw new CompilationException("Missing first color for mix");
+        $color1Arg = $args[0] ?? throw new CompilationException('Missing first color for mix');
         $color1    = is_array($color1Arg) ? $color1Arg['value'] : $color1Arg;
-        $color2Arg = $args[1] ?? throw new CompilationException("Missing second color for mix");
+        $color2Arg = $args[1] ?? throw new CompilationException('Missing second color for mix');
         $color2    = is_array($color2Arg) ? $color2Arg['value'] : $color2Arg;
         $weight    = (float) (is_array($args[2] ?? 0.5) ? $args[2]['value'] : $args[2] ?? 0.5);
 
@@ -387,7 +387,7 @@ class FunctionHandler
     {
         try {
             $color = $this->extractColorValue(
-                $args[0] ?? throw new CompilationException("Missing color for scale")
+                $args[0] ?? throw new CompilationException('Missing color for scale')
             );
 
             $adjustments = $this->extractAdjustments($args);
@@ -401,7 +401,7 @@ class FunctionHandler
     private function handleChange(array $args): string
     {
         $color = $this->extractColorValue(
-            $args[0] ?? throw new CompilationException("Missing color for change")
+            $args[0] ?? throw new CompilationException('Missing color for change')
         );
 
         $adjustments = $this->extractAdjustments($args);
@@ -449,11 +449,11 @@ class FunctionHandler
 
     private function handleHsl(array $args): string
     {
-        $hArg = $args[0] ?? throw new CompilationException("Missing hue for hsl");
+        $hArg = $args[0] ?? throw new CompilationException('Missing hue for hsl');
         $h    = $this->extractAmount($hArg);
-        $sArg = $args[1] ?? throw new CompilationException("Missing saturation for hsl");
+        $sArg = $args[1] ?? throw new CompilationException('Missing saturation for hsl');
         $s    = $this->extractAmount($sArg);
-        $lArg = $args[2] ?? throw new CompilationException("Missing lightness for hsl");
+        $lArg = $args[2] ?? throw new CompilationException('Missing lightness for hsl');
         $l    = $this->extractAmount($lArg);
         $aArg = $args[3] ?? null;
         $a    = $aArg !== null ? $this->extractAmount($aArg) : null;
@@ -463,11 +463,11 @@ class FunctionHandler
 
     private function handleHwb(array $args): string
     {
-        $hArg  = $args[0] ?? throw new CompilationException("Missing hue for hwb");
+        $hArg  = $args[0] ?? throw new CompilationException('Missing hue for hwb');
         $h     = $this->extractAmount($hArg);
-        $wArg  = $args[1] ?? throw new CompilationException("Missing whiteness for hwb");
+        $wArg  = $args[1] ?? throw new CompilationException('Missing whiteness for hwb');
         $w     = $this->extractAmount($wArg);
-        $blArg = $args[2] ?? throw new CompilationException("Missing blackness for hwb");
+        $blArg = $args[2] ?? throw new CompilationException('Missing blackness for hwb');
         $bl    = $this->extractAmount($blArg);
         $aArg  = $args[3] ?? null;
         $a     = $aArg !== null ? $this->extractAmount($aArg) : null;
@@ -488,7 +488,7 @@ class FunctionHandler
         // Functions that don't require unit compatibility checking
         $noUnitCheckFunctions = ['compatible', 'is-unitless', 'random'];
 
-        if (in_array($name, $noUnitCheckFunctions) || $this->allUnitsCompatible($args)) {
+        if (in_array($name, $noUnitCheckFunctions, true) || $this->allUnitsCompatible($args)) {
             return $this->valueFormatter->format($this->mathFunctions->$methodName($args));
         }
 
@@ -497,8 +497,8 @@ class FunctionHandler
 
     private function handleNth(array $args): mixed
     {
-        $listArg  = $args[0] ?? throw new CompilationException("Missing list for nth");
-        $indexArg = $args[1] ?? throw new CompilationException("Missing index for nth");
+        $listArg  = $args[0] ?? throw new CompilationException('Missing list for nth');
+        $indexArg = $args[1] ?? throw new CompilationException('Missing index for nth');
 
         if (is_array($listArg)) {
             $list = $listArg;
@@ -509,7 +509,7 @@ class FunctionHandler
                 $list = array_map(trim(...), explode(' ', $listArg));
             }
 
-            $list = array_filter($list, fn($item): bool => $item !== '');
+            $list = array_filter($list, fn ($item): bool => $item !== '');
         } else {
             $list = [$listArg];
         }
@@ -527,7 +527,7 @@ class FunctionHandler
 
     private function handleLength(array $args): int
     {
-        $value = $args[0] ?? throw new CompilationException("Missing list for length");
+        $value = $args[0] ?? throw new CompilationException('Missing list for length');
 
         if (is_object($value) && isset($value->value)) {
             $value = $value->value;
@@ -544,7 +544,7 @@ class FunctionHandler
 
             return count(array_filter(
                 explode($separator, $value),
-                fn(string $item): bool => trim($item) !== ''
+                fn (string $item): bool => trim($item) !== ''
             ));
         }
 

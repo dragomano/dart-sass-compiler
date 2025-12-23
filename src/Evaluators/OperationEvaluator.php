@@ -16,7 +16,9 @@ use function str_starts_with;
 
 readonly class OperationEvaluator
 {
-    public function __construct(private ValueFormatter $valueFormatter) {}
+    public function __construct(private ValueFormatter $valueFormatter)
+    {
+    }
 
     public function evaluate(mixed $left, string $operator, mixed $right): mixed
     {
@@ -215,8 +217,8 @@ readonly class OperationEvaluator
             '+'     => $left + $right,
             '-'     => $left - $right,
             '*'     => $left * $right,
-            '/'     => $right == 0 ? throw new CompilationException("Division by zero") : $left / $right,
-            '%'     => $right == 0 ? throw new CompilationException("Modulo by zero") : $left % (int) $right,
+            '/'     => $right == 0 ? throw new CompilationException('Division by zero') : $left / $right,
+            '%'     => $right == 0 ? throw new CompilationException('Modulo by zero') : $left % (int) $right,
             default => throw new CompilationException("Unknown operator: $operator"),
         };
 

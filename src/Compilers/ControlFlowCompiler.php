@@ -18,7 +18,9 @@ use function is_array;
 
 readonly class ControlFlowCompiler
 {
-    public function __construct(private VariableHandler $variableHandler) {}
+    public function __construct(private VariableHandler $variableHandler)
+    {
+    }
 
     public function compile(
         AstNode $node,
@@ -31,7 +33,7 @@ readonly class ControlFlowCompiler
             $node instanceof EachNode  => $this->compileEach($node, $nestingLevel, $evaluateExpression, $compileAst),
             $node instanceof ForNode   => $this->compileFor($node, $nestingLevel, $evaluateExpression, $compileAst),
             $node instanceof WhileNode => $this->compileWhile($node, $nestingLevel, $evaluateExpression, $compileAst),
-            default => throw new CompilationException("Unknown control flow node type: " . $node::class),
+            default => throw new CompilationException('Unknown control flow node type: ' . $node::class),
         };
     }
 
@@ -64,7 +66,7 @@ readonly class ControlFlowCompiler
             $list = [$list];
         }
 
-        $varName = $node->variable ?? throw new CompilationException("Missing variable name for @each");
+        $varName = $node->variable ?? throw new CompilationException('Missing variable name for @each');
 
         $css = '';
         $this->variableHandler->enterScope();
@@ -88,7 +90,7 @@ readonly class ControlFlowCompiler
         $from = (int) $evaluateExpression($node->from);
         $to   = (int) $evaluateExpression($node->to);
 
-        $varName   = $node->variable ?? throw new CompilationException("Missing variable name for @for");
+        $varName   = $node->variable ?? throw new CompilationException('Missing variable name for @for');
         $inclusive = $node->inclusive ?? false;
 
         $css = '';

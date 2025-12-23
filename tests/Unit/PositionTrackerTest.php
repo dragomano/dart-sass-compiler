@@ -30,7 +30,7 @@ it('sets source code and resets position', function () {
 });
 
 it('resets position to initial state', function () {
-    $this->tracker->updatePosition("some text");
+    $this->tracker->updatePosition('some text');
     $this->tracker->updatePosition("\nanother line");
 
     expect($this->tracker->getLine())->toBe(2)
@@ -43,7 +43,7 @@ it('resets position to initial state', function () {
 });
 
 it('updates position with single line text', function () {
-    $this->tracker->updatePosition("hello");
+    $this->tracker->updatePosition('hello');
 
     expect($this->tracker->getLine())->toBe(1)
         ->and($this->tracker->getColumn())->toBe(5);
@@ -64,11 +64,11 @@ it('updates position with multiple newlines', function () {
 });
 
 it('accumulates position updates', function () {
-    $this->tracker->updatePosition("hello");
+    $this->tracker->updatePosition('hello');
 
     expect($this->tracker->getColumn())->toBe(5);
 
-    $this->tracker->updatePosition(" world");
+    $this->tracker->updatePosition(' world');
 
     expect($this->tracker->getColumn())->toBe(11);
 
@@ -170,7 +170,7 @@ it('sets state from array', function () {
 
 it('persists state across updates', function () {
     $this->tracker->setState(['line' => 3, 'column' => 7]);
-    $this->tracker->updatePosition("more text");
+    $this->tracker->updatePosition('more text');
 
     expect($this->tracker->getLine())->toBe(3)
         ->and($this->tracker->getColumn())->toBe(16);
@@ -217,7 +217,7 @@ it('works in complex scenario', function () {
         ->and($this->tracker->calculateIndentation(3))->toBe(1);
 
     $savedState = $this->tracker->getState();
-    $this->tracker->updatePosition("more");
+    $this->tracker->updatePosition('more');
 
     expect($this->tracker->getColumn())->toBe(9);
 

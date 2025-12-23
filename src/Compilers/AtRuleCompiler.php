@@ -11,7 +11,9 @@ use DartSass\Utils\PositionTracker;
 
 readonly class AtRuleCompiler
 {
-    public function __construct(private RuleCompiler $ruleCompiler, private PositionTracker $positionTracker) {}
+    public function __construct(private RuleCompiler $ruleCompiler, private PositionTracker $positionTracker)
+    {
+    }
 
     public function compile(
         AstNode $node,

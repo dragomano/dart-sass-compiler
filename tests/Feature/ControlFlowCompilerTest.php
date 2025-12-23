@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 use DartSass\Compiler;
 use DartSass\Parsers\Syntax;
@@ -628,7 +630,7 @@ dataset('control flow sass styles', [
 ]);
 
 beforeEach(function () {
-  $this->compiler = new Compiler();
+    $this->compiler = new Compiler();
 });
 
 describe('SCSS', function () {

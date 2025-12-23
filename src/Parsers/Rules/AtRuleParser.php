@@ -10,7 +10,9 @@ use DartSass\Parsers\TokenAwareParserInterface;
 
 abstract class AtRuleParser
 {
-    public function __construct(protected TokenAwareParserInterface $parser) {}
+    public function __construct(protected TokenAwareParserInterface $parser)
+    {
+    }
 
     abstract public function parse(): AstNode;
 

@@ -11,7 +11,7 @@ final class MediaNode extends AstNode
         public array $body,
         public int $line
     ) {
-        parent::__construct('media',  [
+        parent::__construct('media', [
             'query' => $query,
             'body'  => $body,
             'line'  => $line,

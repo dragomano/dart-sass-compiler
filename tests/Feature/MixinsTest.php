@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 use DartSass\Compiler;
 
@@ -198,9 +200,9 @@ it('handles complex mixins', function () {
     CSS;
 
     expect($this->compiler->compileString($oldMixin . $scss))
-      ->toEqualCss($expected)
-      ->and($this->compiler->compileString($newMixin . $scss))
-      ->toEqualCss($expected);
+        ->toEqualCss($expected)
+        ->and($this->compiler->compileString($newMixin . $scss))
+        ->toEqualCss($expected);
 });
 
 it('handles different complex mixins', function () {
@@ -267,29 +269,29 @@ it('supports @content in mixins', function () {
 });
 
 it('compiles mixins within @media', function () {
-  $scss = <<<'SCSS'
-  @mixin bordered {
-      border: 1px solid black;
-  }
-  .box {
-      @media (min-width: 768px) {
-          @include bordered;
-          color: blue;
-      }
-  }
-  SCSS;
-
-  $expected = /** @lang text */ <<<'CSS'
-  @media (min-width: 768px) {
-    .box {
-      border: 1px solid black;
-      color: blue;
+    $scss = <<<'SCSS'
+    @mixin bordered {
+        border: 1px solid black;
     }
-  }
-  CSS;
+    .box {
+        @media (min-width: 768px) {
+            @include bordered;
+            color: blue;
+        }
+    }
+    SCSS;
 
-  expect($this->compiler->compileString($scss))
-    ->toEqualCss($expected);
+    $expected = /** @lang text */ <<<'CSS'
+    @media (min-width: 768px) {
+      .box {
+        border: 1px solid black;
+        color: blue;
+      }
+    }
+    CSS;
+
+    expect($this->compiler->compileString($scss))
+        ->toEqualCss($expected);
 });
 
 it('compiles mixin with @content directive', function () {
@@ -327,50 +329,50 @@ it('compiles mixin with @content directive', function () {
 });
 
 it('compiles mixin with @for directive', function () {
-  $scss = <<<'SCSS'
-  $color-names: red, green, blue;
-  $color-values: #ff0000, #00ff00, #0000ff;
-  @for $i from 1 through length($color-names) {
-    $name: nth($color-names, $i);
-    $color: nth($color-values, $i);
-    .color-#{"#{$name}"} {
-      background-color: lighten($color, 10%);
-      border: 2px solid saturate($color, 20%);
-      &:hover {
-        background-color: desaturate($color, 15%);
-        transform: rotate(calc(var(--rotation, 0deg) + 5deg));
+    $scss = <<<'SCSS'
+    $color-names: red, green, blue;
+    $color-values: #ff0000, #00ff00, #0000ff;
+    @for $i from 1 through length($color-names) {
+      $name: nth($color-names, $i);
+      $color: nth($color-values, $i);
+      .color-#{"#{$name}"} {
+        background-color: lighten($color, 10%);
+        border: 2px solid saturate($color, 20%);
+        &:hover {
+          background-color: desaturate($color, 15%);
+          transform: rotate(calc(var(--rotation, 0deg) + 5deg));
+        }
       }
     }
-  }
-  SCSS;
+    SCSS;
 
-  $expected = /** @lang text */ <<<'CSS'
-  .color-red {
-    background-color: #ff3333;
-    border: 2px solid red;
-  }
-  .color-red:hover {
-    background-color: #ec1313;
-    transform: rotate(calc(var(--rotation, 0deg) + 5deg));
-  }
-  .color-green {
-    background-color: #33ff33;
-    border: 2px solid lime;
-  }
-  .color-green:hover {
-    background-color: #13ec13;
-    transform: rotate(calc(var(--rotation, 0deg) + 5deg));
-  }
-  .color-blue {
-    background-color: #3333ff;
-    border: 2px solid blue;
-  }
-  .color-blue:hover {
-    background-color: #1313ec;
-    transform: rotate(calc(var(--rotation, 0deg) + 5deg));
-  }
-  CSS;
+    $expected = /** @lang text */ <<<'CSS'
+    .color-red {
+      background-color: #ff3333;
+      border: 2px solid red;
+    }
+    .color-red:hover {
+      background-color: #ec1313;
+      transform: rotate(calc(var(--rotation, 0deg) + 5deg));
+    }
+    .color-green {
+      background-color: #33ff33;
+      border: 2px solid lime;
+    }
+    .color-green:hover {
+      background-color: #13ec13;
+      transform: rotate(calc(var(--rotation, 0deg) + 5deg));
+    }
+    .color-blue {
+      background-color: #3333ff;
+      border: 2px solid blue;
+    }
+    .color-blue:hover {
+      background-color: #1313ec;
+      transform: rotate(calc(var(--rotation, 0deg) + 5deg));
+    }
+    CSS;
 
-  expect($this->compiler->compileString($scss))
-    ->toEqualCss($expected);
+    expect($this->compiler->compileString($scss))
+        ->toEqualCss($expected);
 });

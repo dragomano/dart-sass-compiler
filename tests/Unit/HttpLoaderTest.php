@@ -10,8 +10,9 @@ it('normalizes baseUrls by removing trailing slashes in constructor', function (
 
     expect($loader)->toBeInstanceOf(HttpLoader::class);
 
-    $mockLoader = new class(['https://example.com/', 'https://cdn.com/path/']) extends HttpLoader {
-        public function getBaseUrls(): array {
+    $mockLoader = new class (['https://example.com/', 'https://cdn.com/path/']) extends HttpLoader {
+        public function getBaseUrls(): array
+        {
             return $this->baseUrls;
         }
     };
@@ -20,12 +21,13 @@ it('normalizes baseUrls by removing trailing slashes in constructor', function (
 });
 
 it('loads content from direct URL successfully', function () {
-    $mockLoader = new class(['https://example.com']) extends HttpLoader {
+    $mockLoader = new class (['https://example.com']) extends HttpLoader {
         private array $mockResponses = [
             'https://example.com/test.scss' => '.test { color: red; }',
         ];
 
-        protected function fetch(string $url): ?string {
+        protected function fetch(string $url): ?string
+        {
             return $this->mockResponses[$url] ?? null;
         }
     };
@@ -36,12 +38,13 @@ it('loads content from direct URL successfully', function () {
 });
 
 it('loads content through baseUrl + path successfully', function () {
-    $mockLoader = new class(['https://example.com']) extends HttpLoader {
+    $mockLoader = new class (['https://example.com']) extends HttpLoader {
         private array $mockResponses = [
             'https://example.com/styles/main.scss' => '.main { display: block; }',
         ];
 
-        protected function fetch(string $url): ?string {
+        protected function fetch(string $url): ?string
+        {
             return $this->mockResponses[$url] ?? null;
         }
     };
@@ -52,12 +55,13 @@ it('loads content through baseUrl + path successfully', function () {
 });
 
 it('loads partial file with underscore prefix successfully', function () {
-    $mockLoader = new class(['https://example.com']) extends HttpLoader {
+    $mockLoader = new class (['https://example.com']) extends HttpLoader {
         private array $mockResponses = [
             'https://example.com/_colors.scss' => '$primary: #ff0000;',
         ];
 
-        protected function fetch(string $url): ?string {
+        protected function fetch(string $url): ?string
+        {
             return $this->mockResponses[$url] ?? null;
         }
     };
@@ -68,23 +72,25 @@ it('loads partial file with underscore prefix successfully', function () {
 });
 
 it('throws CompilationException when resource is not available', function () {
-    $mockLoader = new class(['https://example.com']) extends HttpLoader {
-        protected function fetch(string $url): ?string {
+    $mockLoader = new class (['https://example.com']) extends HttpLoader {
+        protected function fetch(string $url): ?string
+        {
             return null; // Always fail
         }
     };
 
-    expect(fn() => $mockLoader->load('nonexistent.scss'))
+    expect(fn () => $mockLoader->load('nonexistent.scss'))
         ->toThrow(CompilationException::class, 'Failed to load SCSS from URL: nonexistent.scss');
 });
 
 it('loads from multiple baseUrls in order', function () {
-    $mockLoader = new class(['https://first.com', 'https://second.com']) extends HttpLoader {
+    $mockLoader = new class (['https://first.com', 'https://second.com']) extends HttpLoader {
         private array $mockResponses = [
             'https://second.com/test.scss' => 'content from second',
         ];
 
-        protected function fetch(string $url): ?string {
+        protected function fetch(string $url): ?string
+        {
             return $this->mockResponses[$url] ?? null;
         }
     };
@@ -95,19 +101,21 @@ it('loads from multiple baseUrls in order', function () {
 });
 
 it('recognizes valid HTTP URLs', function () {
-    $mockLoader = new class([]) extends HttpLoader {
-        public function testIsUrl(string $url): bool {
+    $mockLoader = new class ([]) extends HttpLoader {
+        public function testIsUrl(string $url): bool
+        {
             return $this->isUrl($url);
         }
     };
 
     expect($mockLoader->testIsUrl('https://example.com/styles.css'))->toBeTrue()
-      ->and($mockLoader->testIsUrl('http://example.com/styles.css'))->toBeTrue();
+        ->and($mockLoader->testIsUrl('http://example.com/styles.css'))->toBeTrue();
 });
 
 it('recognizes valid HTTPS URLs', function () {
-    $mockLoader = new class([]) extends HttpLoader {
-        public function testIsUrl(string $url): bool {
+    $mockLoader = new class ([]) extends HttpLoader {
+        public function testIsUrl(string $url): bool
+        {
             return $this->isUrl($url);
         }
     };
@@ -116,35 +124,38 @@ it('recognizes valid HTTPS URLs', function () {
 });
 
 it('does not recognize invalid URLs without scheme', function () {
-    $mockLoader = new class([]) extends HttpLoader {
-        public function testIsUrl(string $url): bool {
+    $mockLoader = new class ([]) extends HttpLoader {
+        public function testIsUrl(string $url): bool
+        {
             return $this->isUrl($url);
         }
     };
 
     expect($mockLoader->testIsUrl('styles.css'))->toBeFalse()
-      ->and($mockLoader->testIsUrl('/path/to/styles.css'))->toBeFalse()
-      ->and($mockLoader->testIsUrl('./styles.css'))->toBeFalse();
+        ->and($mockLoader->testIsUrl('/path/to/styles.css'))->toBeFalse()
+        ->and($mockLoader->testIsUrl('./styles.css'))->toBeFalse();
 });
 
 it('does not recognize invalid URLs with malformed schemes', function () {
-    $mockLoader = new class([]) extends HttpLoader {
-        public function testIsUrl(string $url): bool {
+    $mockLoader = new class ([]) extends HttpLoader {
+        public function testIsUrl(string $url): bool
+        {
             return $this->isUrl($url);
         }
     };
 
     expect($mockLoader->testIsUrl('://example.com/styles.css'))->toBeFalse()
-      ->and($mockLoader->testIsUrl('invalid url with spaces'))->toBeFalse();
+        ->and($mockLoader->testIsUrl('invalid url with spaces'))->toBeFalse();
 });
 
 it('handles multiple baseUrls with trailing slashes correctly', function () {
-    $mockLoader = new class(['https://example.com/', 'https://cdn.com/api/']) extends HttpLoader {
+    $mockLoader = new class (['https://example.com/', 'https://cdn.com/api/']) extends HttpLoader {
         private array $mockResponses = [
             'https://example.com/test.scss' => 'from first base',
         ];
 
-        protected function fetch(string $url): ?string {
+        protected function fetch(string $url): ?string
+        {
             return $this->mockResponses[$url] ?? null;
         }
     };
@@ -155,12 +166,13 @@ it('handles multiple baseUrls with trailing slashes correctly', function () {
 });
 
 it('loads direct URL even when baseUrls are provided', function () {
-    $mockLoader = new class(['https://base.com']) extends HttpLoader {
+    $mockLoader = new class (['https://base.com']) extends HttpLoader {
         private array $mockResponses = [
             'https://direct.com/file.scss' => 'direct content',
         ];
 
-        protected function fetch(string $url): ?string {
+        protected function fetch(string $url): ?string
+        {
             return $this->mockResponses[$url] ?? null;
         }
     };
@@ -171,12 +183,13 @@ it('loads direct URL even when baseUrls are provided', function () {
 });
 
 it('handles empty baseUrls array', function () {
-    $mockLoader = new class([]) extends HttpLoader {
+    $mockLoader = new class ([]) extends HttpLoader {
         private array $mockResponses = [
             'https://example.com/test.scss' => 'content',
         ];
 
-        protected function fetch(string $url): ?string {
+        protected function fetch(string $url): ?string
+        {
             return $this->mockResponses[$url] ?? null;
         }
     };
@@ -187,12 +200,13 @@ it('handles empty baseUrls array', function () {
 });
 
 it('throws exception when loading from empty baseUrls with invalid path', function () {
-    $mockLoader = new class([]) extends HttpLoader {
-        protected function fetch(string $url): ?string {
+    $mockLoader = new class ([]) extends HttpLoader {
+        protected function fetch(string $url): ?string
+        {
             return null;
         }
     };
 
-    expect(fn() => $mockLoader->load('local.scss'))
+    expect(fn () => $mockLoader->load('local.scss'))
         ->toThrow(CompilationException::class, 'Failed to load SCSS from URL: local.scss');
 });

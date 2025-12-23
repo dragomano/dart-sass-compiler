@@ -36,7 +36,9 @@ use const M_PI;
 
 readonly class MathFunctions
 {
-    public function __construct(private ValueFormatter $valueFormatter) {}
+    public function __construct(private ValueFormatter $valueFormatter)
+    {
+    }
 
     public function ceil(array $args): array
     {

@@ -53,7 +53,7 @@ class MediaRuleParser extends AtRuleParser
                 $nested[] = $this->parser->parseVariable();
             } elseif ($this->peek('selector')) {
                 $nested[] = $this->parser->parseRule();
-            } elseif ($this->peek('operator') && in_array($this->currentToken()->value, ['&', '.', '#'])) {
+            } elseif ($this->peek('operator') && in_array($this->currentToken()->value, ['&', '.', '#'], true)) {
                 $nested[] = $this->parser->parseRule();
             } elseif ($this->peek('identifier')) {
                 $this->handleIdentifierInBlock($declarations, $nested);

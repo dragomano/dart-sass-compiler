@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 use DartSass\Compiler;
 use DartSass\Utils\SourceMapGenerator;
@@ -129,11 +131,11 @@ it('compiles with custom outputFile option', function () {
 
 it('validates internal mappings for simple SCSS', function () {
     $scss = <<<'SCSS'
-body {
-  color: blue;
-  margin: 10px;
-}
-SCSS;
+    body {
+      color: blue;
+      margin: 10px;
+    }
+    SCSS;
 
     $compiler = new Compiler(['sourceMap' => true]);
     $compiler->compileString($scss);

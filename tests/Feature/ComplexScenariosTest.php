@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 use DartSass\Compiler;
 
@@ -100,53 +102,53 @@ it('handles complex integration with multiple features', function () {
 });
 
 it('handles complex SCSS with list/color modules', function () {
-  $scss = <<<'SCSS'
-  @use 'sass:list';
-  @use 'sass:color';
+    $scss = <<<'SCSS'
+    @use 'sass:list';
+    @use 'sass:color';
 
-  $color-names: red, green, blue;
-  $color-values: #ff0000, #00ff00, #0000ff;
-  @for $i from 1 through list.length($color-names) {
-    $name: list.nth($color-names, $i);
-    $color: list.nth($color-values, $i);
-    .color-#{"#{$name}"} {
-      background-color: color.adjust($color, $lightness: 10%);
-      border: 2px solid color.adjust($color, $saturation: 20%);
-      &:hover {
-        background-color: color.adjust($color, $saturation: -15%);
-        transform: rotate(calc(var(--rotation, 0deg) + 5deg));
+    $color-names: red, green, blue;
+    $color-values: #ff0000, #00ff00, #0000ff;
+    @for $i from 1 through list.length($color-names) {
+      $name: list.nth($color-names, $i);
+      $color: list.nth($color-values, $i);
+      .color-#{"#{$name}"} {
+        background-color: color.adjust($color, $lightness: 10%);
+        border: 2px solid color.adjust($color, $saturation: 20%);
+        &:hover {
+          background-color: color.adjust($color, $saturation: -15%);
+          transform: rotate(calc(var(--rotation, 0deg) + 5deg));
+        }
       }
     }
-  }
-  SCSS;
+    SCSS;
 
-  $expected = /** @lang text */ <<<'CSS'
-  .color-red {
-    background-color: #ff3333;
-    border: 2px solid red;
-  }
-  .color-red:hover {
-    background-color: #ec1313;
-    transform: rotate(calc(var(--rotation, 0deg) + 5deg));
-  }
-  .color-green {
-    background-color: #33ff33;
-    border: 2px solid lime;
-  }
-  .color-green:hover {
-    background-color: #13ec13;
-    transform: rotate(calc(var(--rotation, 0deg) + 5deg));
-  }
-  .color-blue {
-    background-color: #3333ff;
-    border: 2px solid blue;
-  }
-  .color-blue:hover {
-    background-color: #1313ec;
-    transform: rotate(calc(var(--rotation, 0deg) + 5deg));
-  }
-  CSS;
+    $expected = /** @lang text */ <<<'CSS'
+    .color-red {
+      background-color: #ff3333;
+      border: 2px solid red;
+    }
+    .color-red:hover {
+      background-color: #ec1313;
+      transform: rotate(calc(var(--rotation, 0deg) + 5deg));
+    }
+    .color-green {
+      background-color: #33ff33;
+      border: 2px solid lime;
+    }
+    .color-green:hover {
+      background-color: #13ec13;
+      transform: rotate(calc(var(--rotation, 0deg) + 5deg));
+    }
+    .color-blue {
+      background-color: #3333ff;
+      border: 2px solid blue;
+    }
+    .color-blue:hover {
+      background-color: #1313ec;
+      transform: rotate(calc(var(--rotation, 0deg) + 5deg));
+    }
+    CSS;
 
-  expect($this->compiler->compileString($scss))
-    ->toEqualCss($expected);
+    expect($this->compiler->compileString($scss))
+        ->toEqualCss($expected);
 });

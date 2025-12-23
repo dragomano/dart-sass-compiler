@@ -114,7 +114,9 @@ class ScssParser implements TokenAwareParserInterface
         'brace_open'  => true,
     ];
 
-    public function __construct(protected TokenStreamInterface $stream) {}
+    public function __construct(protected TokenStreamInterface $stream)
+    {
+    }
 
     /**
      * @throws SyntaxException
