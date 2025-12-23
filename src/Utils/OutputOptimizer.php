@@ -14,7 +14,6 @@ use function preg_replace_callback;
 use function str_contains;
 use function str_ends_with;
 use function str_repeat;
-use function str_replace;
 use function strtolower;
 use function substr;
 use function trim;

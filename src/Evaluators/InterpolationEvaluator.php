@@ -8,6 +8,7 @@ use Closure;
 use Exception;
 use DartSass\Utils\ValueFormatter;
 
+use function is_string;
 use function preg_match;
 use function preg_replace_callback;
 use function str_contains;

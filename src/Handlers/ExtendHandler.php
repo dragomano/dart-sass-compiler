@@ -119,8 +119,10 @@ class ExtendHandler
         $baseTarget   = (string) preg_replace('/:[^\s,{]+/', '', $cleanTarget);
 
         // Check if target base selector matches selector base
-        if (preg_match('/\s' . preg_quote($baseTarget, '/') . '(\s|$)/', $baseSelector) ||
-            preg_match('/' . preg_quote($baseTarget, '/') . '$/', $baseSelector)) {
+        if (
+            preg_match('/\s' . preg_quote($baseTarget, '/') . '(\s|$)/', $baseSelector)
+            || preg_match('/' . preg_quote($baseTarget, '/') . '$/', $baseSelector)
+        ) {
             return true;
         }
 

@@ -123,14 +123,12 @@ readonly class ControlFlowCompiler
     ): string {
         $css = '';
 
-        $maxIterations = 1000; // Protection against infinite loops
+        $maxIterations = 1000;
         $iteration = 0;
 
-        // Enter scope for while loop to preserve variables between iterations
         $this->variableHandler->enterScope();
 
         while ($iteration < $maxIterations) {
-            // Re-evaluate condition in each iteration to get updated variable values
             $condition = $evaluateExpression($node->condition);
             if (! $this->isTruthy($condition)) {
                 break;
