@@ -15,6 +15,7 @@ use function ltrim;
 use function pathinfo;
 use function rtrim;
 use function str_starts_with;
+use function substr;
 
 class ModuleHandler
 {
@@ -37,6 +38,8 @@ class ModuleHandler
 
         if (str_starts_with($path, 'sass:')) {
             $ns = $this->registerModule($path, $namespace);
+
+            $this->registerBuiltInModuleProperties($path);
 
             return ['cssAst' => [], 'namespace' => $ns];
         }
@@ -113,8 +116,7 @@ class ModuleHandler
                     return;
                 }
 
-                $value = $config[$configKey]
-                    ?? $evaluateExpression($node->properties['value']);
+                $value = $config[$configKey] ?? $evaluateExpression($node->properties['value']);
 
                 $this->forwardedProperties[$namespace][$name] = $value;
                 $result['variables'][$name] = $value;
@@ -126,7 +128,11 @@ class ModuleHandler
         return $result;
     }
 
-    public function getProperty(string $namespace, string $name, ?callable $evaluateExpression = null): mixed
+    public function getProperty(
+        string $namespace,
+        string $name,
+        ?callable $evaluateExpression = null
+    ): mixed
     {
         if (isset($this->forwardedProperties[$namespace][$name])) {
             $property = $this->forwardedProperties[$namespace][$name];
@@ -191,6 +197,7 @@ class ModuleHandler
     private function registerModule(string $path, ?string $namespace): string
     {
         $actualNamespace = $namespace ?? $this->getNamespaceFromPath($path);
+
         $this->loadedModules[$path] = $actualNamespace;
 
         return $actualNamespace;
@@ -251,5 +258,21 @@ class ModuleHandler
         ];
 
         $result[$type][$name] = $payload;
+    }
+
+    private function registerBuiltInModuleProperties(string $path): void
+    {
+        if ($path === 'sass:math') {
+            // Remove 'sass:' prefix
+            $actualNamespace = substr($path, 5);
+
+            $this->forwardedProperties[$actualNamespace]['$e'] = M_E;
+            $this->forwardedProperties[$actualNamespace]['$epsilon'] = 1e-12;
+            $this->forwardedProperties[$actualNamespace]['$max-number'] = 1e308;
+            $this->forwardedProperties[$actualNamespace]['$max-safe-integer'] = 9e15;
+            $this->forwardedProperties[$actualNamespace]['$min-number'] = -1e308;
+            $this->forwardedProperties[$actualNamespace]['$min-safe-integer'] = -9e15;
+            $this->forwardedProperties[$actualNamespace]['$pi'] = M_PI;
+        }
     }
 }

@@ -813,22 +813,21 @@ class ColorFunctions
 
         return [
             'h'      => round($h, 5),
-            'w'      => round($min * 100, 5),  // *100 → %
-            'bl'     => round((1 - $max) * 100, 5),  // *100 → %
+            'w'      => round($min * 100, 5),
+            'bl'     => round((1 - $max) * 100, 5),
             'format' => 'hwb',
         ];
     }
 
-    private function hwbToRgb(float $h, float $w, float $bl): array  // w, bl: % (0–100)
+    private function hwbToRgb(float $h, float $w, float $bl): array
     {
-        $w /= 100.0;  // → fraction 0–1
+        $w /= 100.0;
         $bl /= 100.0;
 
         $chroma = max(0.0, 1.0 - $w - $bl);
 
         $hsl = $this->hslToRgb($h, 100.0, 50.0);
 
-        // Clamp HSL
         $hsl['r'] = min(255.0, max(0.0, round($hsl['r'])));
         $hsl['g'] = min(255.0, max(0.0, round($hsl['g'])));
         $hsl['b'] = min(255.0, max(0.0, round($hsl['b'])));
@@ -848,12 +847,12 @@ class ColorFunctions
 
     private function linearizeChannel(float $val): float
     {
-        return $val > 0.04045 ? pow(($val + 0.055) / 1.055, 2.4) : $val / 12.92;
+        return $val > 0.04045 ? (($val + 0.055) / 1.055) ** 2.4 : $val / 12.92;
     }
 
     private function unlinearizeChannel(float $val): float
     {
-        return $val > 0.0031308 ? 1.055 * pow($val, 1 / 2.4) - 0.055 : 12.92 * $val;
+        return $val > 0.0031308 ? 1.055 * $val ** (1 / 2.4) - 0.055 : 12.92 * $val;
     }
 
     private function rgbToXyz(float $r, float $g, float $b): array

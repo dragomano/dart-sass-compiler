@@ -179,6 +179,7 @@ class ExpressionEvaluator
         }
 
         $name = $expr->properties['name'];
+
         $complexFunctions = [
             'lighten',
             'darken',
