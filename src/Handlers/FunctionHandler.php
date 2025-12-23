@@ -10,7 +10,6 @@ use DartSass\Utils\LazyValue;
 use DartSass\Utils\MathFunctions;
 use DartSass\Utils\ValueFormatter;
 
-use function array_key_exists;
 use function array_map;
 use function array_slice;
 use function array_unique;
@@ -41,65 +40,66 @@ class FunctionHandler
 
     private const MODULE_COLOR_FUNCTIONS = [
         'adjust'         => true,
-        'mix'            => true,
-        'lighten'        => true,
-        'darken'         => true,
-        'saturate'       => true,
-        'desaturate'     => true,
-        'opacify'        => true,
-        'transparentize' => true,
-        'scale'          => true,
         'change'         => true,
+        'darken'         => true,
+        'desaturate'     => true,
         'hsl'            => true,
         'hwb'            => true,
+        'lighten'        => true,
+        'mix'            => true,
+        'opacify'        => true,
+        'saturate'       => true,
+        'scale'          => true,
+        'transparentize' => true,
     ];
 
     private const MODULE_MATH_FUNCTIONS = [
-        'abs'   => true,
-        'ceil'  => true,
-        'floor' => true,
-        'sqrt'  => true,
-        'sin'   => true,
-        'cos'   => true,
-        'tan'   => true,
-        'asin'  => true,
-        'acos'  => true,
-        'atan'  => true,
-        'atan2' => true,
-        'log'   => true,
-        'pow'   => true,
+        'abs'         => true,
+        'acos'        => true,
+        'asin'        => true,
+        'atan'        => true,
+        'atan2'       => true,
+        'calc'        => true,
+        'ceil'        => true,
+        'clamp'       => true,
+        'compatible'  => true,
+        'cos'         => true,
+        'div'         => true,
+        'floor'       => true,
+        'hypot'       => true,
+        'is-unitless' => true,
+        'log'         => true,
+        'max'         => true,
+        'min'         => true,
+        'percentage'  => true,
+        'pow'         => true,
+        'random'      => true,
+        'round'       => true,
+        'sin'         => true,
+        'sqrt'        => true,
+        'tan'         => true,
+        'unit'        => true,
     ];
 
     private const CSS_FILTERS = [
-        'saturate'    => true,
-        'invert'      => true,
-        'grayscale'   => true,
-        'sepia'       => true,
         'blur'        => true,
         'brightness'  => true,
         'contrast'    => true,
-        'hue-rotate'  => true,
         'drop-shadow' => true,
+        'grayscale'   => true,
+        'hue-rotate'  => true,
+        'invert'      => true,
+        'saturate'    => true,
+        'sepia'       => true,
     ];
 
     private const SIMPLE_COLOR_ADJUSTMENTS = [
-        'lighten'        => true,
         'darken'         => true,
-        'saturate'       => true,
         'desaturate'     => true,
+        'lighten'        => true,
         'opacify'        => true,
+        'saturate'       => true,
         'transparentize' => true,
-    ];
-
-    private const MATH_HANDLERS = [
-        'abs'   => true,
-        'calc'  => true,
-        'clamp' => true,
-        'max'   => true,
-        'min'   => true,
-        'ceil'  => true,
-        'floor' => true,
-        'round' => true,
     ];
 
     private const ADJUST_PARAM_ORDER = [
@@ -258,7 +258,7 @@ class FunctionHandler
             return $this->handleSimpleColorAdjustment($funcName, $args);
         }
 
-        if (isset(self::MATH_HANDLERS[$funcName])) {
+        if (isset(self::MODULE_MATH_FUNCTIONS[$funcName])) {
             return $this->handleMathFunction($funcName, $args);
         }
 
@@ -477,8 +477,19 @@ class FunctionHandler
 
     private function handleMathFunction(string $name, array $args): string
     {
-        if ($this->allUnitsCompatible($args)) {
-            return $this->valueFormatter->format($this->mathFunctions->$name($args));
+        // Mapping from SCSS function names to PHP method names
+        $functionMapping = [
+            'is-unitless' => 'isUnitless',
+        ];
+
+        // Get the actual method name
+        $methodName = $functionMapping[$name] ?? $name;
+
+        // Functions that don't require unit compatibility checking
+        $noUnitCheckFunctions = ['compatible', 'is-unitless', 'random'];
+
+        if (in_array($name, $noUnitCheckFunctions) || $this->allUnitsCompatible($args)) {
+            return $this->valueFormatter->format($this->mathFunctions->$methodName($args));
         }
 
         return $this->formatFunctionCall($name, $args);
@@ -627,6 +638,7 @@ class FunctionHandler
                 is_string($arg) && preg_match('/^-?\d+(?:\.\d+)?(\D*)$/', $arg, $matches) => $matches[1] ?? '',
                 default => '',
             };
+
             if ($unit !== '') {
                 $units[] = $unit;
             }
@@ -666,10 +678,10 @@ class FunctionHandler
                 $returnValue = $statement->properties['value'];
 
                 if (
-                    $returnValue->type === 'operation' &&
-                    $returnValue->properties['left']->type === 'variable' &&
-                    $returnValue->properties['operator'] === '*' &&
-                    $returnValue->properties['right']->type === 'number'
+                    $returnValue->type === 'operation'
+                    && $returnValue->properties['left']->type === 'variable'
+                    && $returnValue->properties['operator'] === '*'
+                    && $returnValue->properties['right']->type === 'number'
                 ) {
                     $argValue = $args[0] ?? 0;
                     $multiplier = $returnValue->properties['right']->properties['value'];

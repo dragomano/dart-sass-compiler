@@ -25,6 +25,22 @@ class ValueFormatter
 
         if (is_array($value)) {
             if (isset($value['value'])) {
+                // Handle boolean values specially - check for string booleans first
+                if ($value['value'] === 'true' || $value['value'] === 'false') {
+                    return $value['value'];
+                }
+
+                // Handle PHP boolean values in arrays
+                if (is_bool($value['value'])) {
+                    return $value['value'] ? 'true' : 'false';
+                }
+
+                // Handle quoted string values
+                if (is_string($value['value']) && strlen($value['value']) >= 2 &&
+                    $value['value'][0] === '"' && $value['value'][strlen($value['value']) - 1] === '"') {
+                    return $value['value'];
+                }
+
                 $formattedValue = $this->formatNumber($value['value']);
 
                 return $formattedValue . ($value['unit'] ?? '');
@@ -38,6 +54,11 @@ class ValueFormatter
 
         if (is_numeric($value)) {
             return $this->formatNumber($value);
+        }
+
+        // Handle PHP boolean values
+        if (is_bool($value)) {
+            return $value ? 'true' : 'false';
         }
 
         return (string) $value;

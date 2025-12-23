@@ -57,14 +57,25 @@ readonly class OperationEvaluator
 
         [$leftValue, $leftUnit, $rightValue, $rightUnit] = $this->extractNumericValues($left, $right);
 
-        if ($leftValue !== null && $rightValue !== null && $leftUnit === $rightUnit) {
-            return $this->performNumericOperation($leftValue, $rightValue, $operator, $leftUnit);
+        if ($leftValue !== null && $rightValue !== null) {
+            // For multiplication and division, allow operations with empty units
+            if ($leftUnit === $rightUnit) {
+                return $this->performNumericOperation($leftValue, $rightValue, $operator, $leftUnit);
+            }
+
+            // For * and / operations, if one side has no unit, use the unit from the other side
+            if (in_array($operator, ['*', '/'], true)) {
+                $unit = $leftUnit !== '' ? $leftUnit : $rightUnit;
+                if ($unit !== '') {
+                    return $this->performNumericOperation($leftValue, $rightValue, $operator, $unit);
+                }
+            }
         }
 
         if ($operator === '*' || $operator === '/') {
             if ($leftValue === null || $rightValue === null) {
-                $isLeftSimpleString  = is_string($left) && !str_contains($left, '(');
-                $isRightSimpleString = is_string($right) && !str_contains($right, '(');
+                $isLeftSimpleString  = is_string($left) && ! str_contains($left, '(');
+                $isRightSimpleString = is_string($right) && ! str_contains($right, '(');
 
                 if ($isLeftSimpleString || $isRightSimpleString) {
                     $leftStr  = $this->valueFormatter->format($left);
@@ -166,6 +177,14 @@ readonly class OperationEvaluator
 
         if ($right instanceof LazyValue) {
             $right = $right->getValue();
+        }
+
+        if (is_string($left) && is_numeric($left) && is_array($right) && isset($right['value'])) {
+            return [(float) $left, '', $right['value'], $right['unit'] ?? ''];
+        }
+
+        if (is_array($left) && isset($left['value']) && is_string($right) && is_numeric($right)) {
+            return [$left['value'], $left['unit'] ?? '', (float) $right, $left['unit'] ?? ''];
         }
 
         if (is_numeric($left) && is_array($right) && isset($right['value'])) {
