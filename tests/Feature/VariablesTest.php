@@ -223,7 +223,7 @@ describe('SCSS variables', function () {
         }
         SCSS;
 
-        expect(fn () => $this->compiler->compileString($scss))
+        expect(fn() => $this->compiler->compileString($scss))
             ->toThrow(CompilationException::class, 'Undefined variable: $undefined');
     });
 });
@@ -245,7 +245,7 @@ describe('SASS variables', function () {
           color: $undefined
         SASS;
 
-        expect(fn () => $this->compiler->compileString($sass, Syntax::SASS))
+        expect(fn() => $this->compiler->compileString($sass, Syntax::SASS))
             ->toThrow(CompilationException::class, 'Undefined variable: $undefined');
     });
 });

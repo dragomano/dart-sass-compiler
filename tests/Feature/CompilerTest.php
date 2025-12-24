@@ -287,12 +287,12 @@ describe('SCSS', function () {
         }
         SCSS;
 
-        expect(fn () => $this->compiler->compileString($scss))
+        expect(fn() => $this->compiler->compileString($scss))
             ->toThrow(SyntaxException::class);
     });
 
     it('throws compilation error on missing SCSS file', function () {
-        expect(fn () => (new Compiler())->compileFile('nonexistent.scss'))
+        expect(fn() => (new Compiler())->compileFile('nonexistent.scss'))
             ->toThrow(CompilationException::class, 'File not found: nonexistent.scss');
     });
 });

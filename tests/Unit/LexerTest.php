@@ -14,7 +14,7 @@ describe('Lexer', function () {
 
         expect($tokenStream->getTokens())->toHaveCount(8);
 
-        $tokenTypes = array_map(fn ($token) => $token->type, $tokenStream->getTokens());
+        $tokenTypes = array_map(fn($token) => $token->type, $tokenStream->getTokens());
 
         expect($tokenTypes)->toBe([
           'operator',
@@ -31,35 +31,35 @@ describe('Lexer', function () {
     it('tokenizes operators correctly', function () {
         $tokenStream = $this->lexer->tokenize('.parent > .child');
 
-        $tokenValues = array_map(fn ($token) => $token->value, $tokenStream->getTokens());
+        $tokenValues = array_map(fn($token) => $token->value, $tokenStream->getTokens());
         expect($tokenValues)->toBe(['.', 'parent', '>', '.', 'child']);
     });
 
     it('tokenizes attribute selectors', function () {
         $tokenStream = $this->lexer->tokenize('[class*="test"]');
 
-        $tokenTypes = array_map(fn ($token) => $token->type, $tokenStream->getTokens());
+        $tokenTypes = array_map(fn($token) => $token->type, $tokenStream->getTokens());
         expect($tokenTypes)->toBe(['attribute_selector']);
     });
 
     it('handles multiple selectors separated by comma', function () {
         $tokenStream = $this->lexer->tokenize('.class1, .class2');
 
-        $tokenValues = array_map(fn ($token) => $token->value, $tokenStream->getTokens());
+        $tokenValues = array_map(fn($token) => $token->value, $tokenStream->getTokens());
         expect($tokenValues)->toBe(['.', 'class1', ',', '.', 'class2']);
     });
 
     it('tokenizes pseudo-classes', function () {
         $tokenStream = $this->lexer->tokenize(':hover');
 
-        $tokenTypes = array_map(fn ($token) => $token->type, $tokenStream->getTokens());
+        $tokenTypes = array_map(fn($token) => $token->type, $tokenStream->getTokens());
         expect($tokenTypes)->toBe(['colon', 'identifier']);
     });
 
     it('tokenizes functions', function () {
         $tokenStream = $this->lexer->tokenize('calc(100% - 20px)');
 
-        $tokenValues = array_map(fn ($token) => $token->value, $tokenStream->getTokens());
+        $tokenValues = array_map(fn($token) => $token->value, $tokenStream->getTokens());
         expect($tokenValues)->toBe(['calc', '(', '100%', '-', '20px', ')']);
     });
 
@@ -85,21 +85,21 @@ describe('Lexer', function () {
 
         expect($tokenStream->getTokens())->toHaveCount(7);
 
-        $tokenValues = array_map(fn ($token) => $token->value, $tokenStream->getTokens());
+        $tokenValues = array_map(fn($token) => $token->value, $tokenStream->getTokens());
         expect($tokenValues)->toBe(['.', 'class', '{', '@include', 'test', ';', '}']);
     });
 
     it('tokenizes variables', function () {
         $tokenStream = $this->lexer->tokenize('$color: red');
 
-        $tokenTypes = array_map(fn ($token) => $token->type, $tokenStream->getTokens());
+        $tokenTypes = array_map(fn($token) => $token->type, $tokenStream->getTokens());
         expect($tokenTypes)->toBe(['variable', 'colon', 'identifier']);
     });
 
     it('handles interpolation', function () {
         $tokenStream = $this->lexer->tokenize('.#{ $class }');
 
-        $tokenTypes = array_map(fn ($token) => $token->type, $tokenStream->getTokens());
+        $tokenTypes = array_map(fn($token) => $token->type, $tokenStream->getTokens());
         expect($tokenTypes)->toContain('interpolation_open')
             ->and($tokenTypes)->toContain('variable')
             ->and($tokenTypes)->toContain('brace_close');
@@ -108,21 +108,21 @@ describe('Lexer', function () {
     it('handles numbers and units correctly', function () {
         $tokenStream = $this->lexer->tokenize('100px');
 
-        $tokenTypes = array_map(fn ($token) => $token->type, $tokenStream->getTokens());
+        $tokenTypes = array_map(fn($token) => $token->type, $tokenStream->getTokens());
         expect($tokenTypes)->toBe(['number']);
     });
 
     it('handles percentage values', function () {
         $tokenStream = $this->lexer->tokenize('50%');
 
-        $tokenTypes = array_map(fn ($token) => $token->type, $tokenStream->getTokens());
+        $tokenTypes = array_map(fn($token) => $token->type, $tokenStream->getTokens());
         expect($tokenTypes)->toBe(['number']);
     });
 
     it('handles hex colors', function () {
         $tokenStream = $this->lexer->tokenize('#ff0000');
 
-        $tokenTypes = array_map(fn ($token) => $token->type, $tokenStream->getTokens());
+        $tokenTypes = array_map(fn($token) => $token->type, $tokenStream->getTokens());
         expect($tokenTypes)->toBe(['hex_color']);
     });
 });

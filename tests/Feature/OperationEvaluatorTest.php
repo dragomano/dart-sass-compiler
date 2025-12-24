@@ -137,7 +137,7 @@ it('compiles multiplication with numeric and string operands using calc', functi
     }
     SCSS;
 
-    expect(fn () => $this->compiler->compileString($scss))
+    expect(fn() => $this->compiler->compileString($scss))
         ->toThrow(CompilationException::class);
 });
 
@@ -148,7 +148,7 @@ it('compiles division with numeric and string operands using calc', function () 
     }
     SCSS;
 
-    expect(fn () => $this->compiler->compileString($scss))
+    expect(fn() => $this->compiler->compileString($scss))
         ->toThrow(CompilationException::class);
 });
 
@@ -159,6 +159,6 @@ it('compiles multiplication with string operands using calc', function () {
     }
     SCSS;
 
-    expect(fn () => $this->compiler->compileString($scss))
+    expect(fn() => $this->compiler->compileString($scss))
         ->toThrow(CompilationException::class);
 });
