@@ -8,7 +8,7 @@ This file contains a performance comparison of SCSS compilation runs across thre
 
 ## Test Environment
 
-- **SCSS code**: Randomly generated, contains 200 classes with 4 nesting levels, variables, mixins and loops ([link](generated.scss))
+- **SCSS code**: Randomly generated, contains 200 classes with 4 nesting levels, variables, mixins and loops
 - **OS**: Windows 11 24H2 (Build 10.0.26100.7019)
 - **PHP version**: 8.2.30
 - **Testing method**: Compilation via `compileString()` with execution time measurement

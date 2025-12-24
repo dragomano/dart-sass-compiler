@@ -8,6 +8,7 @@ custom-output.css.map
 output.css.map
 package-lock.json
 coverage.xml
+generated.scss
 result*
 coverage/
 coverage_report/
