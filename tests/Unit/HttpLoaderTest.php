@@ -79,7 +79,7 @@ it('throws CompilationException when resource is not available', function () {
         }
     };
 
-    expect(fn () => $mockLoader->load('nonexistent.scss'))
+    expect(fn() => $mockLoader->load('nonexistent.scss'))
         ->toThrow(CompilationException::class, 'Failed to load SCSS from URL: nonexistent.scss');
 });
 
@@ -207,6 +207,6 @@ it('throws exception when loading from empty baseUrls with invalid path', functi
         }
     };
 
-    expect(fn () => $mockLoader->load('local.scss'))
+    expect(fn() => $mockLoader->load('local.scss'))
         ->toThrow(CompilationException::class, 'Failed to load SCSS from URL: local.scss');
 });

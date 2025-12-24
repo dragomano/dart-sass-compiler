@@ -18,8 +18,7 @@ readonly class ModuleCompiler
         private ModuleHandler   $moduleHandler,
         private VariableHandler $variableHandler,
         private MixinHandler    $mixinHandler
-    ) {
-    }
+    ) {}
 
     public function compile(
         array $result,

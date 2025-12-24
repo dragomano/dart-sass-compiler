@@ -19,7 +19,7 @@ class FileLoader implements LoaderInterface
     public function __construct(private array $loadPaths)
     {
         $this->loadPaths = array_map(
-            fn (string $path): string => rtrim($path, '/\\'),
+            fn(string $path): string => rtrim($path, '/\\'),
             $loadPaths,
         );
     }

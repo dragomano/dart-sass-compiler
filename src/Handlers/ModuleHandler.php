@@ -17,6 +17,9 @@ use function rtrim;
 use function str_starts_with;
 use function substr;
 
+use const M_E;
+use const M_PI;
+
 class ModuleHandler
 {
     private array $loadedModules = [];
@@ -28,8 +31,7 @@ class ModuleHandler
     public function __construct(
         private readonly LoaderInterface $loader,
         private readonly ParserFactory $parserFactory
-    ) {
-    }
+    ) {}
 
     public function loadModule(string $path, ?string $namespace = null): array
     {
@@ -63,12 +65,12 @@ class ModuleHandler
                     $this->forwardedProperties[$namespace][$name] = $node;
                 }
             },
-            onMixin: fn ($node): array => $this->forwardedProperties[$namespace][$node->properties['name']] = [
+            onMixin: fn($node): array => $this->forwardedProperties[$namespace][$node->properties['name']] = [
                 'type' => 'mixin',
                 'args' => $node->properties['args'],
                 'body' => $node->properties['body'],
             ],
-            onFunction: fn ($node): array => $this->forwardedProperties[$namespace][$node->properties['name']] = [
+            onFunction: fn($node): array => $this->forwardedProperties[$namespace][$node->properties['name']] = [
                 'type' => 'function',
                 'args' => $node->properties['args'],
                 'body' => $node->properties['body'],
@@ -101,7 +103,7 @@ class ModuleHandler
 
         $this->processAst(
             $ast,
-            onCssNode: fn (): null => null,
+            onCssNode: fn(): null => null,
             onVariable: function ($node) use (
                 $namespace,
                 $evaluateExpression,
@@ -122,8 +124,8 @@ class ModuleHandler
                 $this->forwardedProperties[$namespace][$name] = $value;
                 $result['variables'][$name] = $value;
             },
-            onMixin: fn ($node) => $this->forwardCallable($node, $namespace, 'mixins', $result, $hide, $show),
-            onFunction: fn ($node) => $this->forwardCallable($node, $namespace, 'functions', $result, $hide, $show),
+            onMixin: fn($node) => $this->forwardCallable($node, $namespace, 'mixins', $result, $hide, $show),
+            onFunction: fn($node) => $this->forwardCallable($node, $namespace, 'functions', $result, $hide, $show),
         );
 
         return $result;

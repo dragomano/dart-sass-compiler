@@ -23,8 +23,7 @@ class StateManager
         private readonly ModuleHandler $moduleHandler,
         private readonly ExtendHandler $extendHandler,
         private readonly PositionTracker $positionTracker
-    ) {
-    }
+    ) {}
 
     public function push(array $mappings, array $options): void
     {

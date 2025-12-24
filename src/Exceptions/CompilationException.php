@@ -6,6 +6,4 @@ namespace DartSass\Exceptions;
 
 use RuntimeException;
 
-class CompilationException extends RuntimeException
-{
-}
+class CompilationException extends RuntimeException {}

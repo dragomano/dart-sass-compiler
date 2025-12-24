@@ -547,8 +547,6 @@ class Compiler
             ];
         }
 
-        $this->variableHandler->exitScope();
-
         $combinedRuleCss = $includesCss . $this->compileDeclarations(
             $node->declarations ?? [],
             $nestingLevel + 1,
@@ -569,6 +567,8 @@ class Compiler
         $css .= $otherNestedCss;
         $this->positionTracker->updatePosition($otherNestedCss);
         $this->extendHandler->addDefinedSelector($selector);
+
+        $this->variableHandler->exitScope();
 
         return $css;
     }
@@ -605,7 +605,7 @@ class Compiler
 
         $properties = $this->moduleHandler->forwardModule(
             $path,
-            fn ($expr): mixed => $this->evaluateExpression($expr),
+            fn($expr): mixed => $this->evaluateExpression($expr),
             $namespace,
             $config,
             $hide,

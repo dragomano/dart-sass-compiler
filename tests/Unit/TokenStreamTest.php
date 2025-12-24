@@ -120,7 +120,7 @@ describe('TokenStream', function () {
     });
 
     it('throws exception when expecting token type that does not match', function () {
-        expect(fn () => $this->tokenStream->expectAny('brace_open', 'colon'))
+        expect(fn() => $this->tokenStream->expectAny('brace_open', 'colon'))
             ->toThrow(SyntaxException::class);
     });
 

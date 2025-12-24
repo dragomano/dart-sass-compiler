@@ -30,15 +30,14 @@ use function round;
 use function sin;
 use function sqrt;
 use function tan;
+use function sprintf;
 
 use const M_E;
 use const M_PI;
 
 readonly class MathFunctions
 {
-    public function __construct(private ValueFormatter $valueFormatter)
-    {
-    }
+    public function __construct(private ValueFormatter $valueFormatter) {}
 
     public function ceil(array $args): array
     {
@@ -111,8 +110,8 @@ readonly class MathFunctions
 
     public function round(array $args): array
     {
-        if (empty($args) || count($args) > 1) {
-            throw new CompilationException('round() requires exactly one argument');
+        if (count($args) < 1 || count($args) > 2) {
+            throw new CompilationException('round() requires one or two arguments');
         }
 
         $val = $this->normalize($args[0]);

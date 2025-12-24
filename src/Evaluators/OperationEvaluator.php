@@ -16,9 +16,7 @@ use function str_starts_with;
 
 readonly class OperationEvaluator
 {
-    public function __construct(private ValueFormatter $valueFormatter)
-    {
-    }
+    public function __construct(private ValueFormatter $valueFormatter) {}
 
     public function evaluate(mixed $left, string $operator, mixed $right): mixed
     {

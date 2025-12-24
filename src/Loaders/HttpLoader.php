@@ -20,7 +20,7 @@ class HttpLoader implements LoaderInterface
     public function __construct(array $baseUrls)
     {
         $this->baseUrls = array_map(
-            fn (string $url): string => rtrim($url, '/'),
+            fn(string $url): string => rtrim($url, '/'),
             $baseUrls
         );
     }

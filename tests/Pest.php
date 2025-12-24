@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use PHPUnit\Framework\Assert;
+
 expect()->extend('toBeOne', function () {
     return $this->toBe(1);
 });
@@ -17,8 +19,8 @@ expect()->extend('toEqualCss', function (string $expected) {
     return expect($actualNorm)->toBe($expectedNorm);
 });
 
-expect()->extend('toBeCloseTo', function (float $expected, int $precision = 2) {
-    $delta = 0.5 * pow(10, -$precision);
+expect()->extend('toBeCloseTo', function (float $expected, float $delta = 0.01) {
+    Assert::assertEqualsWithDelta($expected, $this->value, $delta);
 
-    return abs($this->value - $expected) < $delta;
+    return $this;
 });

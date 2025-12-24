@@ -39,17 +39,66 @@ class FunctionHandler
     ];
 
     private const MODULE_COLOR_FUNCTIONS = [
-        'adjust'         => true,
-        'change'         => true,
+        'adjust'       => true,
+        'change'       => true,
+        'channel'      => true,
+        'complement'   => true,
+        'grayscale'    => true,
+        'hwb'          => true,
+        'ie-hex-str'   => true,
+        'invert'       => true,
+        'is-legacy'    => true,
+        'is-missing'   => true,
+        'is-powerless' => true,
+        'mix'          => true,
+        'same'         => true,
+        'scale'        => true,
+        'space'        => true,
+        'to-gamut'     => true,
+        'to-space'     => true,
+    ];
+
+    private const COLOR_GLOBAL_FUNCTIONS = [
+        'adjust-color' => true,
+        'change-color' => true,
+        'complement'   => true,
+        'grayscale'    => true,
+        'ie-hex-str'   => true,
+        'invert'       => true,
+        'mix'          => true,
+        'scale-color'  => true,
+    ];
+
+    private const MODULE_COLOR_LEGACY_FUNCTIONS = [
+        'alpha'      => true,
+        'blackness'  => true,
+        'blue'       => true,
+        'green'      => true,
+        'hue'        => true,
+        'lightness'  => true,
+        'red'        => true,
+        'saturation' => true,
+        'whiteness'  => true,
+    ];
+
+    private const COLOR_LEGACY_GLOBAL_FUNCTIONS = [
+        'adjust-hue'     => true,
+        'alpha'          => true,
+        'blackness'      => true,
+        'blue'           => true,
         'darken'         => true,
         'desaturate'     => true,
-        'hsl'            => true,
-        'hwb'            => true,
+        'fade-in'        => true,
+        'fade-out'       => true,
+        'green'          => true,
+        'hue'            => true,
         'lighten'        => true,
-        'mix'            => true,
+        'lightness'      => true,
         'opacify'        => true,
+        'opacity'        => true,
+        'red'            => true,
         'saturate'       => true,
-        'scale'          => true,
+        'saturation'     => true,
         'transparentize' => true,
     ];
 
@@ -79,18 +128,6 @@ class FunctionHandler
         'sqrt'        => true,
         'tan'         => true,
         'unit'        => true,
-    ];
-
-    private const CSS_FILTERS = [
-        'blur'        => true,
-        'brightness'  => true,
-        'contrast'    => true,
-        'drop-shadow' => true,
-        'grayscale'   => true,
-        'hue-rotate'  => true,
-        'invert'      => true,
-        'saturate'    => true,
-        'sepia'       => true,
     ];
 
     private const SIMPLE_COLOR_ADJUSTMENTS = [
@@ -238,38 +275,37 @@ class FunctionHandler
 
         if (isset(self::MODULE_COLOR_FUNCTIONS[$funcName])) {
             $this->moduleHandler->loadModule('sass:color', 'color');
+
+            return $this->handleColorFunction($funcName, $args);
+        }
+
+        if (isset(self::COLOR_GLOBAL_FUNCTIONS[$funcName])) {
+            return $this->handleColorGlobalFunction($funcName, $args);
+        }
+
+        if (isset(self::MODULE_COLOR_LEGACY_FUNCTIONS[$funcName])) {
+            return $this->handleColorLegacyFunction($funcName, $args);
+        }
+
+        if (isset(self::COLOR_LEGACY_GLOBAL_FUNCTIONS[$funcName])) {
+            if (isset(self::SIMPLE_COLOR_ADJUSTMENTS[$funcName])) {
+                return $this->handleSimpleColorAdjustment($funcName, $args);
+            }
+
+            return $this->handleColorLegacyGlobalFunction($funcName, $args);
         }
 
         if (isset(self::MODULE_MATH_FUNCTIONS[$funcName])) {
             $this->moduleHandler->loadModule('sass:math', 'math');
-        }
 
-        if (isset(self::CSS_FILTERS[$funcName]) && count($args) === 1) {
-            $arg = $args[0];
-
-            $value = is_array($arg) && isset($arg['value']) ? $arg['value'] : $arg;
-
-            if (is_numeric($value)) {
-                return $this->formatFunctionCall($funcName, $args);
-            }
-        }
-
-        if (isset(self::SIMPLE_COLOR_ADJUSTMENTS[$funcName])) {
-            return $this->handleSimpleColorAdjustment($funcName, $args);
-        }
-
-        if (isset(self::MODULE_MATH_FUNCTIONS[$funcName])) {
             return $this->handleMathFunction($funcName, $args);
         }
 
         return match ($funcName) {
-            'if'     => $this->handleIfFunction($args),
-            'adjust' => $this->handleAdjust($args, $originalName),
-            'mix'    => $this->handleMix($args),
-            'scale'  => $this->handleScale($args),
-            'change' => $this->handleChange($args),
+            'if'     => $this->handleIf($args),
             'hsl'    => $this->handleHsl($args),
-            'hwb'    => $this->handleHwb($args),
+            'lch'    => $this->handleLch($args),
+            'oklch'  => $this->handleOklch($args),
             'nth'    => $this->handleNth($args),
             'length' => $this->handleLength($args),
             default  => $this->formatFunctionCall($funcName, $args),
@@ -278,14 +314,25 @@ class FunctionHandler
 
     private function handleSimpleColorAdjustment(string $funcName, array $args): string
     {
+        if ($funcName === 'saturate') {
+            try {
+                $color = $this->requireColor($args, 0, $funcName);
+            } catch (CompilationException) {
+                // Not a color, treat as CSS saturate() function
+                return $this->formatFunctionCall('saturate', $args);
+            }
+        } else {
+            $color = $this->requireColor($args, 0, $funcName);
+        }
+
         return $this->handleColorAdjustment(
-            $this->extractColorArg($args[0] ?? throw new CompilationException("Missing color for $funcName")),
-            $this->extractAmount($args[1] ?? throw new CompilationException("Missing amount for $funcName")),
+            $color,
+            $this->requireAmount($args, 1, $funcName),
             $funcName
         );
     }
 
-    private function handleIfFunction(array $args): mixed
+    private function handleIf(array $args): mixed
     {
         if (isset($args['condition']) && isset($args['then']) && isset($args['else'])) {
             $condition  = $args['condition'];
@@ -372,6 +419,15 @@ class FunctionHandler
         return $this->colorFunctions->adjust($color, $adjustments);
     }
 
+    private function handleChange(array $args): string
+    {
+        $color = $this->requireColor($args, 0, 'change');
+
+        $adjustments = $this->extractAdjustments($args);
+
+        return $this->colorFunctions->change($color, $adjustments);
+    }
+
     private function handleMix(array $args): string
     {
         $color1Arg = $args[0] ?? throw new CompilationException('Missing first color for mix');
@@ -386,9 +442,7 @@ class FunctionHandler
     private function handleScale(array $args): string
     {
         try {
-            $color = $this->extractColorValue(
-                $args[0] ?? throw new CompilationException('Missing color for scale')
-            );
+            $color = $this->requireColor($args, 0, 'scale');
 
             $adjustments = $this->extractAdjustments($args);
 
@@ -396,36 +450,6 @@ class FunctionHandler
         } catch (CompilationException) {
             return $this->formatFunctionCall('scale', $args);
         }
-    }
-
-    private function handleChange(array $args): string
-    {
-        $color = $this->extractColorValue(
-            $args[0] ?? throw new CompilationException('Missing color for change')
-        );
-
-        $adjustments = $this->extractAdjustments($args);
-
-        return $this->colorFunctions->change($color, $adjustments);
-    }
-
-    private function extractColorValue(mixed $colorArg): string
-    {
-        $color = is_array($colorArg) ? $colorArg['value'] : $colorArg;
-
-        if (! is_string($color) && ! is_array($color)) {
-            throw new CompilationException(
-                "Invalid color argument: expected string or array with 'value', got " . gettype($color)
-            );
-        }
-
-        if (is_array($color)) {
-            $color = $color['value'] ?? throw new CompilationException(
-                "Invalid color array: missing 'value' key"
-            );
-        }
-
-        return $color;
     }
 
     private function extractAdjustments(array $args): array
@@ -449,43 +473,163 @@ class FunctionHandler
 
     private function handleHsl(array $args): string
     {
-        $hArg = $args[0] ?? throw new CompilationException('Missing hue for hsl');
-        $h    = $this->extractAmount($hArg);
-        $sArg = $args[1] ?? throw new CompilationException('Missing saturation for hsl');
-        $s    = $this->extractAmount($sArg);
-        $lArg = $args[2] ?? throw new CompilationException('Missing lightness for hsl');
-        $l    = $this->extractAmount($lArg);
-        $aArg = $args[3] ?? null;
-        $a    = $aArg !== null ? $this->extractAmount($aArg) : null;
-
-        return $this->colorFunctions->hsl($h, $s, $l, $a);
+        return $this->colorFunctions->hsl(
+            $this->requireAmount($args, 0, 'hsl'),
+            $this->requireAmount($args, 1, 'hsl'),
+            $this->requireAmount($args, 2, 'hsl'),
+            $this->optionalArg($args, 3) !== null ? $this->extractAmount($args[3]) : null
+        );
     }
 
     private function handleHwb(array $args): string
     {
-        $hArg  = $args[0] ?? throw new CompilationException('Missing hue for hwb');
-        $h     = $this->extractAmount($hArg);
-        $wArg  = $args[1] ?? throw new CompilationException('Missing whiteness for hwb');
-        $w     = $this->extractAmount($wArg);
-        $blArg = $args[2] ?? throw new CompilationException('Missing blackness for hwb');
-        $bl    = $this->extractAmount($blArg);
-        $aArg  = $args[3] ?? null;
-        $a     = $aArg !== null ? $this->extractAmount($aArg) : null;
+        return $this->colorFunctions->hwb(
+            $this->requireAmount($args, 0, 'hwb'),
+            $this->requireAmount($args, 1, 'hwb'),
+            $this->requireAmount($args, 2, 'hwb'),
+            $this->optionalArg($args, 3) !== null ? $this->extractAmount($args[3]) : null
+        );
+    }
 
-        return $this->colorFunctions->hwb($h, $w, $bl, $a);
+    private function handleLch(array $args): string
+    {
+        return $this->colorFunctions->lch(
+            $this->requireAmount($args, 0, 'lch'),
+            $this->requireAmount($args, 1, 'lch'),
+            $this->requireAmount($args, 2, 'lch'),
+            $this->optionalArg($args, 3) !== null ? $this->extractAmount($args[3]) : null
+        );
+    }
+
+    private function handleOklch(array $args): string
+    {
+        return $this->colorFunctions->oklch(
+            $this->requireAmount($args, 0, 'oklch'),
+            $this->requireAmount($args, 1, 'oklch'),
+            $this->requireAmount($args, 2, 'oklch'),
+            $this->optionalArg($args, 3) !== null ? $this->extractAmount($args[3]) : null
+        );
+    }
+
+    private function getNamedParamValue(array $args, int $position, string $paramName): mixed
+    {
+        return $args[$paramName] ?? $args[$position] ?? null;
+    }
+
+    private function handleColorFunction(string $funcName, array $args): string
+    {
+        return match ($funcName) {
+            'adjust'   => $this->handleAdjust($args, $funcName),
+            'change'   => $this->handleChange($args),
+            'scale'    => $this->handleScale($args),
+            'mix'      => $this->handleMix($args),
+            'hwb'      => $this->handleHwb($args),
+            'complement',
+            'grayscale',
+            'ie-hex-str',
+            'is-legacy',
+            'space'      => $this->callColorMethod($funcName, [$this->requireColor($args, 0, $funcName)]),
+            'is-missing' => $this->callColorMethod($funcName, [
+                $this->requireColor($args, 0, $funcName),
+                $this->requireString($args, $funcName),
+            ]),
+            'same' => $this->callColorMethod($funcName, [
+                $this->requireColor($args, 0, $funcName),
+                $this->requireColor($args, 1, $funcName),
+            ]),
+            'channel', 'is-powerless' => $this->callColorMethod($funcName, [
+                $this->requireColor($args, 0, $funcName),
+                $this->requireString($args, $funcName),
+                $this->optionalArg($args, 2),
+            ]),
+            'invert' => $this->callColorMethod($funcName, [
+                $this->requireColor($args, 0, $funcName),
+                (int) $this->extractAmount($this->optionalArg($args, 1) ?? 100),
+                $this->optionalArg($args, 2),
+            ]),
+            'to-gamut' => $this->callColorMethod($funcName, [
+                $this->requireColor($args, 0, $funcName),
+                $this->getNamedParamValue($args, 1, '$space'),
+                $this->getNamedParamValue($args, 2, '$method'),
+            ]),
+            'to-space' => $this->callColorMethod($funcName, [
+                $this->requireColor($args, 0, $funcName),
+                $this->optionalArg($args, 1),
+            ]),
+            default => throw new CompilationException("Unknown color function: $funcName")
+        };
+    }
+
+    private function handleColorGlobalFunction(string $funcName, array $args): string
+    {
+        return $this->callColorMethod($funcName, [$this->requireColor($args, 0, $funcName)]);
+    }
+
+    private function handleColorLegacyFunction(string $funcName, array $args): string
+    {
+        return $this->callColorMethod($funcName, [$this->requireColor($args, 0, $funcName)]);
+    }
+
+    private function handleColorLegacyGlobalFunction(string $funcName, array $args): string
+    {
+        $twoArgFunctions = [
+            'adjust-hue', 'fade-in', 'fade-out', 'lighten', 'darken',
+            'saturate', 'desaturate', 'opacify', 'transparentize'
+        ];
+
+        if (in_array($funcName, $twoArgFunctions, true)) {
+            return $this->callColorMethod(
+                $funcName,
+                [
+                    $this->requireColor($args, 0, $funcName),
+                    $this->requireAmount($args, 1, $funcName),
+                ]
+            );
+        }
+
+        if ($funcName === 'opacity') {
+            return $this->callColorMethod($funcName, [$this->requireColor($args, 0, $funcName)]);
+        }
+
+        throw new CompilationException("Unknown color legacy function: $funcName");
+    }
+
+    private function convertFunctionNameToMethodName(string $funcName): string
+    {
+        return str_replace(' ', '', ucwords(str_replace('-', ' ', $funcName)));
+    }
+
+    private function extractStringValue(mixed $arg): string
+    {
+        if ($arg instanceof LazyValue) {
+            $arg = $arg->getValue();
+        }
+
+        if (is_array($arg) && isset($arg['value'])) {
+            return (string) $arg['value'];
+        }
+
+        if (is_string($arg)) {
+            return $arg;
+        }
+
+        if (is_object($arg) && isset($arg->value)) {
+            return (string) $arg->value;
+        }
+
+        throw new CompilationException(
+            "Invalid string argument: expected string or array with 'value', got " . gettype($arg)
+        );
     }
 
     private function handleMathFunction(string $name, array $args): string
     {
-        // Mapping from SCSS function names to PHP method names
         $functionMapping = [
             'is-unitless' => 'isUnitless',
         ];
 
-        // Get the actual method name
         $methodName = $functionMapping[$name] ?? $name;
 
-        // Functions that don't require unit compatibility checking
         $noUnitCheckFunctions = ['compatible', 'is-unitless', 'random'];
 
         if (in_array($name, $noUnitCheckFunctions, true) || $this->allUnitsCompatible($args)) {
@@ -509,7 +653,7 @@ class FunctionHandler
                 $list = array_map(trim(...), explode(' ', $listArg));
             }
 
-            $list = array_filter($list, fn ($item): bool => $item !== '');
+            $list = array_filter($list, fn($item): bool => $item !== '');
         } else {
             $list = [$listArg];
         }
@@ -544,7 +688,7 @@ class FunctionHandler
 
             return count(array_filter(
                 explode($separator, $value),
-                fn (string $item): bool => trim($item) !== ''
+                fn(string $item): bool => trim($item) !== ''
             ));
         }
 
@@ -575,27 +719,27 @@ class FunctionHandler
         };
     }
 
-    private function extractColorArg($arg): string
+    private function extractColorValue(mixed $arg): string
     {
         if ($arg instanceof LazyValue) {
             $arg = $arg->getValue();
         }
 
-        if (is_array($arg) && isset($arg['value'])) {
-            return $arg['value'];
+        while (is_array($arg) && isset($arg['value'])) {
+            $arg = $arg['value'];
         }
 
-        if (is_string($arg)) {
-            return $arg;
+        while (is_object($arg) && isset($arg->value)) {
+            $arg = $arg->value;
         }
 
-        if (is_object($arg) && isset($arg->value)) {
-            return (string) $arg->value;
+        if (! is_string($arg)) {
+            throw new CompilationException(
+                'Invalid color argument: expected string, got ' . gettype($arg)
+            );
         }
 
-        throw new CompilationException(
-            "Invalid color argument: expected string or array with 'value', got " . gettype($arg)
-        );
+        return $arg;
     }
 
     private function extractAmount(mixed $arg): float|string
@@ -635,7 +779,7 @@ class FunctionHandler
         foreach ($args as $arg) {
             $unit = match (true) {
                 is_array($arg) && isset($arg['unit']) => $arg['unit'],
-                is_string($arg) && preg_match('/^-?\d+(?:\.\d+)?(\D*)$/', $arg, $matches) => $matches[1] ?? '',
+                is_string($arg) && preg_match('/^-?d+(?:\.d+)?(\D*)$/', $arg, $matches) => $matches[1] ?? '',
                 default => '',
             };
 
@@ -709,5 +853,44 @@ class FunctionHandler
         $variableHandler->exitScope();
 
         return null;
+    }
+
+    private function requireColor(array $args, int $index, string $funcName): string
+    {
+        $arg = $args[$index] ?? throw new CompilationException("Missing color argument for $funcName");
+
+        return $this->extractColorValue($arg);
+    }
+
+    private function requireAmount(array $args, int $index, string $funcName): float
+    {
+        $arg = $args[$index] ?? throw new CompilationException("Missing amount argument for $funcName");
+
+        return $this->extractAmount($arg);
+    }
+
+    private function requireString(array $args, string $funcName): string
+    {
+        $arg = $args[1] ?? throw new CompilationException(
+            "Missing argument at position 1 for $funcName"
+        );
+
+        return $this->extractStringValue($arg);
+    }
+
+    private function optionalArg(array $args, int $index): mixed
+    {
+        return $args[$index] ?? null;
+    }
+
+    private function callColorMethod(string $funcName, array $args): string
+    {
+        $methodName = $this->convertFunctionNameToMethodName($funcName);
+
+        if (! method_exists($this->colorFunctions, $methodName)) {
+            throw new CompilationException("Method $methodName does not exist in ColorFunctions");
+        }
+
+        return $this->colorFunctions->$methodName(...$args);
     }
 }

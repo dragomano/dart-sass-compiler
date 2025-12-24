@@ -49,9 +49,9 @@
     "rector": "vendor/bin/rector process --clear-cache",
     "check": "vendor/bin/rector process --dry-run --clear-cache",
     "tests": "vendor/bin/pest --colors=always",
-    "tests-coverage": "vendor/bin/pest --colors=always --coverage --min=80",
-    "tests-coverage-clover": "vendor/bin/pest --colors=always --min=80 --coverage-clover coverage.xml",
-    "tests-coverage-html": "vendor/bin/pest --colors=always --min=80 --coverage-html coverage"
+    "tests-coverage": "vendor/bin/pest --colors=always --coverage --min=86",
+    "tests-coverage-clover": "vendor/bin/pest --colors=always --min=86 --coverage-clover coverage.xml",
+    "tests-coverage-html": "vendor/bin/pest --colors=always --min=86 --coverage-html coverage"
   },
   "config": {
     "optimize-autoloader": true,

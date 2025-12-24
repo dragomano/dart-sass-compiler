@@ -29,7 +29,7 @@ it('allows custom function definition with @return', function () {
 });
 
 it('allows adding custom PHP function', function () {
-    $this->compiler->addFunction('triple', fn ($value) => $value * 3);
+    $this->compiler->addFunction('triple', fn($value) => $value * 3);
 
     $scss = <<<'SCSS'
     body {

@@ -23,9 +23,7 @@ readonly class CalcFunctionEvaluator
 {
     private const UNIT_REGEX = '(px|em|rem|%|vw|vh|vmin|vmax|pt|pc|in|cm|mm|deg|rad|turn|s|ms|Hz|kHz|dpi|dpcm|dppx)?';
 
-    public function __construct(private ValueFormatter $valueFormatter)
-    {
-    }
+    public function __construct(private ValueFormatter $valueFormatter) {}
 
     public function evaluate(array $args, Closure $evaluateExpression): mixed
     {

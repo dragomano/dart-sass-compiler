@@ -89,7 +89,7 @@ it('throws error when accessing hidden property', function () {
     }
     SCSS;
 
-    expect(fn () => $this->compiler->compileString($scss))
+    expect(fn() => $this->compiler->compileString($scss))
         ->toThrow(CompilationException::class, 'Property $primary not found in module colors');
 });
 

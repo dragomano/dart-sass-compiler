@@ -18,9 +18,7 @@ use function is_array;
 
 readonly class ControlFlowCompiler
 {
-    public function __construct(private VariableHandler $variableHandler)
-    {
-    }
+    public function __construct(private VariableHandler $variableHandler) {}
 
     public function compile(
         AstNode $node,

@@ -21,7 +21,7 @@ it('compiles a simple mixin include', function () {
     $includeNode = new IncludeNode('testMixin', [], null, 0);
     $parentSelector = '.parent';
     $nestingLevel = 0;
-    $evaluateExpression = fn ($expr) => $expr;
+    $evaluateExpression = fn($expr) => $expr;
 
     $this->mixinHandler
         ->shouldReceive('include')
@@ -44,7 +44,7 @@ it('compiles a mixin include with arguments', function () {
     $includeNode = new IncludeNode('testMixin', ['arg1', 'arg2'], null, 0);
     $parentSelector = '.parent';
     $nestingLevel = 0;
-    $evaluateExpression = fn ($expr) => 'evaluated_' . $expr;
+    $evaluateExpression = fn($expr) => 'evaluated_' . $expr;
 
     $this->mixinHandler
         ->shouldReceive('include')
@@ -68,7 +68,7 @@ it('compiles a mixin include with content', function () {
     $includeNode = new IncludeNode('testMixin', [], [$contentNode], 0);
     $parentSelector = '.parent';
     $nestingLevel = 0;
-    $evaluateExpression = fn ($expr) => $expr;
+    $evaluateExpression = fn($expr) => $expr;
 
     $this->mixinHandler
         ->shouldReceive('include')
@@ -91,7 +91,7 @@ it('compiles a module mixin include with dot in name', function () {
     $includeNode = new IncludeNode('module.mixin', [], null, 0);
     $parentSelector = '.parent';
     $nestingLevel = 0;
-    $evaluateExpression = fn ($expr) => $expr;
+    $evaluateExpression = fn($expr) => $expr;
 
     $mixinData = [
         'type' => 'mixin',
@@ -136,7 +136,7 @@ it('searches for module mixin without dot when local search throws exception', f
     $includeNode = new IncludeNode('mixinWithoutDot', [], null, 0);
     $parentSelector = '.parent';
     $nestingLevel = 0;
-    $evaluateExpression = fn ($expr) => $expr;
+    $evaluateExpression = fn($expr) => $expr;
 
     $mixinData = [
         'type' => 'mixin',
@@ -202,7 +202,7 @@ it('throws original exception when mixin not found locally or in modules', funct
     $includeNode = new IncludeNode('nonExistentMixin', [], null, 0);
     $parentSelector = '.parent';
     $nestingLevel = 0;
-    $evaluateExpression = fn ($expr) => $expr;
+    $evaluateExpression = fn($expr) => $expr;
 
     $originalException = new CompilationException('Mixin not found locally');
 
@@ -233,21 +233,21 @@ it('throws original exception when mixin not found locally or in modules', funct
         ->andThrow(new CompilationException('Not in module2'));
 
     // Expect the original exception to be thrown
-    expect(fn () => $this->mixinCompiler->compile(
+    expect(fn() => $this->mixinCompiler->compile(
         $includeNode,
         $this->compiler,
         $parentSelector,
         $nestingLevel,
         $evaluateExpression
     ))->toThrow(CompilationException::class)
-        ->and(fn ($exception) => $exception === $originalException);
+        ->and(fn($exception) => $exception === $originalException);
 });
 
 it('throws exception when property in module is not a mixin', function () {
     $includeNode = new IncludeNode('module.variable', [], null, 0);
     $parentSelector = '.parent';
     $nestingLevel = 0;
-    $evaluateExpression = fn ($expr) => $expr;
+    $evaluateExpression = fn($expr) => $expr;
 
     $this->moduleHandler
         ->shouldReceive('getProperty')
@@ -255,21 +255,21 @@ it('throws exception when property in module is not a mixin', function () {
         ->with('module', 'variable', $evaluateExpression)
         ->andReturn(['type' => 'variable', 'value' => 'some value']);
 
-    expect(fn () => $this->mixinCompiler->compile(
+    expect(fn() => $this->mixinCompiler->compile(
         $includeNode,
         $this->compiler,
         $parentSelector,
         $nestingLevel,
         $evaluateExpression
     ))->toThrow(CompilationException::class)
-        ->and(fn ($exception) => $exception->getMessage() === 'Property variable is not a mixin in module module');
+        ->and(fn($exception) => $exception->getMessage() === 'Property variable is not a mixin in module module');
 });
 
 it('ensures correct sequence of define, include, removeMixin for temporary mixin in module call', function () {
     $includeNode = new IncludeNode('module.tempMixin', [], null, 0);
     $parentSelector = '.parent';
     $nestingLevel = 0;
-    $evaluateExpression = fn ($expr) => $expr;
+    $evaluateExpression = fn($expr) => $expr;
 
     $mixinData = [
         'type' => 'mixin',
@@ -318,7 +318,7 @@ it('passes parentSelector and nestingLevel correctly to MixinHandler::include', 
     $includeNode = new IncludeNode('testMixin', [], null, 0);
     $parentSelector = '.nested .parent';
     $nestingLevel = 2;
-    $evaluateExpression = fn ($expr) => $expr;
+    $evaluateExpression = fn($expr) => $expr;
 
     $this->mixinHandler
         ->shouldReceive('include')
