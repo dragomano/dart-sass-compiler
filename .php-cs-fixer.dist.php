@@ -22,6 +22,15 @@ return (new Config())
             'indentation' => 'same_as_start',
         ],
 
+        'cast_spaces' => ['space' => 'single'],
+
+        'function_declaration' => [
+            'closure_function_spacing' => 'one',
+            'closure_fn_spacing'       => 'none',
+        ],
+
+        'not_operator_with_successor_space' => true,
+        'single_line_empty_body' => true,
         'method_chaining_indentation' => true,
         'no_unused_imports' => true,
         'single_quote' => true,

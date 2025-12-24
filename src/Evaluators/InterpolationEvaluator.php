@@ -17,9 +17,7 @@ use function trim;
 
 readonly class InterpolationEvaluator
 {
-    public function __construct(private ValueFormatter $valueFormatter)
-    {
-    }
+    public function __construct(private ValueFormatter $valueFormatter) {}
 
     public function evaluate(string $string, Closure $evaluateExpression): string
     {

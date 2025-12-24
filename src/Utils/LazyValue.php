@@ -12,9 +12,7 @@ class LazyValue
 
     private bool $computed = false;
 
-    public function __construct(private readonly Closure $computation)
-    {
-    }
+    public function __construct(private readonly Closure $computation) {}
 
     public function getValue(): mixed
     {

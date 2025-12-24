@@ -57,9 +57,7 @@ readonly class OutputOptimizer
 
     private const ZERO_UNIT_REGEX = '/(?<![\w\-(])0(?:px|em|rem|pt|pc|in|cm|mm|vmin|vmax)(?=[;\s}]|$)/';
 
-    public function __construct(private string $style)
-    {
-    }
+    public function __construct(private string $style) {}
 
     public function optimize(string $css): string
     {

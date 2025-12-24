@@ -6,7 +6,5 @@ namespace DartSass\Parsers\Nodes;
 
 class AstNode
 {
-    public function __construct(public string $type, public array $properties = [])
-    {
-    }
+    public function __construct(public string $type, public array $properties = []) {}
 }

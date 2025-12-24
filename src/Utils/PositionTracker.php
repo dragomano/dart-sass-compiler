@@ -15,9 +15,7 @@ class PositionTracker
 
     private int $currentColumn = 0;
 
-    public function __construct(private string $sourceCode = '')
-    {
-    }
+    public function __construct(private string $sourceCode = '') {}
 
     public function setSourceCode(string $sourceCode): void
     {
