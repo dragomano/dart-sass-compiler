@@ -54,8 +54,9 @@ readonly class CalcFunctionEvaluator
         if ($node instanceof OperationNode) {
             $node = $this->ensurePrecedence($node);
 
-            $left = $this->resolveNode($node->properties['left'], $evaluateExpression);
+            $left  = $this->resolveNode($node->properties['left'], $evaluateExpression);
             $right = $this->resolveNode($node->properties['right'], $evaluateExpression);
+
             $operator = $node->properties['operator'];
 
             return $this->computeOperation($left, $operator, $right);
@@ -70,19 +71,20 @@ readonly class CalcFunctionEvaluator
 
     private function ensurePrecedence(OperationNode $node): OperationNode
     {
-        $left = $node->properties['left'];
-        $operator = $node->properties['operator'];
+        $left  = $node->properties['left'];
         $right = $node->properties['right'];
+
+        $operator = $node->properties['operator'];
 
         if (($operator === '*' || $operator === '/') && $left instanceof OperationNode) {
             $subOp = $left->properties['operator'];
 
             if ($subOp === '+' || $subOp === '-') {
                 $newLeft = $left->properties['left'];
-                $mid = $left->properties['right'];
+                $mid     = $left->properties['right'];
 
                 $newRight = new OperationNode($mid, $operator, $right, $node->properties['line']);
-                $node = new OperationNode($newLeft, $subOp, $newRight, $node->properties['line']);
+                $node     = new OperationNode($newLeft, $subOp, $newRight, $node->properties['line']);
             }
         }
 
@@ -123,7 +125,7 @@ readonly class CalcFunctionEvaluator
                 case '*':
                     if ($lVal['unit'] === '' || $rVal['unit'] === '') {
                         $value = $lVal['value'] * $rVal['value'];
-                        $unit = $lVal['unit'] ?: $rVal['unit'];
+                        $unit  = $lVal['unit'] ?: $rVal['unit'];
 
                         return ['value' => $value, 'unit' => $unit];
                     }

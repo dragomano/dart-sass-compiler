@@ -52,7 +52,7 @@ class IfRuleParser extends AtRuleParser
         $this->consume('brace_open');
 
         $block = $this->parser->parseBlock();
-        $body = array_merge($block['declarations'], $block['nested']);
+        $body  = array_merge($block['declarations'], $block['nested']);
 
         $elseBlock = $this->parseElseChain();
 
@@ -147,7 +147,7 @@ class IfRuleParser extends AtRuleParser
             $this->consume('brace_open');
 
             $block = $this->parser->parseBlock();
-            $body = array_merge($block['declarations'], $block['nested']);
+            $body  = array_merge($block['declarations'], $block['nested']);
 
             $nextElse = $this->parseElseChain();
 

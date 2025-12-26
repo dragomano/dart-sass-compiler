@@ -15,7 +15,6 @@ use function cos;
 use function fmod;
 use function hexdec;
 use function in_array;
-use function ltrim;
 use function max;
 use function min;
 use function preg_match;
@@ -75,6 +74,7 @@ class ColorFunctions
         '$y'          => true,
         '$z'          => true,
         '$chroma'     => true,
+        '$space'      => true,
     ];
 
     private const NAMED_COLORS = [
@@ -787,7 +787,7 @@ class ColorFunctions
                     ColorFormat::HSL   => $this->parseHslColor($matches),
                     ColorFormat::HSLA  => $this->parseHslaColor($matches),
                     ColorFormat::HWB   => $this->parseHwbColor($matches),
-                    ColorFormat::LCH => $this->parseLchColor($matches),
+                    ColorFormat::LCH   => $this->parseLchColor($matches),
                     ColorFormat::OKLCH => $this->parseOklchColor($matches),
                     ColorFormat::RGB   => $this->parseRgbColor($matches),
                     ColorFormat::RGBA  => $this->parseRgbaColor($matches),
@@ -982,13 +982,13 @@ class ColorFunctions
                 '$saturation',
                 '$lightness' => $hslAdjustments[ColorFormat::HSL->value][$this->keyToHslChannel($key)] = $valueNumber,
                 '$alpha' => $rgbAdjustments['alpha'] = ($rgbAdjustments['alpha'] ?? $result['a']) + $valueNumber,
-                '$whiteness',
-                '$blackness',
-                '$x',
-                '$y',
-                '$z',
-                '$space',
-                '$chroma' => $rgbAdjustments[ltrim($key, '$')] = $valueNumber,
+                '$whiteness' => $rgbAdjustments['whiteness'] = $valueNumber,
+                '$blackness' => $rgbAdjustments['blackness'] = $valueNumber,
+                '$x' => $rgbAdjustments['x'] = $valueNumber,
+                '$y' => $rgbAdjustments['y'] = $valueNumber,
+                '$z' => $rgbAdjustments['z'] = $valueNumber,
+                '$space' => $rgbAdjustments['space'] = $valueNumber,
+                '$chroma' => $rgbAdjustments['chroma'] = $valueNumber,
                 default => throw new CompilationException("Unknown adjustment parameter: $key"),
             };
         }

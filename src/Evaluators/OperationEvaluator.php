@@ -80,6 +80,7 @@ readonly class OperationEvaluator
                 if ($isLeftSimpleString || $isRightSimpleString) {
                     $leftStr  = $this->valueFormatter->format($left);
                     $rightStr = $this->valueFormatter->format($right);
+
                     throw new CompilationException("Undefined operation \"$leftStr $operator $rightStr\".");
                 }
             }

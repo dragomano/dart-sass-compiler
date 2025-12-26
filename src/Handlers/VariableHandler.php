@@ -14,7 +14,7 @@ use function count;
 
 class VariableHandler
 {
-    private array $scopes = [[]];
+    private array $scopes = [];
 
     private array $globalVariables = [];
 
@@ -32,13 +32,7 @@ class VariableHandler
 
     public function define(string $name, mixed $value, bool $global = false, bool $default = false): void
     {
-        if (
-            $default
-            && (
-                array_key_exists($name, $this->scopes[array_key_last($this->scopes)])
-                || array_key_exists($name, $this->globalVariables)
-            )
-        ) {
+        if ($default && $this->variableExists($name)) {
             return;
         }
 
@@ -77,7 +71,14 @@ class VariableHandler
 
     public function setVariables(array $variables): void
     {
-        $this->scopes = [[]];
+        $this->scopes = [];
         $this->globalVariables = $variables;
+    }
+
+    private function variableExists(string $name): bool
+    {
+        $currentScope = $this->scopes[array_key_last($this->scopes)];
+
+        return array_key_exists($name, $currentScope) || array_key_exists($name, $this->globalVariables);
     }
 }

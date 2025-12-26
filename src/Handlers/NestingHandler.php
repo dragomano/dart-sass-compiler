@@ -48,11 +48,11 @@ class NestingHandler
 
                 if (empty(trim($rest))) {
                     $result = "$normalizedParent $combinator";
-                    $resolvedSelectors[] = $result;
                 } else {
                     $result = "$normalizedParent $combinator " . trim($rest);
-                    $resolvedSelectors[] = $result;
                 }
+
+                $resolvedSelectors[] = $result;
             } else {
                 foreach ($parentSelectors as $parentSel) {
                     $normalizedParent = $this->normalizeSelector($parentSel);

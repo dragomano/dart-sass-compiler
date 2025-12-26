@@ -8,6 +8,7 @@ use DartSass\Compiler;
 use DartSass\Exceptions\CompilationException;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\IdentifierNode;
+use DartSass\Utils\SassList;
 use Throwable;
 
 use function array_key_exists;
@@ -84,7 +85,11 @@ class MixinHandler
 
         $argIndex = 0;
 
-        if (count($args) === 1 && is_array($args[0]) && ! isset($args[0]['value'])) {
+        // Check if we have a SassList that needs to be unpacked
+        if (count($args) === 1 && $args[0] instanceof SassList) {
+            $sassList = $args[0];
+            $arguments = $sassList->value;
+        } elseif (count($args) === 1 && is_array($args[0]) && ! isset($args[0]['value'])) {
             $arguments = $args[0];
         } else {
             $arguments = $args;

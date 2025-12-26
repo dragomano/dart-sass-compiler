@@ -481,8 +481,9 @@ class Compiler
 
         $this->variableHandler->enterScope();
 
-        $includesCss    = '';
-        $otherNestedCss = '';
+        $includesCss      = '';
+        $controlFlowCss  = '';
+        $otherNestedCss  = '';
 
         foreach ($node->properties['nested'] ?? [] as $nestedItem) {
             if ($nestedItem->type === 'include') {
@@ -504,10 +505,10 @@ class Compiler
             $trimmedCss = trim($itemCss);
 
             if ($nestedItem->type === 'include' && ! str_starts_with($trimmedCss, '@')) {
-                $lines = explode("\n", rtrim($itemCss));
+                $lines            = explode("\n", rtrim($itemCss));
                 $declarationsPart = '';
-                $nestedPart = '';
-                $inNestedRule = false;
+                $nestedPart       = '';
+                $inNestedRule     = false;
 
                 foreach ($lines as $line) {
                     $trimmedLine = trim($line);
@@ -527,11 +528,8 @@ class Compiler
 
                 $includesCss .= $declarationsPart;
                 $otherNestedCss .= $nestedPart;
-            } elseif (
-                in_array($nestedItem->type, ['if', 'each', 'for', 'while'], true)
-                && preg_match('/^[a-zA-Z_-]/', $trimmedCss)
-            ) {
-                $includesCss .= $itemCss;
+            } elseif (in_array($nestedItem->type, ['if', 'each', 'for', 'while'], true)) {
+                $controlFlowCss .= $itemCss;
             } else {
                 $otherNestedCss .= $itemCss;
             }
@@ -552,6 +550,8 @@ class Compiler
             $nestingLevel + 1,
             $selector
         );
+
+        $combinedRuleCss .= $controlFlowCss;
 
         $css = '';
         if (trim($combinedRuleCss) !== '') {
