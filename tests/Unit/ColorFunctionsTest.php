@@ -379,8 +379,8 @@ it('correctly mixes colors with percentage weight', function () {
 
 it('correctly clamps weight to valid range', function () {
     // Weight > 1 is normalized by dividing by 100, then clamped
-    $resultPercent = $this->colorFunctions->mix('#ff0000', '#0000ff', 50); // 50% = 0.5
-    $resultDecimal = $this->colorFunctions->mix('#ff0000', '#0000ff', 0.5);
+    $resultPercent = $this->colorFunctions->mix('#ff0000', '#0000ff', 50);
+    $resultDecimal = $this->colorFunctions->mix('#ff0000', '#0000ff');
 
     expect($resultPercent)->toBe($resultDecimal);
 
