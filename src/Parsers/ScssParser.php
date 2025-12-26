@@ -47,8 +47,6 @@ use function preg_match;
 use function sprintf;
 use function str_ends_with;
 use function str_starts_with;
-use function strlen;
-use function substr;
 use function trim;
 
 class ScssParser implements TokenAwareParserInterface
@@ -67,8 +65,6 @@ class ScssParser implements TokenAwareParserInterface
         '+' => true,
         '~' => true,
     ];
-
-    private static ?string $hexRegex = '/^[a-fA-F0-9]+$/';
 
     private static ?string $attributeRegex1 = '/\[([^\]=]+)([~*^|$!]?=)(["\'"]?)([^"\'\s]+)(\3)\]/';
 
@@ -223,9 +219,11 @@ class ScssParser implements TokenAwareParserInterface
         $this->stream->consume('colon');
         $this->stream->skipWhitespace();
 
-        $value = $this->parseExpression();
-        $hasMultipleValues = false;
+        $value  = $this->parseExpression();
         $values = null;
+
+        $hasMultipleValues = false;
+        $isCommaSeparated  = false;
 
         while (
             $this->stream->current()
@@ -241,15 +239,11 @@ class ScssParser implements TokenAwareParserInterface
             }
 
             $token = $this->stream->current();
-            if (
-                $token
-                && $token->type === 'operator'
-                && $token->value === ','
-            ) {
+            if ($token && $token->type === 'operator' && $token->value === ',') {
+                $isCommaSeparated = true;
                 $this->stream->advance();
                 $this->stream->skipWhitespace();
 
-                $values[] = new OperatorNode(',', $propertyToken->line);
                 $values[] = $this->parseExpression();
             } else {
                 $nextToken = $this->stream->current();
@@ -266,24 +260,17 @@ class ScssParser implements TokenAwareParserInterface
         }
 
         if ($hasMultipleValues) {
-            $value = new ListNode($values, $value->properties['line']);
+            $separator = $isCommaSeparated ? 'comma' : 'space';
+            $value = new ListNode($values, $value->properties['line'] ?? 0, $separator);
         }
 
         $token = $this->stream->current();
-        if (
-            $token
-            && $token->type === 'operator'
-            && $token->value === '!'
-        ) {
+        if ($token && $token->type === 'operator' && $token->value === '!') {
             $this->stream->consume('operator');
             $this->stream->skipWhitespace();
 
             $identToken = $this->stream->current();
-            if (
-                $identToken
-                && $identToken->type === 'identifier'
-                && $identToken->value === 'important'
-            ) {
+            if ($identToken && $identToken->type === 'identifier' && $identToken->value === 'important') {
                 $this->stream->consume('identifier');
                 $value->properties['important'] = true;
             } else {
@@ -346,7 +333,77 @@ class ScssParser implements TokenAwareParserInterface
                 }
             }
 
-            return new ListNode($values, $left->properties['line']);
+            return new ListNode($values, $left->properties['line'] ?? 0, 'comma');
+        }
+
+        if ($token && $token->type === 'operator' && $token->value === '!') {
+            return $left;
+        }
+
+        if (
+            $token
+            && ! isset(self::BLOCK_END_TYPES[$token->type])
+            && ! ($token->type === 'operator' && $token->value === ',')
+        ) {
+            // Check for space-separated list
+            $currentPos = $this->stream->getPosition();
+
+            $this->stream->skipWhitespace();
+
+            if (
+                $this->stream->current()
+                && ! isset(self::BLOCK_END_TYPES[$this->stream->current()->type])
+                && ! ($this->stream->current()->type === 'operator' && $this->stream->current()->value === ',')
+            ) {
+                $nextToken = $this->stream->current();
+
+                // Check if the next token is a control flow keyword (should not create list)
+                if (
+                    $nextToken && $nextToken->type === 'identifier'
+                    && in_array($nextToken->value, ['to', 'through', 'from'], true)
+                ) {
+                    $this->stream->setPosition($currentPos);
+
+                    return $left;
+                }
+
+                // Check if we have variable followed by colon (named parameter)
+                if ($left->type === 'variable') {
+                    if ($nextToken && $nextToken->type === 'colon') {
+                        $this->stream->setPosition($currentPos);
+
+                        return $left;
+                    }
+
+                }
+
+                $values = [$left];
+
+                while (
+                    $this->stream->current()
+                    && ! isset(self::BLOCK_END_TYPES[$this->stream->current()->type])
+                    && $this->stream->current()->type !== 'paren_close'
+                    && ! ($this->stream->current()->type === 'operator' && $this->stream->current()->value === ',')
+                ) {
+                    $this->stream->skipWhitespace();
+                    if (
+                        isset(self::BLOCK_END_TYPES[$this->stream->current()->type])
+                        || $this->stream->current()->type === 'paren_close'
+                        || ($this->stream->current()->type === 'operator' && $this->stream->current()->value === ',')
+                    ) {
+                        break;
+                    }
+
+                    $values[] = $this->parseBinaryExpression(0);
+                    $this->stream->skipWhitespace();
+                }
+
+                if (count($values) > 1) {
+                    return new ListNode($values, $left->properties['line'] ?? 0, 'space');
+                }
+            } else {
+                $this->stream->setPosition($this->stream->getPosition() - 1);
+            }
         }
 
         return $left;
@@ -502,7 +559,7 @@ class ScssParser implements TokenAwareParserInterface
                         break;
                     }
 
-                    $argValue = $this->parseBinaryExpression(0);
+                    $argValue = $this->parseExpression();
                     $args[] = $argValue;
 
                     if (! $this->stream->matches('paren_close')) {
@@ -618,8 +675,8 @@ class ScssParser implements TokenAwareParserInterface
     {
         if (preg_match(self::$attributeRegex1, $selector, $matches)) {
             $attribute = $matches[1];
-            $operator = $matches[2];
-            $value = $matches[4];
+            $operator  = $matches[2];
+            $value     = $matches[4];
 
             if (preg_match(self::$attributeRegex2, $value)) {
                 return "[$attribute$operator$value]";
@@ -656,6 +713,7 @@ class ScssParser implements TokenAwareParserInterface
 
                 if ($this->stream->matches('colon')) {
                     $this->stream->consume('colon');
+
                     $defaultValue = $this->parseBinaryExpression(0);
                     $args[$argName] = $defaultValue;
                 } else {
@@ -727,6 +785,7 @@ class ScssParser implements TokenAwareParserInterface
 
                         if ($this->stream->matches('colon')) {
                             $this->stream->consume('colon');
+
                             $defaultValue = $this->parseBinaryExpression(0);
                             $args[$argName] = $defaultValue;
                         } else {
@@ -755,6 +814,7 @@ class ScssParser implements TokenAwareParserInterface
         }
 
         $this->stream->consume('brace_open');
+
         $content = $this->parseBody();
 
         $content = array_filter($content, function ($node) {
@@ -816,7 +876,9 @@ class ScssParser implements TokenAwareParserInterface
 
             if ($operator === '.') {
                 $this->stream->advance();
+
                 $right = $this->parsePrimaryExpression();
+
                 $this->stream->skipWhitespace();
 
                 $left = new PropertyAccessNode($left, $right, $token->line);
@@ -975,7 +1037,19 @@ class ScssParser implements TokenAwareParserInterface
         $this->stream->advance();
 
         return match ($token->type) {
-            'number' => new NumberNode($token->value, $token->line),
+            'number' => (function () use ($token) {
+                $valueStr = $token->value;
+
+                if (preg_match('/^(-?\d*\.?\d+)(.*)$/', $valueStr, $matches)) {
+                    $value = (float) $matches[1];
+                    $unit = trim($matches[2]) ?: null;
+                } else {
+                    $value = 0.0;
+                    $unit = null;
+                }
+
+                return new NumberNode($value, $token->line, $unit);
+            })(),
 
             'identifier' => (function () use ($token) {
                 if ($this->stream->matches('colon')) {
@@ -987,7 +1061,7 @@ class ScssParser implements TokenAwareParserInterface
                 return new IdentifierNode($token->value, $token->line);
             })(),
 
-            'hex_color' => $this->validateHexColor($token),
+            'hex_color' => new HexColorNode($token->value, $token->line),
 
             'string' => new StringNode(trim($token->value, '"\''), $token->line),
 
@@ -1003,26 +1077,38 @@ class ScssParser implements TokenAwareParserInterface
                 $args = [];
 
                 while (! $this->stream->matches('paren_close')) {
-                    $this->stream->skipTokens('whitespace');
+                    $this->stream->skipWhitespace();
 
                     if ($this->stream->matches('paren_close')) {
                         break;
                     }
 
-                    if (
-                        $this->stream->matchesAny('variable', 'identifier')
-                        && $this->stream->peekType() === 'colon'
-                    ) {
-                        $name = $this->stream->expectAny('variable', 'identifier')->value;
-                        $this->stream->consume('colon');
-                        $value = $this->parseBinaryExpression(5);
-                        $args[$name] = $value;
+                    if ($this->stream->matches('variable')) {
+                        $varToken = $this->stream->consume('variable');
+
+                        $argName = $varToken->value;
+
+                        if ($this->stream->matches('colon')) {
+                            $this->stream->consume('colon');
+                            $this->stream->skipWhitespace();
+
+                            // Parse function argument value (stop at comma or paren_close)
+                            $argValue = $this->parseBinaryExpression(0);
+
+                            $args[$argName] = $argValue;
+                        } else {
+                            $this->stream->setPosition($this->stream->getPosition() - 1);
+
+                            $arg = $this->parseBinaryExpression(0);
+                            $args[] = $arg;
+                        }
                     } else {
-                        $args[] = $this->parseBinaryExpression(0);
+                        $arg = $this->parseBinaryExpression(0);
+                        $args[] = $arg;
                     }
 
                     if (! $this->stream->matches('paren_close')) {
-                        $this->stream->skipTokens('whitespace');
+                        $this->stream->skipWhitespace();
 
                         $commaToken = $this->stream->current();
                         if ($commaToken && $commaToken->type === 'operator' && $commaToken->value === ',') {
@@ -1042,14 +1128,30 @@ class ScssParser implements TokenAwareParserInterface
                         }
 
                         $args = $mergedArgs;
+                    } elseif ($formattedArgs[0] === 'to' && $formattedArgs[1] === 'right') {
+                        $mergedArgs = ['to right'];
+                        for ($i = 2; $i < count($args); $i++) {
+                            $mergedArgs[] = $args[$i];
+                        }
+
+                        $args = $mergedArgs;
                     }
                 }
 
                 return new FunctionNode($funcName, $args, line: $token->line);
             })(),
 
-            'paren_open' => (function () {
+            'paren_open' => (function () use ($token) {
+                $this->stream->skipWhitespace();
+
+                if ($this->stream->matches('paren_close')) {
+                    $this->stream->consume('paren_close');
+
+                    return new ListNode([], $token->line, 'space');
+                }
+
                 $node = $this->parseExpression();
+
                 $this->stream->consume('paren_close');
 
                 return $node;
@@ -1057,12 +1159,31 @@ class ScssParser implements TokenAwareParserInterface
 
             'interpolation_open' => (function () use ($token) {
                 $expression = $this->parseExpression();
+
                 $this->stream->consume('brace_close');
 
                 return new InterpolationNode($expression, $token->line);
             })(),
 
-            'asterisk', 'colon', 'semicolon' => new OperatorNode($token->value, $token->line),
+            'attribute_selector' => (function () use ($token) {
+                $value  = trim($token->value, '[]');
+                $parts  = array_map(trim(...), explode(',', $value));
+                $values = [];
+
+                foreach ($parts as $part) {
+                    if (preg_match('/^(\d+(?:\.\d+)?)(px|em|rem|%)?$/', $part, $matches)) {
+                        $values[] = $matches[2]
+                            ? ['value' => (float) $matches[1], 'unit' => $matches[2]]
+                            : (float) $matches[1];
+                    } else {
+                        $values[] = $part;
+                    }
+                }
+
+                return new ListNode($values, $token->line, 'comma', true);
+            })(),
+
+            'operator', 'asterisk', 'colon', 'semicolon' => new OperatorNode($token->value, $token->line),
 
             default => (function () use ($token): void {
                 throw new SyntaxException(
@@ -1161,33 +1282,5 @@ class ScssParser implements TokenAwareParserInterface
         }
 
         return 'expression';
-    }
-
-    /**
-     * @throws SyntaxException
-     */
-    private function validateHexColor(Token $token): AstNode
-    {
-        $value = $token->value;
-        $hexPart = substr($value, 1);
-
-        if (! preg_match(self::$hexRegex, $hexPart)) {
-            throw new SyntaxException(
-                sprintf('Invalid hex color: %s', $value),
-                $token->line,
-                $token->column
-            );
-        }
-
-        $length = strlen($hexPart);
-        if ($length !== 3 && $length !== 6) {
-            throw new SyntaxException(
-                sprintf('Invalid hex color length: %s (must be 3 or 6 characters)', $value),
-                $token->line,
-                $token->column
-            );
-        }
-
-        return new HexColorNode($value, $token->line);
     }
 }
