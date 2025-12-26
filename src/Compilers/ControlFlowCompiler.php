@@ -31,7 +31,7 @@ readonly class ControlFlowCompiler
             $node instanceof EachNode  => $this->compileEach($node, $nestingLevel, $evaluateExpression, $compileAst),
             $node instanceof ForNode   => $this->compileFor($node, $nestingLevel, $evaluateExpression, $compileAst),
             $node instanceof WhileNode => $this->compileWhile($node, $nestingLevel, $evaluateExpression, $compileAst),
-            default => throw new CompilationException('Unknown control flow node type: ' . $node::class),
+            default                    => throw new CompilationException('Unknown control flow node type: ' . $node::class),
         };
     }
 
@@ -59,6 +59,10 @@ readonly class ControlFlowCompiler
         Closure $compileAst
     ): string {
         $list = $evaluateExpression($node->condition);
+
+        if (is_object($list) && property_exists($list, 'value')) {
+            $list = $list->value;
+        }
 
         if (! is_array($list)) {
             $list = [$list];

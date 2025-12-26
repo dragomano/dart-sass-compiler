@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use DartSass\Compiler;
 use DartSass\Exceptions\CompilationException;
-use DartSass\Exceptions\SyntaxException;
+use DartSass\Exceptions\InvalidColorException;
 use DartSass\Loaders\LoaderInterface;
 use DartSass\Parsers\Syntax;
 
@@ -288,7 +288,7 @@ describe('SCSS', function () {
         SCSS;
 
         expect(fn() => $this->compiler->compileString($scss))
-            ->toThrow(SyntaxException::class);
+            ->toThrow(InvalidColorException::class);
     });
 
     it('throws compilation error on missing SCSS file', function () {

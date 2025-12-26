@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace DartSass\Handlers;
 
 use DartSass\Exceptions\CompilationException;
+use DartSass\Parsers\Nodes\ListNode;
 use DartSass\Utils\ColorFunctions;
 use DartSass\Utils\LazyValue;
+use DartSass\Utils\ListFunctions;
 use DartSass\Utils\MathFunctions;
 use DartSass\Utils\ValueFormatter;
 
@@ -33,9 +35,34 @@ use function trim;
 
 class FunctionHandler
 {
-    private const LIST_FUNCTIONS = [
-        'length' => true,
-        'nth'    => true,
+    public const ADJUST_PARAM_ORDER = [
+        '$red',
+        '$green',
+        '$blue',
+        '$hue',
+        '$saturation',
+        '$lightness',
+        '$whiteness',
+        '$blackness',
+        '$x',
+        '$y',
+        '$z',
+        '$chroma',
+        '$alpha',
+        '$space',
+    ];
+
+    private const MODULE_LIST_FUNCTIONS = [
+        'append'       => true,
+        'index'        => true,
+        'is-bracketed' => true,
+        'join'         => true,
+        'length'       => true,
+        'nth'          => true,
+        'separator'    => true,
+        'set-nth'      => true,
+        'slash'        => true,
+        'zip'          => true,
     ];
 
     private const MODULE_COLOR_FUNCTIONS = [
@@ -139,26 +166,11 @@ class FunctionHandler
         'transparentize' => true,
     ];
 
-    private const ADJUST_PARAM_ORDER = [
-        '$red',
-        '$green',
-        '$blue',
-        '$hue',
-        '$saturation',
-        '$lightness',
-        '$whiteness',
-        '$blackness',
-        '$x',
-        '$y',
-        '$z',
-        '$chroma',
-        '$alpha',
-        '$space',
-    ];
+    private readonly ColorFunctions $colorFunctions;
+
+    private readonly ListFunctions $listFunctions;
 
     private readonly MathFunctions $mathFunctions;
-
-    private readonly ColorFunctions $colorFunctions;
 
     private array $customFunctions = [];
 
@@ -171,8 +183,9 @@ class FunctionHandler
         private readonly ModuleHandler $moduleHandler,
         callable $evaluateExpression,
     ) {
-        $this->mathFunctions      = new MathFunctions($valueFormatter);
         $this->colorFunctions     = new ColorFunctions();
+        $this->listFunctions      = new ListFunctions();
+        $this->mathFunctions      = new MathFunctions($valueFormatter);
         $this->evaluateExpression = $evaluateExpression;
     }
 
@@ -215,7 +228,7 @@ class FunctionHandler
         if (
             count($args) === 1 && is_array($args[0])
             && ! isset($args[0]['value'])
-            && ! isset(self::LIST_FUNCTIONS[$funcName])
+            && ! isset(self::MODULE_LIST_FUNCTIONS[$funcName])
         ) {
             $args = $args[0];
         }
@@ -295,6 +308,12 @@ class FunctionHandler
             return $this->handleColorLegacyGlobalFunction($funcName, $args);
         }
 
+        if (isset(self::MODULE_LIST_FUNCTIONS[$funcName])) {
+            $this->moduleHandler->loadModule('sass:list', 'list');
+
+            return $this->handleListFunction($funcName, $args);
+        }
+
         if (isset(self::MODULE_MATH_FUNCTIONS[$funcName])) {
             $this->moduleHandler->loadModule('sass:math', 'math');
 
@@ -306,8 +325,6 @@ class FunctionHandler
             'hsl'    => $this->handleHsl($args),
             'lch'    => $this->handleLch($args),
             'oklch'  => $this->handleOklch($args),
-            'nth'    => $this->handleNth($args),
-            'length' => $this->handleLength($args),
             default  => $this->formatFunctionCall($funcName, $args),
         };
     }
@@ -399,7 +416,12 @@ class FunctionHandler
                 $paramName = trim($paramName);
                 if (str_starts_with($paramName, '$')) {
                     $adjustKey = substr($paramName, 1);
-                    $adjustments[$adjustKey] = $this->extractAmount(trim($paramValue));
+                    // Special handling for $space parameter - keep as string
+                    if ($adjustKey === 'space') {
+                        $adjustments[$adjustKey] = trim($paramValue);
+                    } else {
+                        $adjustments[$adjustKey] = $this->extractAmount(trim($paramValue));
+                    }
                 }
             } elseif (is_string($key) && str_starts_with($key, '$')) {
                 $adjustments[$key] = $this->extractAmount($value);
@@ -519,16 +541,16 @@ class FunctionHandler
     private function handleColorFunction(string $funcName, array $args): string
     {
         return match ($funcName) {
-            'adjust'   => $this->handleAdjust($args, $funcName),
-            'change'   => $this->handleChange($args),
-            'scale'    => $this->handleScale($args),
-            'mix'      => $this->handleMix($args),
-            'hwb'      => $this->handleHwb($args),
+            'adjust' => $this->handleAdjust($args, $funcName),
+            'change' => $this->handleChange($args),
+            'scale'  => $this->handleScale($args),
+            'mix'    => $this->handleMix($args),
+            'hwb'    => $this->handleHwb($args),
             'complement',
             'grayscale',
             'ie-hex-str',
             'is-legacy',
-            'space'      => $this->callColorMethod($funcName, [$this->requireColor($args, 0, $funcName)]),
+            'space' => $this->callColorMethod($funcName, [$this->requireColor($args, 0, $funcName)]),
             'is-missing' => $this->callColorMethod($funcName, [
                 $this->requireColor($args, 0, $funcName),
                 $this->requireString($args, $funcName),
@@ -574,7 +596,7 @@ class FunctionHandler
     {
         $twoArgFunctions = [
             'adjust-hue', 'fade-in', 'fade-out', 'lighten', 'darken',
-            'saturate', 'desaturate', 'opacify', 'transparentize'
+            'saturate', 'desaturate', 'opacify', 'transparentize',
         ];
 
         if (in_array($funcName, $twoArgFunctions, true)) {
@@ -622,6 +644,49 @@ class FunctionHandler
         );
     }
 
+    private function handleListFunction(string $name, array $args): string|array|bool|null
+    {
+        $functionMapping = [
+            'is-bracketed' => 'isBracketed',
+            'set-nth'      => 'setNth',
+        ];
+
+        $methodName = $functionMapping[$name] ?? $name;
+
+        // For functions that expect a single list argument but receive multiple positional args
+        if ($name === 'length' && count($args) > 1 && ! isset($args['$separator'])) {
+            $args = [new ListNode($args, 0, 'space')];
+        }
+
+        // For append, if multiple positional args without separator, treat first n-1 as list, last as val
+        if ($name === 'append' && count($args) > 2 && ! isset($args['$separator'])) {
+            $listArgs = array_slice($args, 0, count($args) - 1);
+            $val = $args[count($args) - 1];
+            $args = [new ListNode($listArgs, 0, 'space'), $val];
+        }
+
+        // For join, if multiple positional args without separator, treat first n/2 as list1, second n/2 as list2
+        if ($name === 'join' && count($args) > 2 && ! isset($args['$separator'])) {
+            $midPoint = intdiv(count($args), 2);
+            $list1Args = array_slice($args, 0, $midPoint);
+            $list2Args = array_slice($args, $midPoint);
+            $args = [new ListNode($list1Args, 0, 'space'), new ListNode($list2Args, 0, 'space')];
+        }
+
+        if (isset(self::MODULE_LIST_FUNCTIONS[$name]) || $this->allUnitsCompatible($args)) {
+            $evaluatedArgs = array_map($this->evaluateExpression, $args);
+            $result = $this->listFunctions->$methodName($evaluatedArgs);
+
+            return match (true) {
+                $result === null => null,
+                is_array($result) || is_bool($result) => $result,
+                default => $this->valueFormatter->format($result),
+            };
+        }
+
+        return $this->formatFunctionCall($name, $args);
+    }
+
     private function handleMathFunction(string $name, array $args): string
     {
         $functionMapping = [
@@ -637,62 +702,6 @@ class FunctionHandler
         }
 
         return $this->formatFunctionCall($name, $args);
-    }
-
-    private function handleNth(array $args): mixed
-    {
-        $listArg  = $args[0] ?? throw new CompilationException('Missing list for nth');
-        $indexArg = $args[1] ?? throw new CompilationException('Missing index for nth');
-
-        if (is_array($listArg)) {
-            $list = $listArg;
-        } elseif (is_string($listArg)) {
-            if (str_contains($listArg, ',')) {
-                $list = array_map(trim(...), explode(',', $listArg));
-            } else {
-                $list = array_map(trim(...), explode(' ', $listArg));
-            }
-
-            $list = array_filter($list, fn($item): bool => $item !== '');
-        } else {
-            $list = [$listArg];
-        }
-
-        $index = is_numeric($indexArg)
-            ? (int) $indexArg
-            : (is_array($indexArg) && isset($indexArg['value']) ? (int) $indexArg['value'] : 1);
-
-        if (empty($list) || $index < 1 || $index > count($list)) {
-            throw new CompilationException("Index $index out of bounds for list");
-        }
-
-        return $list[$index - 1];
-    }
-
-    private function handleLength(array $args): int
-    {
-        $value = $args[0] ?? throw new CompilationException('Missing list for length');
-
-        if (is_object($value) && isset($value->value)) {
-            $value = $value->value;
-        } elseif (is_array($value) && isset($value['value'])) {
-            $value = $value['value'];
-        }
-
-        if (is_array($value)) {
-            return count($value);
-        }
-
-        if (is_string($value)) {
-            $separator = str_contains($value, ',') ? ',' : ' ';
-
-            return count(array_filter(
-                explode($separator, $value),
-                fn(string $item): bool => trim($item) !== ''
-            ));
-        }
-
-        return 1;
     }
 
     private function formatFunctionCall(string $name, array $args): string
@@ -862,7 +871,7 @@ class FunctionHandler
         return $this->extractColorValue($arg);
     }
 
-    private function requireAmount(array $args, int $index, string $funcName): float
+    private function requireAmount(array $args, int $index, string $funcName): float|string
     {
         $arg = $args[$index] ?? throw new CompilationException("Missing amount argument for $funcName");
 

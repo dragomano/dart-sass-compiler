@@ -8,17 +8,17 @@ This file contains a performance comparison of SCSS compilation runs across thre
 
 ## Test Environment
 
-- **SCSS code**: Randomly generated, contains 200 classes with 4 nesting levels, variables, mixins and loops ([link](generated.scss))
+- **SCSS code**: Randomly generated, contains 200 classes with 4 nesting levels, variables, mixins and loops
 - **OS**: Windows 11 24H2 (Build 10.0.26100.7019)
 - **PHP version**: 8.2.30
 - **Testing method**: Compilation via `compileString()` with execution time measurement
 
 ## Results
 
-| Compiler                | Time (sec) | CSS Size (KB) | Memory (MB) |
-|-------------------------|------------|---------------|-------------|
-| scssphp/scssphp         | 2.1940     | 300.77        | 0.66        |
-| bugo/sass-embedded-php  | 0.5871     | 363.29        | 0.36        |
-| bugo/dart-sass-compiler | 1.9497     | 299.87        | 0.29        |
+| Compiler | Time (sec) | CSS Size (KB) | Memory (MB) |
+|------------|-------------|---------------|-------------|
+| scssphp/scssphp | 2.2288 | 300.61 | 0.66 |
+| bugo/sass-embedded-php | 0.6038 | 363.12 | 0.36 |
+| bugo/dart-sass-compiler | 1.7584 | 299.43 | 0.29 |
 
 *Note: These results are approximate. Run `php benchmark.php` from the project root to see the actual results.*

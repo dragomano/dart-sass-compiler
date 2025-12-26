@@ -35,7 +35,8 @@
     "mockery/mockery": "^2.0.x-dev",
     "pestphp/pest": "^3.8",
     "rector/rector": "^2.2",
-    "scssphp/scssphp": "^2.1"
+    "scssphp/scssphp": "^2.1",
+    "symfony/var-dumper": "^7.4"
   },
   "repositories": [
     {

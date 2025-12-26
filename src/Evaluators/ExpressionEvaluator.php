@@ -12,7 +12,7 @@ use DartSass\Handlers\VariableHandler;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\OperationNode;
 use DartSass\Parsers\Nodes\VariableNode;
-use DartSass\Utils\LazyValue;
+use DartSass\Utils\SassList;
 use DartSass\Utils\ValueFormatter;
 
 use function array_map;
@@ -62,9 +62,9 @@ class ExpressionEvaluator
                 'function'            => $this->evaluateFunctionExpression($expr),
                 'number'              => $this->evaluateNumberExpression($expr),
                 'string'              => $this->evaluateStringExpression($expr),
-                'list'                => $this->evaluateArguments($props['values']),
+                'list'                => $this->evaluateListExpression($props),
                 'identifier'          => $this->evaluateIdentifierExpression($expr),
-                'variable'            => $this->evaluate($this->variableHandler->get($props['name'])),
+                'variable'            => $this->evaluateVariableNode($props['name']),
                 'condition'           => $this->evaluate($props['expression']),
                 'css_custom_property' => $props['name'],
                 'interpolation'       => $this->valueFormatter->format($this->evaluate($props['expression'])),
@@ -137,6 +137,15 @@ class ExpressionEvaluator
         return '"' . $value . '"';
     }
 
+    public function evaluateListExpression(array $props): SassList
+    {
+        return new SassList(
+            $this->evaluateArguments($props['values']),
+            $props['separator'] ?? 'comma',
+            $props['bracketed'] ?? false
+        );
+    }
+
     public function evaluateIdentifierExpression(AstNode $expr): mixed
     {
         $value = $expr->properties['value'];
@@ -179,25 +188,6 @@ class ExpressionEvaluator
         }
 
         $name = $expr->properties['name'];
-
-        $complexFunctions = [
-            'lighten',
-            'darken',
-            'saturate',
-            'desaturate',
-            'opacify',
-            'transparentize',
-            'adjust',
-            'scale',
-            'change',
-            'hsl',
-            'hwb',
-            'mix',
-        ];
-
-        if (in_array($name, $complexFunctions, true)) {
-            return new LazyValue(fn() => $this->functionHandler->call($name, $args));
-        }
 
         return $this->functionHandler->call($name, $args);
     }
@@ -286,5 +276,19 @@ class ExpressionEvaluator
         }
 
         return $args;
+    }
+
+    private function evaluateVariableNode(string $varName): mixed
+    {
+        if ($this->isFunctionMetaParameter($varName)) {
+            return ltrim($varName, '$');
+        }
+
+        return $this->evaluate($this->variableHandler->get($varName));
+    }
+
+    private function isFunctionMetaParameter(string $varName): bool
+    {
+        return in_array($varName, $this->functionHandler::ADJUST_PARAM_ORDER, true);
     }
 }

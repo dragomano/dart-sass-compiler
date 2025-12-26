@@ -9,23 +9,7 @@ use function implode;
 
 enum TokenPattern: string
 {
-    case SELECTOR                  = '(?P<selector>
-        (?:
-            # div, .class, #id, *
-            (?:[.#]?[a-zA-Z0-9_-]+|\*)
-            # :hover, ::before, :nth-child(2n)
-            (?:[:]{1,2}[\w-]+(?:\([^)]*\))?)*
-        )
-        (?:
-            # > , + , ~ , ,
-            \s*[>+~,]\s*
-            # div, .class, #id, *
-            (?:[.#]?[a-zA-Z0-9_-]+|\*)
-            # :hover, ::before
-            (?:[:]{1,2}[\w-]+(?:\([^)]*\))?)*
-        )*
-    )';
-    case HEX_COLOR                 = '(?P<hex_color>#[0-9a-fA-F]{3,8})';
+    case HEX_COLOR                 = '(?P<hex_color>#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b)';
     case WHITESPACE                = '(?P<whitespace>\s+)';
     case STRING                    = '(?P<string>"[^"\\\\]*(?:\\\\.[^"\\\\]*)*"|\'[^\'\\\\]*(?:\\\\.[^\'\\\\]*)*\')';
     case COMMENT                   = '(?P<comment>\/\/.*?$|\/\*.*?\*\/)';
@@ -47,6 +31,22 @@ enum TokenPattern: string
     case PAREN_CLOSE               = '(?P<paren_close>\))';
     case SEMICOLON                 = '(?P<semicolon>;)';
     case COLON                     = '(?P<colon>:)';
+    case SELECTOR                  = '(?P<selector>
+        (?:
+            # div, .class, #id, *
+            (?:[.#]?[a-zA-Z0-9_-]+|\*)
+            # :hover, ::before, :nth-child(2n)
+            (?:[:]{1,2}[\w-]+(?:\([^)]*\))?)*
+        )
+        (?:
+            # > , + , ~ , ,
+            \s*[>+~,]\s*
+            # div, .class, #id, *
+            (?:[.#]?[a-zA-Z0-9_-]+|\*)
+            # :hover, ::before
+            (?:[:]{1,2}[\w-]+(?:\([^)]*\))?)*
+        )*
+    )';
 
     public static function getPatterns(): array
     {

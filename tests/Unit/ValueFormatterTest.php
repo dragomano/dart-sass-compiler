@@ -93,7 +93,7 @@ describe('ValueFormatter', function () {
         it('formats array of values', function () {
             $result = $this->valueFormatter->format([1, 2, 3]);
 
-            expect($result)->toBe('1 2 3');
+            expect($result)->toBe('1, 2, 3');
         });
 
         it('formats array of values with comma separation', function () {
@@ -108,7 +108,7 @@ describe('ValueFormatter', function () {
                 ['value' => 20, 'unit' => 'em']
             ]);
 
-            expect($result)->toBe('10px 20em');
+            expect($result)->toBe('10px, 20em');
         });
     });
 
