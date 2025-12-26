@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace DartSass\Utils;
 
+use DartSass\Modules\SassList;
+
 use function array_filter;
 use function array_map;
 use function implode;

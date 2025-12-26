@@ -9,10 +9,10 @@ use DartSass\Exceptions\CompilationException;
 use DartSass\Handlers\FunctionHandler;
 use DartSass\Handlers\ModuleHandler;
 use DartSass\Handlers\VariableHandler;
+use DartSass\Modules\SassList;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\OperationNode;
 use DartSass\Parsers\Nodes\VariableNode;
-use DartSass\Utils\SassList;
 use DartSass\Utils\ValueFormatter;
 
 use function array_map;

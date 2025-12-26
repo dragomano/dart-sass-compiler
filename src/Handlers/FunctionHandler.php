@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace DartSass\Handlers;
 
 use DartSass\Exceptions\CompilationException;
+use DartSass\Modules\ColorModule;
+use DartSass\Modules\ListModule;
+use DartSass\Modules\MathModule;
 use DartSass\Parsers\Nodes\ListNode;
-use DartSass\Utils\ColorFunctions;
 use DartSass\Utils\LazyValue;
-use DartSass\Utils\ListFunctions;
-use DartSass\Utils\MathFunctions;
 use DartSass\Utils\ValueFormatter;
 
 use function array_map;
@@ -166,11 +166,11 @@ class FunctionHandler
         'transparentize' => true,
     ];
 
-    private readonly ColorFunctions $colorFunctions;
+    private readonly ColorModule $colorModule;
 
-    private readonly ListFunctions $listFunctions;
+    private readonly ListModule $listModule;
 
-    private readonly MathFunctions $mathFunctions;
+    private readonly MathModule $mathModule;
 
     private array $customFunctions = [];
 
@@ -183,9 +183,10 @@ class FunctionHandler
         private readonly ModuleHandler $moduleHandler,
         callable $evaluateExpression,
     ) {
-        $this->colorFunctions     = new ColorFunctions();
-        $this->listFunctions      = new ListFunctions();
-        $this->mathFunctions      = new MathFunctions($valueFormatter);
+        $this->colorModule = new ColorModule();
+        $this->listModule  = new ListModule();
+        $this->mathModule  = new MathModule($valueFormatter);
+
         $this->evaluateExpression = $evaluateExpression;
     }
 
@@ -438,7 +439,7 @@ class FunctionHandler
             }
         }
 
-        return $this->colorFunctions->adjust($color, $adjustments);
+        return $this->colorModule->adjust($color, $adjustments);
     }
 
     private function handleChange(array $args): string
@@ -447,7 +448,7 @@ class FunctionHandler
 
         $adjustments = $this->extractAdjustments($args);
 
-        return $this->colorFunctions->change($color, $adjustments);
+        return $this->colorModule->change($color, $adjustments);
     }
 
     private function handleMix(array $args): string
@@ -458,7 +459,7 @@ class FunctionHandler
         $color2    = is_array($color2Arg) ? $color2Arg['value'] : $color2Arg;
         $weight    = (float) (is_array($args[2] ?? 0.5) ? $args[2]['value'] : $args[2] ?? 0.5);
 
-        return $this->colorFunctions->mix($color1, $color2, $weight);
+        return $this->colorModule->mix($color1, $color2, $weight);
     }
 
     private function handleScale(array $args): string
@@ -468,7 +469,7 @@ class FunctionHandler
 
             $adjustments = $this->extractAdjustments($args);
 
-            return $this->colorFunctions->scale($color, $adjustments);
+            return $this->colorModule->scale($color, $adjustments);
         } catch (CompilationException) {
             return $this->formatFunctionCall('scale', $args);
         }
@@ -495,7 +496,7 @@ class FunctionHandler
 
     private function handleHsl(array $args): string
     {
-        return $this->colorFunctions->hsl(
+        return $this->colorModule->hsl(
             $this->requireAmount($args, 0, 'hsl'),
             $this->requireAmount($args, 1, 'hsl'),
             $this->requireAmount($args, 2, 'hsl'),
@@ -505,7 +506,7 @@ class FunctionHandler
 
     private function handleHwb(array $args): string
     {
-        return $this->colorFunctions->hwb(
+        return $this->colorModule->hwb(
             $this->requireAmount($args, 0, 'hwb'),
             $this->requireAmount($args, 1, 'hwb'),
             $this->requireAmount($args, 2, 'hwb'),
@@ -515,7 +516,7 @@ class FunctionHandler
 
     private function handleLch(array $args): string
     {
-        return $this->colorFunctions->lch(
+        return $this->colorModule->lch(
             $this->requireAmount($args, 0, 'lch'),
             $this->requireAmount($args, 1, 'lch'),
             $this->requireAmount($args, 2, 'lch'),
@@ -525,7 +526,7 @@ class FunctionHandler
 
     private function handleOklch(array $args): string
     {
-        return $this->colorFunctions->oklch(
+        return $this->colorModule->oklch(
             $this->requireAmount($args, 0, 'oklch'),
             $this->requireAmount($args, 1, 'oklch'),
             $this->requireAmount($args, 2, 'oklch'),
@@ -675,7 +676,7 @@ class FunctionHandler
 
         if (isset(self::MODULE_LIST_FUNCTIONS[$name]) || $this->allUnitsCompatible($args)) {
             $evaluatedArgs = array_map($this->evaluateExpression, $args);
-            $result = $this->listFunctions->$methodName($evaluatedArgs);
+            $result = $this->listModule->$methodName($evaluatedArgs);
 
             return match (true) {
                 $result === null => null,
@@ -698,7 +699,7 @@ class FunctionHandler
         $noUnitCheckFunctions = ['compatible', 'is-unitless', 'random'];
 
         if (in_array($name, $noUnitCheckFunctions, true) || $this->allUnitsCompatible($args)) {
-            return $this->valueFormatter->format($this->mathFunctions->$methodName($args));
+            return $this->valueFormatter->format($this->mathModule->$methodName($args));
         }
 
         return $this->formatFunctionCall($name, $args);
@@ -718,12 +719,12 @@ class FunctionHandler
         }
 
         return match ($method) {
-            'lighten'        => $this->colorFunctions->lighten($color, $amount),
-            'darken'         => $this->colorFunctions->darken($color, $amount),
-            'saturate'       => $this->colorFunctions->saturate($color, $amount),
-            'desaturate'     => $this->colorFunctions->desaturate($color, $amount),
-            'opacify'        => $this->colorFunctions->opacify($color, $amount),
-            'transparentize' => $this->colorFunctions->transparentize($color, $amount),
+            'lighten'        => $this->colorModule->lighten($color, $amount),
+            'darken'         => $this->colorModule->darken($color, $amount),
+            'saturate'       => $this->colorModule->saturate($color, $amount),
+            'desaturate'     => $this->colorModule->desaturate($color, $amount),
+            'opacify'        => $this->colorModule->opacify($color, $amount),
+            'transparentize' => $this->colorModule->transparentize($color, $amount),
             default          => throw new CompilationException("Unknown color adjustment method: $method"),
         };
     }
@@ -896,10 +897,10 @@ class FunctionHandler
     {
         $methodName = $this->convertFunctionNameToMethodName($funcName);
 
-        if (! method_exists($this->colorFunctions, $methodName)) {
+        if (! method_exists($this->colorModule, $methodName)) {
             throw new CompilationException("Method $methodName does not exist in ColorFunctions");
         }
 
-        return $this->colorFunctions->$methodName(...$args);
+        return $this->colorModule->$methodName(...$args);
     }
 }

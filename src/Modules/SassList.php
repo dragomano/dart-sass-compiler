@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Utils;
+namespace DartSass\Modules;
 
 class SassList
 {

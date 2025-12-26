@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Utils;
+namespace DartSass\Modules;
 
 use DartSass\Exceptions\CompilationException;
+use DartSass\Utils\ValueFormatter;
 
 use function abs;
 use function acos;
@@ -28,14 +29,14 @@ use function mt_getrandmax;
 use function mt_rand;
 use function round;
 use function sin;
+use function sprintf;
 use function sqrt;
 use function tan;
-use function sprintf;
 
 use const M_E;
 use const M_PI;
 
-readonly class MathFunctions
+readonly class MathModule
 {
     public function __construct(private ValueFormatter $valueFormatter) {}
 

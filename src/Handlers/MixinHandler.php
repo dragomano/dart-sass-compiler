@@ -6,9 +6,9 @@ namespace DartSass\Handlers;
 
 use DartSass\Compiler;
 use DartSass\Exceptions\CompilationException;
+use DartSass\Modules\SassList;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\IdentifierNode;
-use DartSass\Utils\SassList;
 use Throwable;
 
 use function array_key_exists;
