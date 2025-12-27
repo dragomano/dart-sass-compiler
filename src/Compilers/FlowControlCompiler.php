@@ -16,7 +16,7 @@ use DartSass\Parsers\Nodes\WhileNode;
 use function count;
 use function is_array;
 
-readonly class ControlFlowCompiler
+readonly class FlowControlCompiler
 {
     public function __construct(private VariableHandler $variableHandler) {}
 

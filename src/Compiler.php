@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace DartSass;
 
 use DartSass\Compilers\AtRuleCompiler;
-use DartSass\Compilers\ControlFlowCompiler;
 use DartSass\Compilers\DeclarationCompiler;
+use DartSass\Compilers\FlowControlCompiler;
 use DartSass\Compilers\MixinCompiler;
 use DartSass\Compilers\ModuleCompiler;
 use DartSass\Compilers\RuleCompiler;
@@ -15,14 +15,24 @@ use DartSass\Evaluators\ExpressionEvaluator;
 use DartSass\Evaluators\InterpolationEvaluator;
 use DartSass\Evaluators\OperationEvaluator;
 use DartSass\Exceptions\CompilationException;
+use DartSass\Handlers\BuiltinFunctionHandler;
+use DartSass\Handlers\ColorModuleHandler;
+use DartSass\Handlers\CustomFunctionHandler;
 use DartSass\Handlers\ExtendHandler;
 use DartSass\Handlers\FunctionHandler;
+use DartSass\Handlers\FunctionRouter;
+use DartSass\Handlers\ListModuleHandler;
+use DartSass\Handlers\MathModuleHandler;
 use DartSass\Handlers\MixinHandler;
 use DartSass\Handlers\ModuleHandler;
+use DartSass\Handlers\ModuleRegistry;
 use DartSass\Handlers\NestingHandler;
 use DartSass\Handlers\VariableHandler;
 use DartSass\Loaders\FileLoader;
 use DartSass\Loaders\LoaderInterface;
+use DartSass\Modules\ColorModule;
+use DartSass\Modules\ListModule;
+use DartSass\Modules\MathModule;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\ForwardNode;
 use DartSass\Parsers\Nodes\FunctionNode;
@@ -36,8 +46,10 @@ use DartSass\Parsers\ParserFactory;
 use DartSass\Parsers\Syntax;
 use DartSass\Utils\OutputOptimizer;
 use DartSass\Utils\PositionTracker;
+use DartSass\Utils\ResultFormatter;
 use DartSass\Utils\SourceMapGenerator;
 use DartSass\Utils\StateManager;
+use DartSass\Utils\UnitValidator;
 use DartSass\Utils\ValueFormatter;
 
 use function array_merge;
@@ -57,7 +69,7 @@ class Compiler
 
     private readonly MixinHandler $mixinHandler;
 
-    private readonly ControlFlowCompiler $controlFlowCompiler;
+    private readonly FlowControlCompiler $controlFlowCompiler;
 
     private readonly DeclarationCompiler $declarationCompiler;
 
@@ -360,9 +372,34 @@ class Compiler
         $this->extendHandler   = new ExtendHandler();
         $this->moduleHandler   = new ModuleHandler($this->loader, $this->parserFactory);
 
+        $resultFormatter = new ResultFormatter($this->valueFormatter);
+        $moduleRegistry  = new ModuleRegistry();
+
+        $customFunctionHandler  = new CustomFunctionHandler();
+        $builtinFunctionHandler = new BuiltinFunctionHandler($this->evaluateExpression(...));
+        $colorModuleHandler     = new ColorModuleHandler(new ColorModule());
+        $listModuleHandler      = new ListModuleHandler(new ListModule());
+
+        $mathModuleHandler = new MathModuleHandler(
+            new MathModule($this->valueFormatter),
+            new UnitValidator(),
+            $this->valueFormatter
+        );
+
+        $moduleRegistry->register($builtinFunctionHandler);
+        $moduleRegistry->register($colorModuleHandler);
+        $moduleRegistry->register($listModuleHandler);
+        $moduleRegistry->register($mathModuleHandler);
+        $moduleRegistry->register($customFunctionHandler);
+
+        $customFunctionHandler->setRegistry($moduleRegistry);
+
+        $functionRouter = new FunctionRouter($moduleRegistry, $resultFormatter);
+
         $this->functionHandler = new FunctionHandler(
-            $this->valueFormatter,
             $this->moduleHandler,
+            $functionRouter,
+            $customFunctionHandler,
             $this->evaluateExpression(...)
         );
     }
@@ -396,7 +433,7 @@ class Compiler
     {
         $this->ruleCompiler = new RuleCompiler($this->valueFormatter);
 
-        $this->controlFlowCompiler = new ControlFlowCompiler($this->variableHandler);
+        $this->controlFlowCompiler = new FlowControlCompiler($this->variableHandler);
 
         $this->declarationCompiler = new DeclarationCompiler(
             $this->valueFormatter,

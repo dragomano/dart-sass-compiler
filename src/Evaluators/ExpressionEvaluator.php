@@ -278,17 +278,8 @@ class ExpressionEvaluator
         return $args;
     }
 
-    private function evaluateVariableNode(string $varName): mixed
+    private function evaluateVariableNode(string $varName)
     {
-        if ($this->isFunctionMetaParameter($varName)) {
-            return ltrim($varName, '$');
-        }
-
         return $this->evaluate($this->variableHandler->get($varName));
-    }
-
-    private function isFunctionMetaParameter(string $varName): bool
-    {
-        return in_array($varName, $this->functionHandler::ADJUST_PARAM_ORDER, true);
     }
 }
