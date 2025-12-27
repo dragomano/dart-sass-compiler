@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-use DartSass\Utils\ColorFunctions;
 use DartSass\Exceptions\CompilationException;
+use DartSass\Modules\ColorModule;
 use Tests\ReflectionAccessor;
 
 beforeEach(function () {
-    $this->colorFunctions = new ColorFunctions();
-    $this->accessor       = new ReflectionAccessor($this->colorFunctions);
+    $this->colorModule = new ColorModule();
+    $this->accessor    = new ReflectionAccessor($this->colorModule);
 });
 
 it('correctly parses hex3 color', function () {
@@ -241,397 +241,397 @@ it('correctly converts hwb to rgb', function () {
 });
 
 it('correctly adjusts color', function () {
-    $result = $this->colorFunctions->adjust('#ff0000', ['$red' => -50]);
+    $result = $this->colorModule->adjust('#ff0000', ['$red' => -50]);
 
     expect($result)->toBe('#cd0000');
 });
 
 it('throws exception for unknown adjustment parameter', function () {
-    expect(fn() => $this->colorFunctions->adjust('#ff0000', ['$unknown' => 10]))
+    expect(fn() => $this->colorModule->adjust('#ff0000', ['$unknown' => 10]))
         ->toThrow(CompilationException::class, 'Unknown adjustment parameter');
 });
 
 it('correctly changes color', function () {
-    $result = $this->colorFunctions->change('#ff0000', ['$red' => 128]);
+    $result = $this->colorModule->change('#ff0000', ['$red' => 128]);
     expect($result)->toBe('maroon');
 
-    $result = $this->colorFunctions->change('#ff0000', ['$green' => 128]);
+    $result = $this->colorModule->change('#ff0000', ['$green' => 128]);
     expect($result)->toBe('#ff8000');
 
-    $result = $this->colorFunctions->change('#ff0000', ['$blue' => 128]);
+    $result = $this->colorModule->change('#ff0000', ['$blue' => 128]);
     expect($result)->toBe('#ff0080');
 
-    $result = $this->colorFunctions->change('#ff0000', ['$alpha' => 0.5]);
+    $result = $this->colorModule->change('#ff0000', ['$alpha' => 0.5]);
     expect($result)->toBe('#ff000080');
 
-    $result = $this->colorFunctions->change('#ff0000', ['$hue' => 120]);
+    $result = $this->colorModule->change('#ff0000', ['$hue' => 120]);
     expect($result)->toBe('lime');
 
-    $result = $this->colorFunctions->change('#ff0000', ['$saturation' => 50]);
+    $result = $this->colorModule->change('#ff0000', ['$saturation' => 50]);
     expect($result)->toBe('#bf4040');
 
-    $result = $this->colorFunctions->change('#ff0000', ['$lightness' => 50]);
+    $result = $this->colorModule->change('#ff0000', ['$lightness' => 50]);
     expect($result)->toBe('red');
 });
 
 it('throws exception for unknown changing parameter', function () {
-    expect(fn() => $this->colorFunctions->change('#ff0000', ['$unknown' => 10]))
+    expect(fn() => $this->colorModule->change('#ff0000', ['$unknown' => 10]))
         ->toThrow(CompilationException::class, 'Unknown changing parameter');
 });
 
 it('correctly returns color channel', function () {
-    $result = $this->colorFunctions->channel('#ff0000', 'red');
+    $result = $this->colorModule->channel('#ff0000', 'red');
     expect($result)->toBe('255');
 
-    $result = $this->colorFunctions->channel('#ff0000', 'green');
+    $result = $this->colorModule->channel('#ff0000', 'green');
     expect($result)->toBe('0');
 
-    $result = $this->colorFunctions->channel('#ff0000', 'blue');
+    $result = $this->colorModule->channel('#ff0000', 'blue');
     expect($result)->toBe('0');
 
-    $result = $this->colorFunctions->channel('#ff0000', 'alpha');
+    $result = $this->colorModule->channel('#ff0000', 'alpha');
     expect($result)->toBe('1');
 
-    $result = $this->colorFunctions->channel('hsl(0, 100%, 50%)', 'hue');
+    $result = $this->colorModule->channel('hsl(0, 100%, 50%)', 'hue');
     expect($result)->toBe('0');
 
-    $result = $this->colorFunctions->channel('hsl(0, 100%, 50%)', 'saturation');
+    $result = $this->colorModule->channel('hsl(0, 100%, 50%)', 'saturation');
     expect($result)->toBe('100%');
 
-    $result = $this->colorFunctions->channel('hsl(0, 100%, 50%)', 'lightness');
+    $result = $this->colorModule->channel('hsl(0, 100%, 50%)', 'lightness');
     expect($result)->toBe('50%');
 });
 
 it('correctly returns complement color', function () {
-    $result = $this->colorFunctions->complement('#ff0000'); // red
+    $result = $this->colorModule->complement('#ff0000'); // red
     expect($result)->toBe('cyan');
 
-    $result = $this->colorFunctions->complement('#008000'); // green
+    $result = $this->colorModule->complement('#008000'); // green
     expect($result)->toBe('purple');
 });
 
 it('correctly converts color to grayscale', function () {
-    $result = $this->colorFunctions->grayscale('#ff0000'); // red
+    $result = $this->colorModule->grayscale('#ff0000'); // red
     expect($result)->toBe('grey');
 
-    $result = $this->colorFunctions->grayscale('#ffffff'); // white
+    $result = $this->colorModule->grayscale('#ffffff'); // white
     expect($result)->toBe('white');
 
-    $result = $this->colorFunctions->grayscale('#000000'); // black
+    $result = $this->colorModule->grayscale('#000000'); // black
     expect($result)->toBe('black');
 });
 
 it('correctly returns IE hex string', function () {
-    $result = $this->colorFunctions->ieHexStr('#ff0000');
+    $result = $this->colorModule->ieHexStr('#ff0000');
     expect($result)->toBe('#FFFF0000'); // ARGB format for IE
 
-    $result = $this->colorFunctions->ieHexStr('rgba(255, 0, 0, 0.5)');
+    $result = $this->colorModule->ieHexStr('rgba(255, 0, 0, 0.5)');
     expect($result)->toBe('#80FF0000'); // ARGB format with alpha
 });
 
 it('correctly inverts color', function () {
-    $result = $this->colorFunctions->invert('#ff0000'); // full invert
+    $result = $this->colorModule->invert('#ff0000'); // full invert
     expect($result)->toBe('cyan'); // inverted red is cyan
 
-    $result = $this->colorFunctions->invert('#ffffff'); // invert white
+    $result = $this->colorModule->invert('#ffffff'); // invert white
     expect($result)->toBe('black'); // inverted white is black
 
-    $result = $this->colorFunctions->invert('#000000'); // invert black
+    $result = $this->colorModule->invert('#000000'); // invert black
     expect($result)->toBe('white'); // inverted black is white
 });
 
 it('correctly checks if color is legacy', function () {
-    $result = $this->colorFunctions->isLegacy('#ff0000');
+    $result = $this->colorModule->isLegacy('#ff0000');
 
     expect($result)->toBe('true');
 });
 
 it('correctly checks if channel is missing', function () {
-    $result = $this->colorFunctions->isMissing('#ff0000', 'red');
+    $result = $this->colorModule->isMissing('#ff0000', 'red');
 
     expect($result)->toBe('false');
 });
 
 it('correctly checks if hue channel is powerless', function () {
-    $result = $this->colorFunctions->isPowerless('#808080', 'hue');
+    $result = $this->colorModule->isPowerless('#808080', 'hue');
     expect($result)->toBe('true'); // gray: hsl(0, 0%, 50%) → hue powerless (s=0%)
 
-    $result = $this->colorFunctions->isPowerless('#ff0000', 'hue');
+    $result = $this->colorModule->isPowerless('#ff0000', 'hue');
     expect($result)->toBe('false'); // red: hsl(0, 100%, 50%) → hue has effect (s=100%)
 
-    $result = $this->colorFunctions->isPowerless('hsl(180deg 0% 40%)', 'hue');
+    $result = $this->colorModule->isPowerless('hsl(180deg 0% 40%)', 'hue');
     expect($result)->toBe('true'); // hsl(180deg 0% 40%) → hue powerless (s=0%)
 });
 
 it('correctly mixes colors', function () {
-    $result = $this->colorFunctions->mix('#ff0000', '#0000ff');
+    $result = $this->colorModule->mix('#ff0000', '#0000ff');
 
     expect($result)->toBe('purple');
 });
 
 it('correctly mixes colors with percentage weight', function () {
     // Mix with 75% weight should be same as 0.75 weight
-    $resultPercent = $this->colorFunctions->mix('#ff0000', '#0000ff', 75);
-    $resultDecimal = $this->colorFunctions->mix('#ff0000', '#0000ff', 0.75);
+    $resultPercent = $this->colorModule->mix('#ff0000', '#0000ff', 75);
+    $resultDecimal = $this->colorModule->mix('#ff0000', '#0000ff', 0.75);
 
     expect($resultPercent)->toBe($resultDecimal);
 });
 
 it('correctly clamps weight to valid range', function () {
     // Weight > 1 is normalized by dividing by 100, then clamped
-    $resultPercent = $this->colorFunctions->mix('#ff0000', '#0000ff', 50);
-    $resultDecimal = $this->colorFunctions->mix('#ff0000', '#0000ff');
+    $resultPercent = $this->colorModule->mix('#ff0000', '#0000ff', 50);
+    $resultDecimal = $this->colorModule->mix('#ff0000', '#0000ff');
 
     expect($resultPercent)->toBe($resultDecimal);
 
     // Weight < 0 should be clamped to 0
-    $resultLow = $this->colorFunctions->mix('#ff0000', '#0000ff', -1);
-    $resultMin = $this->colorFunctions->mix('#ff0000', '#0000ff', 0);
+    $resultLow = $this->colorModule->mix('#ff0000', '#0000ff', -1);
+    $resultMin = $this->colorModule->mix('#ff0000', '#0000ff', 0);
 
     expect($resultLow)->toBe($resultMin);
 });
 
 it('correctly checks if two colors are the same', function () {
-    $result = $this->colorFunctions->same('#ff0000', '#ff0000');
+    $result = $this->colorModule->same('#ff0000', '#ff0000');
     expect($result)->toBe('true');
 
-    $result = $this->colorFunctions->same('#ff0000', '#00ff00');
+    $result = $this->colorModule->same('#ff0000', '#00ff00');
     expect($result)->toBe('false');
 
-    $result = $this->colorFunctions->same('red', '#ff0000');
+    $result = $this->colorModule->same('red', '#ff0000');
     expect($result)->toBe('true');
 });
 
 it('correctly scales color', function () {
-    $result = $this->colorFunctions->scale('#ff0000', ['$red' => 50]);
+    $result = $this->colorModule->scale('#ff0000', ['$red' => 50]);
     expect($result)->toBe('red');
 
-    $result = $this->colorFunctions->scale('#ff0000', ['$green' => 50]);
+    $result = $this->colorModule->scale('#ff0000', ['$green' => 50]);
     expect($result)->toBe('#ff8000');
 
-    $result = $this->colorFunctions->scale('#ff0000', ['$blue' => 50]);
+    $result = $this->colorModule->scale('#ff0000', ['$blue' => 50]);
     expect($result)->toBe('#ff0080');
 
-    $result = $this->colorFunctions->scale('#ff0000', ['$hue' => 30]);
+    $result = $this->colorModule->scale('#ff0000', ['$hue' => 30]);
     expect($result)->toBe('#33ff00');
 
-    $result = $this->colorFunctions->scale('#ff0000', ['$saturation' => -50]);
+    $result = $this->colorModule->scale('#ff0000', ['$saturation' => -50]);
     expect($result)->toBe('#bf4040');
 
-    $result = $this->colorFunctions->scale('#ff0000', ['$lightness' => 20]);
+    $result = $this->colorModule->scale('#ff0000', ['$lightness' => 20]);
     expect($result)->toBe('#ff3333');
 
-    $result = $this->colorFunctions->scale('#ffd700', ['$alpha' => 20]);
+    $result = $this->colorModule->scale('#ffd700', ['$alpha' => 20]);
     expect($result)->toBe('gold');
 });
 
 it('throws exception for unknown scaling parameter', function () {
-    expect(fn() => $this->colorFunctions->scale('#ff0000', ['$unknown' => 10]))
+    expect(fn() => $this->colorModule->scale('#ff0000', ['$unknown' => 10]))
         ->toThrow(CompilationException::class, 'Unknown scaling parameter');
 });
 
 it('correctly returns color space', function () {
-    $result = $this->colorFunctions->space('#ff0000');
+    $result = $this->colorModule->space('#ff0000');
     expect($result)->toBe('rgb');
 
-    $result = $this->colorFunctions->space('hsl(0, 100%, 50%)');
+    $result = $this->colorModule->space('hsl(0, 100%, 50%)');
     expect($result)->toBe('hsl');
 
-    $result = $this->colorFunctions->space('hwb(0, 0%, 0%)');
+    $result = $this->colorModule->space('hwb(0, 0%, 0%)');
     expect($result)->toBe('hwb');
 });
 
 it('correctly converts color to gamut', function () {
-    $result = $this->colorFunctions->toGamut('#ff0000');
+    $result = $this->colorModule->toGamut('#ff0000');
     expect($result)->toBe('red');
 });
 
 it('correctly converts color to space', function () {
-    $result = $this->colorFunctions->toSpace('#ff0000', 'hsl');
+    $result = $this->colorModule->toSpace('#ff0000', 'hsl');
     expect($result)->toBe('hsl(0, 100%, 50%)');
 
-    $result = $this->colorFunctions->toSpace('#ff0000', 'rgb');
+    $result = $this->colorModule->toSpace('#ff0000', 'rgb');
     expect($result)->toBe('red');
 
-    $result = $this->colorFunctions->toSpace('hsl(0, 100%, 50%)', 'rgb');
+    $result = $this->colorModule->toSpace('hsl(0, 100%, 50%)', 'rgb');
     expect($result)->toBe('red');
 });
 
 it('adjusts hue correctly', function () {
-    expect($this->colorFunctions->adjustHue('#ff0000', 60))->toBe('yellow')
-        ->and($this->colorFunctions->adjustHue('hsl(0, 100%, 50%)', 120))->toBe('lime')
-        ->and($this->colorFunctions->adjustHue('#0000ff', -120))->toBe('lime');
+    expect($this->colorModule->adjustHue('#ff0000', 60))->toBe('yellow')
+        ->and($this->colorModule->adjustHue('hsl(0, 100%, 50%)', 120))->toBe('lime')
+        ->and($this->colorModule->adjustHue('#0000ff', -120))->toBe('lime');
 });
 
 it('returns alpha channel', function () {
-    expect($this->colorFunctions->alpha('#ff0000'))->toBe('1')
-        ->and($this->colorFunctions->alpha('rgba(255, 0, 0, 0.5)'))->toBe('0.5')
-        ->and($this->colorFunctions->alpha('hsla(0, 100%, 50%, 0.3)'))->toBe('0.3');
+    expect($this->colorModule->alpha('#ff0000'))->toBe('1')
+        ->and($this->colorModule->alpha('rgba(255, 0, 0, 0.5)'))->toBe('0.5')
+        ->and($this->colorModule->alpha('hsla(0, 100%, 50%, 0.3)'))->toBe('0.3');
 });
 
 it('returns opacity (alias for alpha)', function () {
-    expect($this->colorFunctions->opacity('#ff0000'))->toBe('1')
-        ->and($this->colorFunctions->opacity('rgba(255, 0, 0, 0.7)'))->toBe('0.7');
+    expect($this->colorModule->opacity('#ff0000'))->toBe('1')
+        ->and($this->colorModule->opacity('rgba(255, 0, 0, 0.7)'))->toBe('0.7');
 });
 
 it('returns red channel', function () {
-    expect($this->colorFunctions->red('#ff0000'))->toBe('255')
-        ->and($this->colorFunctions->red('rgb(128, 64, 32)'))->toBe('128')
-        ->and($this->colorFunctions->red('#00ff00'))->toBe('0');
+    expect($this->colorModule->red('#ff0000'))->toBe('255')
+        ->and($this->colorModule->red('rgb(128, 64, 32)'))->toBe('128')
+        ->and($this->colorModule->red('#00ff00'))->toBe('0');
 });
 
 it('returns green channel', function () {
-    expect($this->colorFunctions->green('#00ff00'))->toBe('255')
-        ->and($this->colorFunctions->green('rgb(128, 64, 32)'))->toBe('64')
-        ->and($this->colorFunctions->green('#ff0000'))->toBe('0');
+    expect($this->colorModule->green('#00ff00'))->toBe('255')
+        ->and($this->colorModule->green('rgb(128, 64, 32)'))->toBe('64')
+        ->and($this->colorModule->green('#ff0000'))->toBe('0');
 });
 
 it('returns blue channel', function () {
-    expect($this->colorFunctions->blue('#0000ff'))->toBe('255')
-        ->and($this->colorFunctions->blue('rgb(128, 64, 32)'))->toBe('32')
-        ->and($this->colorFunctions->blue('#ff0000'))->toBe('0');
+    expect($this->colorModule->blue('#0000ff'))->toBe('255')
+        ->and($this->colorModule->blue('rgb(128, 64, 32)'))->toBe('32')
+        ->and($this->colorModule->blue('#ff0000'))->toBe('0');
 });
 
 it('returns hue channel', function () {
-    expect($this->colorFunctions->hue('#ff0000'))->toBe('0')
-        ->and($this->colorFunctions->hue('hsl(120, 100%, 50%)'))->toBe('120deg')
-        ->and($this->colorFunctions->hue('#00ff00'))->toBe('120deg')
-        ->and($this->colorFunctions->hue('#0000ff'))->toBe('240deg');
+    expect($this->colorModule->hue('#ff0000'))->toBe('0')
+        ->and($this->colorModule->hue('hsl(120, 100%, 50%)'))->toBe('120deg')
+        ->and($this->colorModule->hue('#00ff00'))->toBe('120deg')
+        ->and($this->colorModule->hue('#0000ff'))->toBe('240deg');
 });
 
 it('returns blackness channel', function () {
-    expect($this->colorFunctions->blackness('hwb(0, 0%, 50%)'))->toBe('50%')
-        ->and($this->colorFunctions->blackness('#ffffff'))->toBe('0%')
-        ->and($this->colorFunctions->blackness('#000000'))->toBe('100%');
+    expect($this->colorModule->blackness('hwb(0, 0%, 50%)'))->toBe('50%')
+        ->and($this->colorModule->blackness('#ffffff'))->toBe('0%')
+        ->and($this->colorModule->blackness('#000000'))->toBe('100%');
 });
 
 it('returns lightness channel', function () {
-    expect($this->colorFunctions->lightness('hsl(0, 100%, 50%)'))->toBe('50%')
-        ->and($this->colorFunctions->lightness('#ffffff'))->toBe('100%')
-        ->and($this->colorFunctions->lightness('#000000'))->toBe('0%')
-        ->and($this->colorFunctions->lightness('#808080'))->toBe('50.1960784314%');
+    expect($this->colorModule->lightness('hsl(0, 100%, 50%)'))->toBe('50%')
+        ->and($this->colorModule->lightness('#ffffff'))->toBe('100%')
+        ->and($this->colorModule->lightness('#000000'))->toBe('0%')
+        ->and($this->colorModule->lightness('#808080'))->toBe('50.1960784314%');
 });
 
 it('returns whiteness channel', function () {
-    expect($this->colorFunctions->whiteness('hwb(0, 50%, 0%)'))->toBe('50%')
-        ->and($this->colorFunctions->whiteness('#ffffff'))->toBe('100%')
-        ->and($this->colorFunctions->whiteness('#000000'))->toBe('0%');
+    expect($this->colorModule->whiteness('hwb(0, 50%, 0%)'))->toBe('50%')
+        ->and($this->colorModule->whiteness('#ffffff'))->toBe('100%')
+        ->and($this->colorModule->whiteness('#000000'))->toBe('0%');
 });
 
 it('returns saturation channel', function () {
-    expect($this->colorFunctions->saturation('hsl(0, 100%, 50%)'))->toBe('100%')
-        ->and($this->colorFunctions->saturation('hsl(0, 50%, 50%)'))->toBe('50%')
-        ->and($this->colorFunctions->saturation('#808080'))->toBe('0%');
+    expect($this->colorModule->saturation('hsl(0, 100%, 50%)'))->toBe('100%')
+        ->and($this->colorModule->saturation('hsl(0, 50%, 50%)'))->toBe('50%')
+        ->and($this->colorModule->saturation('#808080'))->toBe('0%');
 });
 
 it('correctly lightens color', function () {
-    $result = $this->colorFunctions->lighten('#007bff', 10);
+    $result = $this->colorModule->lighten('#007bff', 10);
 
     expect($result)->toBe('#3395ff');
 });
 
 it('correctly darkens color', function () {
-    $result = $this->colorFunctions->darken('#b37399', 20);
+    $result = $this->colorModule->darken('#b37399', 20);
 
     expect($result)->toBe('#7c4465');
 });
 
 it('correctly saturates color', function () {
-    $result = $this->colorFunctions->saturate('#0e4982', 30);
+    $result = $this->colorModule->saturate('#0e4982', 30);
 
     expect($result)->toBe('#004990');
 });
 
 it('correctly opacifies color', function () {
-    $result = $this->colorFunctions->opacify('rgba(255, 0, 0, 0.5)', 0.5);
+    $result = $this->colorModule->opacify('rgba(255, 0, 0, 0.5)', 0.5);
 
     expect($result)->toBe('red');
 });
 
 it('correctly transparentizes color', function () {
-    $result = $this->colorFunctions->transparentize('#ff0000', 1.0);
+    $result = $this->colorModule->transparentize('#ff0000', 1.0);
 
     expect($result)->toBe('#ff000000');
 });
 
 it('correctly fades in color', function () {
-    $result = $this->colorFunctions->fadeIn('rgba(255, 0, 0, 0.5)', 0.3);
+    $result = $this->colorModule->fadeIn('rgba(255, 0, 0, 0.5)', 0.3);
 
     expect($result)->toBe('#ff0000cc');
 });
 
 it('correctly fades out color', function () {
-    $result = $this->colorFunctions->fadeOut('rgba(255, 0, 0, 0.8)', 0.3);
+    $result = $this->colorModule->fadeOut('rgba(255, 0, 0, 0.8)', 0.3);
 
     expect($result)->toBe('#ff000080');
 });
 
 it('correctly creates hsl color', function () {
-    $result = $this->colorFunctions->hsl(0, 100, 50);
+    $result = $this->colorModule->hsl(0, 100, 50);
     expect($result)->toBe('hsl(0, 100%, 50%)');
 
-    $result = $this->colorFunctions->hsl(120, 100, 50);
+    $result = $this->colorModule->hsl(120, 100, 50);
     expect($result)->toBe('hsl(120, 100%, 50%)');
 
-    $result = $this->colorFunctions->hsl(240, 100, 50);
+    $result = $this->colorModule->hsl(240, 100, 50);
     expect($result)->toBe('hsl(240, 100%, 50%)');
 
-    $result = $this->colorFunctions->hsl(0, 100, 50, 0.5);
+    $result = $this->colorModule->hsl(0, 100, 50, 0.5);
     expect($result)->toBe('hsla(0, 100%, 50%, 0.5)');
 });
 
 it('correctly creates hwb color', function () {
-    $result = $this->colorFunctions->hwb(0, 0, 0);
+    $result = $this->colorModule->hwb(0, 0, 0);
     expect($result)->toBe('hwb(0 0% 0%)');
 
-    $result = $this->colorFunctions->hwb(0, 100, 0);
+    $result = $this->colorModule->hwb(0, 100, 0);
     expect($result)->toBe('hwb(0 100% 0%)');
 
-    $result = $this->colorFunctions->hwb(0, 0, 100);
+    $result = $this->colorModule->hwb(0, 0, 100);
     expect($result)->toBe('hwb(0 0% 100%)');
 
-    $result = $this->colorFunctions->hwb(120, 20, 30);
+    $result = $this->colorModule->hwb(120, 20, 30);
     expect($result)->toBe('hwb(120 20% 30%)');
 });
 
 it('correctly adjusts color with whiteness parameter', function () {
-    $result = $this->colorFunctions->adjust('#ff0000', ['$whiteness' => 20]);
+    $result = $this->colorModule->adjust('#ff0000', ['$whiteness' => 20]);
 
     expect($result)->toBe('#ff3333');
 });
 
 it('correctly adjusts color with blackness parameter', function () {
-    $result = $this->colorFunctions->adjust('#ff0000', ['$blackness' => 20]);
+    $result = $this->colorModule->adjust('#ff0000', ['$blackness' => 20]);
 
     expect($result)->toBe('#cc0000');
 });
 
 it('correctly adjusts color with x parameter', function () {
-    $result = $this->colorFunctions->adjust('#ff0000', ['$x' => 30, '$space' => 'xyz']);
+    $result = $this->colorModule->adjust('#ff0000', ['$x' => 30, '$space' => 'xyz']);
 
     expect($result)->toBe('#ff0023');
 });
 
 it('correctly adjusts color with y parameter', function () {
-    $result = $this->colorFunctions->adjust('#ff0000', ['$y' => 20, '$space' => 'xyz']);
+    $result = $this->colorModule->adjust('#ff0000', ['$y' => 20, '$space' => 'xyz']);
 
     expect($result)->toBe('#d9a500');
 });
 
 it('correctly adjusts color with z parameter', function () {
-    $result = $this->colorFunctions->adjust('#ff0000', ['$z' => 10, '$space' => 'xyz']);
+    $result = $this->colorModule->adjust('#ff0000', ['$z' => 10, '$space' => 'xyz']);
 
     expect($result)->toBe('#f90d5b');
 });
 
 it('correctly adjusts color with chroma parameter', function () {
-    $result = $this->colorFunctions->adjust('#ff0000', ['$chroma' => 20, '$space' => 'lch']);
+    $result = $this->colorModule->adjust('#ff0000', ['$chroma' => 20, '$space' => 'lch']);
 
     expect($result)->toBe('#ff3333');
 });
 
 it('correctly combines multiple rgb adjustment parameters', function () {
-    $result = $this->colorFunctions->adjust('#ff0000', [
+    $result = $this->colorModule->adjust('#ff0000', [
         '$red'   => 15,
         '$green' => 5,
         '$blue'  => 25,
@@ -739,43 +739,43 @@ it('correctly clamps value', function () {
 });
 
 it('correctly inverts color with hwb space', function () {
-    $result = $this->colorFunctions->invert('#ff0000', 100, 'hwb');
+    $result = $this->colorModule->invert('#ff0000', 100, 'hwb');
     expect($result)->toBe('cyan');
 });
 
 it('correctly inverts color with hsl space', function () {
-    $result = $this->colorFunctions->invert('#ff0000', 100, 'hsl');
+    $result = $this->colorModule->invert('#ff0000', 100, 'hsl');
     expect($result)->toBe('cyan');
 });
 
 it('correctly returns complement color with different spaces', function () {
-    expect($this->colorFunctions->complement('#ff0000', 'hwb'))->toBe('cyan')
-        ->and($this->colorFunctions->complement('#008000', 'hwb'))->toBe('purple')
-        ->and($this->colorFunctions->complement('#ff0000', 'lch'))->toBe('cyan')
-        ->and($this->colorFunctions->complement('#ff0000', 'oklch'))->toBe('cyan');
+    expect($this->colorModule->complement('#ff0000', 'hwb'))->toBe('cyan')
+        ->and($this->colorModule->complement('#008000', 'hwb'))->toBe('purple')
+        ->and($this->colorModule->complement('#ff0000', 'lch'))->toBe('cyan')
+        ->and($this->colorModule->complement('#ff0000', 'oklch'))->toBe('cyan');
 });
 
 it('throws exception for unsupported color space in complement', function () {
-    expect(fn() => $this->colorFunctions->complement('#ff0000', 'xyz'))
+    expect(fn() => $this->colorModule->complement('#ff0000', 'xyz'))
         ->toThrow(CompilationException::class, 'not a polar color space');
 });
 
 it('correctly converts color to gamut with different spaces', function () {
-    expect($this->colorFunctions->toGamut('#ff0000', 'hsl'))->toBe('red')
-        ->and($this->colorFunctions->toGamut('#ff0000', 'hwb'))->toBe('red')
-        ->and($this->colorFunctions->toGamut('#ff0000', 'rgb'))->toBe('red');
+    expect($this->colorModule->toGamut('#ff0000', 'hsl'))->toBe('red')
+        ->and($this->colorModule->toGamut('#ff0000', 'hwb'))->toBe('red')
+        ->and($this->colorModule->toGamut('#ff0000', 'rgb'))->toBe('red');
 });
 
 it('throws exception for unsupported method in toGamut', function () {
-    expect(fn() => $this->colorFunctions->toGamut('#ff0000', null, 'invalid'))
+    expect(fn() => $this->colorModule->toGamut('#ff0000', null, 'invalid'))
         ->toThrow(CompilationException::class, 'Only \'clip\' method is currently supported');
 });
 
 it('correctly handles oklch color with different formats', function () {
-    $result = $this->colorFunctions->toSpace('oklch(60% 0.15 30)', 'rgb');
+    $result = $this->colorModule->toSpace('oklch(60% 0.15 30)', 'rgb');
     expect($result)->toBe('#ca5747');
 
-    $result = $this->colorFunctions->toSpace('#ff0000', 'oklch');
+    $result = $this->colorModule->toSpace('#ff0000', 'oklch');
     expect($result)->toMatch('/^oklch\(/');
 });
 
@@ -785,36 +785,36 @@ it('correctly parses hwb with alpha', function () {
 });
 
 it('correctly checks if hue channel is powerless with different spaces', function () {
-    expect($this->colorFunctions->isPowerless('#808080', 'hue', 'hsl'))->toBe('true')
-        ->and($this->colorFunctions->isPowerless('#808080', 'hue', 'hwb'))->toBe('true');
+    expect($this->colorModule->isPowerless('#808080', 'hue', 'hsl'))->toBe('true')
+        ->and($this->colorModule->isPowerless('#808080', 'hue', 'hwb'))->toBe('true');
 });
 
 it('correctly checks if other channels are powerless', function () {
-    expect($this->colorFunctions->isPowerless('#808080', 'saturation'))->toBe('false')
-        ->and($this->colorFunctions->isPowerless('#ff0000', 'hue'))->toBe('false');
+    expect($this->colorModule->isPowerless('#808080', 'saturation'))->toBe('false')
+        ->and($this->colorModule->isPowerless('#ff0000', 'hue'))->toBe('false');
 });
 
 it('throws exception for unknown channel in isPowerless', function () {
-    expect(fn() => $this->colorFunctions->isPowerless('#808080', 'unknown'))
+    expect(fn() => $this->colorModule->isPowerless('#808080', 'unknown'))
         ->toThrow(CompilationException::class, 'Unknown channel');
 });
 
 it('correctly handles different channel formats in isMissing', function () {
-    expect($this->colorFunctions->isMissing('#ff0000', 'r'))->toBe('false')
-        ->and($this->colorFunctions->isMissing('#ff0000', 'red'))->toBe('false')
-        ->and($this->colorFunctions->isMissing('hsl(0, 100%, 50%)', 'h'))->toBe('false')
-        ->and($this->colorFunctions->isMissing('hsl(0, 100%, 50%)', 'hue'))->toBe('false')
-        ->and($this->colorFunctions->isMissing('#ff0000', 'h'))->toBe('true')
-        ->and($this->colorFunctions->isMissing('#ff0000', 'hue'))->toBe('true');
+    expect($this->colorModule->isMissing('#ff0000', 'r'))->toBe('false')
+        ->and($this->colorModule->isMissing('#ff0000', 'red'))->toBe('false')
+        ->and($this->colorModule->isMissing('hsl(0, 100%, 50%)', 'h'))->toBe('false')
+        ->and($this->colorModule->isMissing('hsl(0, 100%, 50%)', 'hue'))->toBe('false')
+        ->and($this->colorModule->isMissing('#ff0000', 'h'))->toBe('true')
+        ->and($this->colorModule->isMissing('#ff0000', 'hue'))->toBe('true');
 });
 
 it('throws exception for unknown channel in isMissing', function () {
-    expect(fn() => $this->colorFunctions->isMissing('#808080', 'unknown'))
+    expect(fn() => $this->colorModule->isMissing('#808080', 'unknown'))
         ->toThrow(CompilationException::class, 'Unknown channel');
 });
 
 it('correctly adjusts color with oklch parameters', function () {
-    $result = $this->colorFunctions->adjust('#ff0000', ['$space' => 'oklch', '$chroma' => 0.1]);
+    $result = $this->colorModule->adjust('#ff0000', ['$space' => 'oklch', '$chroma' => 0.1]);
     expect($result)->toBe('red');
 });
 
@@ -1028,52 +1028,52 @@ it('correctly handles apply adjustments with various parameters', function () {
 });
 
 it('correctly handles toSpace with unsupported space', function () {
-    $result = $this->colorFunctions->toSpace('#ff0000', 'xyz'); // Should return original color
+    $result = $this->colorModule->toSpace('#ff0000', 'xyz'); // Should return original color
     expect($result)->toBe('red');
 });
 
 it('correctly handles channel method with space parameter', function () {
-    expect($this->colorFunctions->channel('#ff0000', 'hue', 'hsl'))->toBe('0')
-        ->and($this->colorFunctions->channel('hsl(0, 100%, 50%)', 'red', 'rgb'))->toBe('255');
+    expect($this->colorModule->channel('#ff0000', 'hue', 'hsl'))->toBe('0')
+        ->and($this->colorModule->channel('hsl(0, 100%, 50%)', 'red', 'rgb'))->toBe('255');
 });
 
 it('correctly handles desaturate and darken methods (aliases)', function () {
-    expect($this->colorFunctions->desaturate('#ff0000', 20))->toBe('#e61a1a')
-        ->and($this->colorFunctions->darken('#ff0000', 20))->toBe('#990000');
+    expect($this->colorModule->desaturate('#ff0000', 20))->toBe('#e61a1a')
+        ->and($this->colorModule->darken('#ff0000', 20))->toBe('#990000');
 });
 
 it('correctly handles fade in and fade out methods (aliases)', function () {
-    expect($this->colorFunctions->fadeIn('rgba(255, 0, 0, 0.3)', 0.2))->toBe('#ff000080')
-        ->and($this->colorFunctions->fadeOut('rgba(255, 0, 0, 0.8)', 0.3))->toBe('#ff000080');
+    expect($this->colorModule->fadeIn('rgba(255, 0, 0, 0.3)', 0.2))->toBe('#ff000080')
+        ->and($this->colorModule->fadeOut('rgba(255, 0, 0, 0.8)', 0.3))->toBe('#ff000080');
 });
 
 it('correctly handles lch creation method', function () {
-    $result = $this->colorFunctions->lch(60, 40, 30);
+    $result = $this->colorModule->lch(60, 40, 30);
     expect($result)->toBe('lch(60% 40 30)');
 
-    $result = $this->colorFunctions->lch(60, 40, 30, 0.5);
+    $result = $this->colorModule->lch(60, 40, 30, 0.5);
     expect($result)->toBe('lch(60% 40 30 / 0.5)');
 });
 
 it('correctly handles oklch creation method', function () {
-    $result = $this->colorFunctions->oklch(0.6, 0.15, 30);
+    $result = $this->colorModule->oklch(0.6, 0.15, 30);
     expect($result)->toBe('oklch(60% 0.15 30)');
 
-    $result = $this->colorFunctions->oklch(0.6, 0.15, 30, 0.5);
+    $result = $this->colorModule->oklch(0.6, 0.15, 30, 0.5);
     expect($result)->toBe('oklch(60% 0.15 30 / 0.5)');
 });
 
 it('correctly handles toGamut with clip method and different spaces', function () {
     // Test RGB clipping
-    $result = $this->colorFunctions->toGamut('#ff0000', 'rgb');
+    $result = $this->colorModule->toGamut('#ff0000', 'rgb');
     expect($result)->toBe('red');
 
     // Test HSL clipping
-    $result = $this->colorFunctions->toGamut('hsl(0, 100%, 50%)', 'hsl');
+    $result = $this->colorModule->toGamut('hsl(0, 100%, 50%)', 'hsl');
     expect($result)->toBe('hsl(0, 100%, 50%)');
 
     // Test HWB clipping
-    $result = $this->colorFunctions->toGamut('hwb(0, 0%, 0%)', 'hwb');
+    $result = $this->colorModule->toGamut('hwb(0, 0%, 0%)', 'hwb');
     expect($result)->toBe('hwb(0 0% 0%)');
 });
 

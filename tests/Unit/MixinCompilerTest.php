@@ -96,7 +96,7 @@ it('compiles a module mixin include with dot in name', function () {
     $mixinData = [
         'type' => 'mixin',
         'args' => [],
-        'body' => []
+        'body' => [],
     ];
 
     $this->moduleHandler
@@ -141,7 +141,7 @@ it('searches for module mixin without dot when local search throws exception', f
     $mixinData = [
         'type' => 'mixin',
         'args' => [],
-        'body' => []
+        'body' => [],
     ];
 
     // Local search throws exception
@@ -274,7 +274,7 @@ it('ensures correct sequence of define, include, removeMixin for temporary mixin
     $mixinData = [
         'type' => 'mixin',
         'args' => [],
-        'body' => []
+        'body' => [],
     ];
 
     $this->moduleHandler
