@@ -8,6 +8,7 @@ use DartSass\Exceptions\CompilationException;
 use DartSass\Modules\ColorModule;
 
 use function array_slice;
+use function count;
 use function implode;
 use function in_array;
 use function is_array;
@@ -15,6 +16,7 @@ use function is_numeric;
 use function is_string;
 use function method_exists;
 use function preg_match;
+use function str_contains;
 use function str_replace;
 use function str_starts_with;
 use function trim;
@@ -37,6 +39,11 @@ class ColorModuleHandler extends BaseModuleHandler
         'red', 'saturation', 'whiteness', 'opacity',
     ];
 
+    private const CSS_FILTER_FUNCTIONS = [
+        'blur', 'brightness', 'contrast', 'drop-shadow', 'grayscale',
+        'hue-rotate', 'invert', 'opacity', 'saturate', 'sepia',
+    ];
+
     private const STRING_PARAM_FUNCTIONS = [
         'channel', 'is-missing', 'is-powerless', 'same', 'to-gamut', 'to-space',
     ];
@@ -52,6 +59,11 @@ class ColorModuleHandler extends BaseModuleHandler
 
     public function handle(string $functionName, array $args): string
     {
+        // Check if this is a CSS filter function that should be returned as-is
+        if ($this->isCssFilterFunction($functionName, $args)) {
+            return $this->formatCssFunction($functionName, $args);
+        }
+
         $processedArgs = $this->normalizeArgs($args);
 
         return match ($functionName) {
@@ -242,5 +254,45 @@ class ColorModuleHandler extends BaseModuleHandler
         return is_array($arg) && isset($arg['value'])
             ? (string) $arg['value']
             : (string) $arg;
+    }
+
+    private function isCssFilterFunction(string $functionName, array $args): bool
+    {
+        if (count($args) !== 1) {
+            return false;
+        }
+
+        if (! in_array($functionName, self::CSS_FILTER_FUNCTIONS, true)) {
+            return false;
+        }
+
+        $arg = $args[0];
+
+        $value = is_array($arg) && isset($arg['value']) ? (string) $arg['value'] : (string) $arg;
+
+        // Check if the argument looks like a CSS filter value
+        // (contains units, percentages, or looks like a CSS value)
+        return preg_match('/^(-?\d*\.?\d+)(deg|px|em|rem|%|)$/', $value) > 0
+            || str_contains($value, '%')
+            || str_contains($value, 'deg')
+            || str_contains($value, 'px')
+            || str_contains($value, 'em')
+            || str_contains($value, 'rem');
+    }
+
+    private function formatCssFunction(string $functionName, array $args): string
+    {
+        $formattedArgs = array_map(function ($arg) {
+            if (is_array($arg) && isset($arg['value'])) {
+                $value = (string) $arg['value'];
+                $unit  = $arg['unit'] ?? '';
+
+                return $unit !== '' ? $value . $unit : $value;
+            }
+
+            return (string) $arg;
+        }, $args);
+
+        return $functionName . '(' . implode(', ', $formattedArgs) . ')';
     }
 }
