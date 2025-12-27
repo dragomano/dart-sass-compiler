@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DartSass\Utils;
 
 use DartSass\Modules\SassList;
+use DartSass\Parsers\Nodes\IdentifierNode;
 
 use function array_filter;
 use function array_map;
@@ -40,6 +41,16 @@ class ValueFormatter
 
         if (is_bool($value)) {
             return $value ? 'true' : 'false';
+        }
+
+        if ($value instanceof IdentifierNode && ($value->properties['important'] ?? false)) {
+            $value->value .= ' !important';
+
+            return $value->value;
+        }
+
+        if ($value instanceof IdentifierNode) {
+            return $value->value;
         }
 
         return (string) $value;
@@ -129,14 +140,8 @@ class ValueFormatter
         );
 
         $separator = $this->getSeparatorString($list->separator);
-        $result = implode($separator, $formattedItems);
 
-        // Fix !important spacing for space-separated lists
-        if ($list->separator === 'space') {
-            $result = preg_replace('/!\s+important/', '!important', $result);
-        }
-
-        return $result;
+        return implode($separator, $formattedItems);
     }
 
     private function filterEmptyItems(array $items): array

@@ -33,15 +33,16 @@ readonly class RuleCompiler
         Closure $compileAst
     ): string {
         $value = $evaluateExpression($node->properties['value'] ?? '');
-        $bodyNestingLevel = $currentNestingLevel + 1;
 
+        $bodyNestingLevel = $currentNestingLevel + 1;
         $bodyDeclarations = $node->properties['body']['declarations'] ?? [];
+
         $bodyNested = $node->properties['body']['nested'] ?? [];
 
         $declarationsCss = $compileDeclarations($bodyDeclarations, $bodyNestingLevel);
         $nestedCss = $compileAst($bodyNested, '', $bodyNestingLevel);
-        $body = rtrim($declarationsCss . $nestedCss);
 
+        $body   = rtrim($declarationsCss . $nestedCss);
         $indent = str_repeat('  ', $currentNestingLevel);
 
         return "$indent{$node->properties['name']} $value {\n$body\n$indent}\n";
@@ -59,9 +60,10 @@ readonly class RuleCompiler
         $query = $node->properties['query'];
         $query = $evaluateInterpolations($query);
         $query = $this->valueFormatter->format($query);
-        $bodyNestingLevel = $currentNestingLevel + 1;
 
+        $bodyNestingLevel = $currentNestingLevel + 1;
         $bodyDeclarations = $node->properties['body']['declarations'] ?? [];
+
         $bodyNested = $node->properties['body']['nested'] ?? [];
 
         $declarationsCss = '';
@@ -80,7 +82,7 @@ readonly class RuleCompiler
             $nestedCss = '';
         }
 
-        $body = rtrim($declarationsCss . $nestedCss);
+        $body   = rtrim($declarationsCss . $nestedCss);
         $indent = str_repeat('  ', $currentNestingLevel);
 
         return "$indent@$ruleName $query {\n$body\n$indent}\n";
@@ -95,10 +97,9 @@ readonly class RuleCompiler
         Closure $compileAst,
         Closure $getIndent
     ): string {
-        $query = $mediaNode->properties['query'];
+        $query  = $mediaNode->properties['query'];
         $indent = $getIndent($nestingLevel);
-
-        $css = "$indent@media $query {\n";
+        $css    = "$indent@media $query {\n";
 
         $nested = $mediaNode->properties['body']['nested'] ?? [];
         $declarations = $mediaNode->properties['body']['declarations'] ?? [];
@@ -116,6 +117,7 @@ readonly class RuleCompiler
 
         if ($hasDirectContent) {
             $bodyIndent = $getIndent($nestingLevel + 1);
+
             $css .= "$bodyIndent$parentSelector {\n";
             $css .= $includesCss;
             $css .= $compileDeclarations($declarations, $nestingLevel + 2, $parentSelector);
@@ -191,13 +193,11 @@ readonly class RuleCompiler
             foreach ($keyframe['declarations'] as $declaration) {
                 $property = key($declaration);
                 $value = current($declaration);
+
                 $evaluatedValue = $evaluateExpression($value);
                 $formattedValue = $this->valueFormatter->format($evaluatedValue);
-                if ($value instanceof AstNode && ($value->properties['important'] ?? false)) {
-                    $formattedValue .= ' !important';
-                }
-
                 $declarationCss = "$indent  $property: " . $formattedValue . ";\n";
+
                 $body .= $declarationCss;
             }
 
@@ -218,10 +218,11 @@ readonly class RuleCompiler
             $trimmed = trim($line);
 
             if (preg_match('/^([^,]+,\s*[^,{]+)\s*\{$/', $trimmed, $matches)) {
-                $selector = $matches[1];
-                $selectors = array_map(trim(...), explode(',', $selector));
+                $selector      = $matches[1];
+                $selectors     = array_map(trim(...), explode(',', $selector));
                 $fixedSelector = implode(",\n  ", $selectors);
-                $indent = substr($line, 0, strlen($line) - strlen(ltrim($line)));
+                $indent        = substr($line, 0, strlen($line) - strlen(ltrim($line)));
+
                 $fixedLines[] = $indent . $fixedSelector . ' {';
             } else {
                 $fixedLines[] = $line;

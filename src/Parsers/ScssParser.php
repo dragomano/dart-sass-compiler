@@ -264,22 +264,15 @@ class ScssParser implements TokenAwareParserInterface
             $value = new ListNode($values, $value->properties['line'] ?? 0, $separator);
         }
 
+        // Check for !important modifier using dedicated token
         $token = $this->stream->current();
-        if ($token && $token->type === 'operator' && $token->value === '!') {
-            $this->stream->consume('operator');
-            $this->stream->skipWhitespace();
+        if ($token && $token->type === 'important_modifier') {
+            $this->stream->consume('important_modifier');
 
-            $identToken = $this->stream->current();
-            if ($identToken && $identToken->type === 'identifier' && $identToken->value === 'important') {
-                $this->stream->consume('identifier');
-                $value->properties['important'] = true;
-            } else {
-                throw new SyntaxException(
-                    'Expected "important" after "!"',
-                    $identToken->line ?? 0,
-                    $identToken->column ?? 0
-                );
-            }
+            $value->properties['important'] = true;
+        } elseif ($token && $token->type === 'operator' && $token->value === '!') {
+            // Regular ! operator - just consume it
+            $this->stream->consume('operator');
         }
 
         if (! $this->stream->consumeIf('semicolon')) {
@@ -1184,6 +1177,8 @@ class ScssParser implements TokenAwareParserInterface
             })(),
 
             'operator', 'asterisk', 'colon', 'semicolon' => new OperatorNode($token->value, $token->line),
+
+            'important_modifier' => new IdentifierNode('!important', $token->line),
 
             default => (function () use ($token): void {
                 throw new SyntaxException(
