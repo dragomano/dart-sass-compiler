@@ -29,6 +29,21 @@ return (new Config())
             'closure_fn_spacing'       => 'none',
         ],
 
+        'ordered_imports' => [
+            'sort_algorithm' => 'alpha',
+            'imports_order' => [
+                'class',
+                'function',
+                'const',
+            ],
+        ],
+
+        'global_namespace_import' => [
+            'import_classes'   => true,
+            'import_constants' => true,
+            'import_functions' => true,
+        ],
+
         'not_operator_with_successor_space' => true,
         'single_line_empty_body' => true,
         'method_chaining_indentation' => true,
