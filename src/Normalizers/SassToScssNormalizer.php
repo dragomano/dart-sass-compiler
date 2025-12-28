@@ -101,8 +101,9 @@ readonly class SassToScssNormalizer implements SourceNormalizer
 
             $pendingEmptyLines = [];
 
-            if (preg_match('/^[a-zA-Z.#&%\-]+\s*,/', $trimmed)) {
-                $result[] = str_repeat(' ', $level * $indentSize) . $trimmed;
+            if (preg_match('/,\s*$/', $trimmed)) {
+                $lineToAdd = rtrim($trimmed);
+                $result[] = str_repeat(' ', $level * $indentSize) . $lineToAdd;
                 continue;
             }
 

@@ -1,0 +1,67 @@
+<?php
+
+declare(strict_types=1);
+
+use DartSass\Parsers\Syntax;
+
+describe('Syntax enum', function () {
+    it('has SASS constant with correct value', function () {
+        expect(Syntax::SASS->value)->toBe('sass');
+    });
+
+    it('has SCSS constant with correct value', function () {
+        expect(Syntax::SCSS->value)->toBe('scss');
+    });
+
+    describe('fromPath method', function () {
+        it('detects SASS syntax from .sass extension', function () {
+            $syntax = Syntax::fromPath('styles.sass');
+            expect($syntax)->toBe(Syntax::SASS);
+        });
+
+        it('detects SASS syntax from .sass file path (uppercase)', function () {
+            $syntax = Syntax::fromPath('STYLES.SASS');
+            expect($syntax)->toBe(Syntax::SASS);
+        });
+
+        it('detects SCSS syntax from .scss extension', function () {
+            $syntax = Syntax::fromPath('styles.scss');
+            expect($syntax)->toBe(Syntax::SCSS);
+        });
+
+        it('detects SCSS syntax from .scss file path (uppercase)', function () {
+            $syntax = Syntax::fromPath('STYLES.SCSS');
+            expect($syntax)->toBe(Syntax::SCSS);
+        });
+
+        it('detects SCSS syntax from file without extension', function () {
+            $syntax = Syntax::fromPath('styles');
+            expect($syntax)->toBe(Syntax::SCSS);
+        });
+
+        it('detects SCSS syntax from file with path and .scss extension', function () {
+            $syntax = Syntax::fromPath('/path/to/styles.scss');
+            expect($syntax)->toBe(Syntax::SCSS);
+        });
+
+        it('detects SASS syntax from file with path and .sass extension', function () {
+            $syntax = Syntax::fromPath('/path/to/styles.sass');
+            expect($syntax)->toBe(Syntax::SASS);
+        });
+
+        it('throws exception for unsupported extensions', function () {
+            expect(fn() => Syntax::fromPath('styles.css'))
+                ->toThrow(InvalidArgumentException::class);
+        });
+
+        it('throws exception for unknown file extensions', function () {
+            expect(fn() => Syntax::fromPath('styles.txt'))
+                ->toThrow(InvalidArgumentException::class);
+        });
+
+        it('handles paths with multiple dots correctly', function () {
+            $syntax = Syntax::fromPath('my.styles.sass');
+            expect($syntax)->toBe(Syntax::SASS);
+        });
+    });
+});

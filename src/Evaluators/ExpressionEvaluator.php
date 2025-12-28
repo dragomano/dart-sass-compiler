@@ -9,10 +9,10 @@ use DartSass\Exceptions\CompilationException;
 use DartSass\Handlers\FunctionHandler;
 use DartSass\Handlers\ModuleHandler;
 use DartSass\Handlers\VariableHandler;
+use DartSass\Modules\SassList;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\OperationNode;
 use DartSass\Parsers\Nodes\VariableNode;
-use DartSass\Utils\SassList;
 use DartSass\Utils\ValueFormatter;
 
 use function array_map;
@@ -278,17 +278,8 @@ class ExpressionEvaluator
         return $args;
     }
 
-    private function evaluateVariableNode(string $varName): mixed
+    private function evaluateVariableNode(string $varName)
     {
-        if ($this->isFunctionMetaParameter($varName)) {
-            return ltrim($varName, '$');
-        }
-
         return $this->evaluate($this->variableHandler->get($varName));
-    }
-
-    private function isFunctionMetaParameter(string $varName): bool
-    {
-        return in_array($varName, $this->functionHandler::ADJUST_PARAM_ORDER, true);
     }
 }

@@ -5,13 +5,10 @@ declare(strict_types=1);
 namespace DartSass\Parsers;
 
 use DartSass\Exceptions\InvalidColorException;
-use DartSass\Exceptions\SyntaxException;
 
-use function count;
 use function ctype_xdigit;
 use function in_array;
 use function preg_match;
-use function sprintf;
 use function str_contains;
 use function str_starts_with;
 use function strlen;
@@ -36,9 +33,6 @@ class Lexer implements LexerInterface
 
     private bool $expectingPropertyValue = false;
 
-    /**
-     * @throws SyntaxException
-     */
     public function tokenize(string $input): TokenStreamInterface
     {
         $this->resetState();
@@ -79,15 +73,9 @@ class Lexer implements LexerInterface
                     continue 2;
                 }
             }
-
-            throw new SyntaxException(
-                sprintf('Unexpected character: %s', $input[$this->position]),
-                $this->line,
-                $this->column
-            );
         }
 
-        return new TokenStream($this->postProcessTokens($tokens));
+        return new TokenStream($tokens);
     }
 
     private function resetState(): void
@@ -171,139 +159,11 @@ class Lexer implements LexerInterface
         return false;
     }
 
-    private function postProcessTokens(array $tokens): array
-    {
-        $processedTokens = [];
-        $tokenCount = count($tokens);
-
-        for ($i = 0; $i < $tokenCount; $i++) {
-            $currentToken = $tokens[$i];
-            $nextToken = ($i + 1 < $tokenCount) ? $tokens[$i + 1] : null;
-
-            if ($this->isInvalidHexColor($currentToken, $nextToken, $tokens, $i)) {
-                throw new InvalidColorException(
-                    $currentToken->value . $nextToken->value,
-                    $currentToken->line,
-                    $currentToken->column
-                );
-            }
-
-            if ($this->shouldSplitHashToken($currentToken, $nextToken)) {
-                $processedTokens[] = new Token(
-                    'operator',
-                    '#',
-                    $currentToken->line,
-                    $currentToken->column
-                );
-
-                if ($nextToken && $nextToken->type === 'identifier') {
-                    $processedTokens[] = $nextToken;
-                    $i++;
-                    continue;
-                }
-            }
-
-            if ($this->shouldSplitHexColor($currentToken)) {
-                $identifierPart = substr($currentToken->value, 1);
-                $processedTokens[] = new Token(
-                    'operator',
-                    '#',
-                    $currentToken->line,
-                    $currentToken->column
-                );
-                $processedTokens[] = new Token(
-                    'identifier',
-                    $identifierPart,
-                    $currentToken->line,
-                    $currentToken->column + 1
-                );
-                continue;
-            }
-
-            $processedTokens[] = $currentToken;
-        }
-
-        return $processedTokens;
-    }
-
-    private function shouldSplitHashToken($currentToken, $nextToken): bool
-    {
-        if ($currentToken->type !== 'identifier' || ! str_starts_with($currentToken->value, '#')) {
-            return false;
-        }
-
-        if (! $nextToken || $nextToken->type !== 'identifier') {
-            return false;
-        }
-
-        $hashPart = substr($currentToken->value, 1);
-
-        return $this->isValidIdentifier($hashPart);
-    }
-
-    private function shouldSplitHexColor($currentToken): bool
-    {
-        if ($currentToken->type !== 'hex_color' || ! $this->inBlock) {
-            return false;
-        }
-
-        $value = $currentToken->value;
-        if (strlen($value) <= 1 || $value[0] !== '#') {
-            return false;
-        }
-
-        $identifierPart = substr($value, 1);
-
-        return $this->isValidIdentifier($identifierPart);
-    }
-
-    private function isValidIdentifier(string $value): bool
-    {
-        return $value !== '' && preg_match('/^-?[a-zA-Z_][a-zA-Z0-9_-]*$/', $value);
-    }
-
-    private function isInvalidHexColor($currentToken, $nextToken, array $tokens, int $index): bool
-    {
-        if ($currentToken->type !== 'operator' || $currentToken->value !== '#' || ! $nextToken) {
-            return false;
-        }
-
-        if (! $this->isInPropertyValueContext($tokens, $index)) {
-            return false;
-        }
-
-        if (! in_array($nextToken->type, ['identifier', 'number'], true)) {
-            return false;
-        }
-
-        $hexPart = $nextToken->value;
-        $length  = strlen($hexPart);
-
-        return in_array($length, [3, 4, 6, 8], true) && ! ctype_xdigit($hexPart);
-    }
-
-    private function isInPropertyValueContext(array $tokens, int $index): bool
-    {
-        for ($j = $index - 1; $j >= 0; $j--) {
-            $prevToken = $tokens[$j];
-
-            if ($prevToken->type === 'colon') {
-                return true;
-            }
-
-            if (in_array($prevToken->type, ['brace_open', 'semicolon'], true)) {
-                return false;
-            }
-        }
-
-        return false;
-    }
-
     private function validatePotentialHexColor(string $input, int $position): void
     {
         $remaining = substr($input, $position + 1);
 
-        if (! preg_match('/^([a-fA-F0-9]{3,8})/', $remaining, $matches)) {
+        if (! preg_match('/^([a-zA-Z0-9]{3,8})/', $remaining, $matches)) {
             return;
         }
 

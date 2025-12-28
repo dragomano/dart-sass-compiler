@@ -33,9 +33,9 @@ readonly class DeclarationCompiler
             if ($declaration instanceof AstNode) {
                 $css .= $compileAst([$declaration], $parentSelector, $nestingLevel);
             } else {
-                $indent = str_repeat('  ', $nestingLevel);
+                $indent   = str_repeat('  ', $nestingLevel);
                 $property = key($declaration);
-                $value = current($declaration);
+                $value    = current($declaration);
 
                 $generatedPosition = $this->positionTracker->getCurrentPosition();
                 $generatedPosition['line'] += 1;
@@ -46,11 +46,8 @@ readonly class DeclarationCompiler
                 }
 
                 $formattedValue = $this->valueFormatter->format($evaluatedValue);
-                if ($value instanceof AstNode && ($value->properties['important'] ?? false)) {
-                    $formattedValue .= ' !important';
-                }
-
                 $declarationCss = "$indent$property: " . $formattedValue . ";\n";
+
                 $css .= $declarationCss;
 
                 $this->positionTracker->updatePosition($declarationCss);
@@ -61,7 +58,7 @@ readonly class DeclarationCompiler
                         'column' => $generatedPosition['column'] + strlen($indent),
                     ];
 
-                    $originalLine = $generatedPosition['line'];
+                    $originalLine   = $generatedPosition['line'];
                     $originalColumn = $this->positionTracker->calculateIndentation($originalLine);
 
                     $mappings[] = [

@@ -23,6 +23,7 @@ enum TokenPattern: string
     case IDENTIFIER                = '(?P<identifier>-?[a-zA-Z_][a-zA-Z0-9_-]*)';
     case DOUBLE_HASH_INTERPOLATION = '(?P<double_hash_interpolation>##\{)';
     case INTERPOLATION_OPEN        = '(?P<interpolation_open>#\{)';
+    case IMPORTANT_MODIFIER        = '(?P<important_modifier>!important\b)';
     case ATTRIBUTE_SELECTOR        = '(?P<attribute_selector>\[[^\]]+\])';
     case OPERATOR                  = '(?P<operator>[+\-*\/%=<>!&|.,\]#])';
     case BRACE_OPEN                = '(?P<brace_open>\{)';

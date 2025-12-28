@@ -6,8 +6,8 @@ namespace DartSass\Utils;
 
 use function count;
 use function explode;
-use function strlen;
 use function ltrim;
+use function strlen;
 
 class PositionTracker
 {

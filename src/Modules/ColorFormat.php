@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Utils;
+namespace DartSass\Modules;
 
 enum ColorFormat: string
 {
@@ -19,8 +19,8 @@ enum ColorFormat: string
     public function getPattern(): string
     {
         return match ($this) {
-            self::HEX,
-            self::HEXA  => '/^#([0-9a-fA-F]{3,8})$/',
+            self::HEX   => '/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/',
+            self::HEXA  => '/^#([0-9a-fA-F]{4}|[0-9a-fA-F]{8})$/',
             self::HSL   => '/^hsl\((\d+(?:\.\d+)?(?:deg|rad|grad|turn)?)[\s,]+(\d+(?:\.\d+)?)%[\s,]+(\d+(?:\.\d+)?)%\s*(?:\/\s*([0-1]?\.\d+|0|1|100%|\d{1,2}%))?\)$/',
             self::HSLA  => '/^hsla\((\d+(?:\.\d+)?(?:deg|rad|grad|turn)?)[\s,]+(\d+(?:\.\d+)?)%[\s,]+(\d+(?:\.\d+)?)%[\s,]+([0-1]?\.\d+|0|1|100%|\d{1,2}%)?\)$/',
             self::HWB   => '/^hwb\((\d+(?:\.\d+)?(?:deg|rad|grad|turn)?)[\s,]+(\d+(?:\.\d+)?)%[\s,]+(\d+(?:\.\d+)?)%\s*(?:\/\s*([0-1]?\.\d+|0|1|100%|\d{1,2}%))?\)$/',
@@ -39,32 +39,32 @@ enum ColorFormat: string
             self::HWB,
             self::LCH,
             self::OKLCH => true,
-            default     => false,
+            default => false,
         };
     }
 
     public function isLegacy(): bool
     {
         return match ($this) {
-            self::RGB,
-            self::RGBA,
             self::HSL,
             self::HSLA,
-            self::HWB => true,
-            default   => false,
+            self::HWB,
+            self::RGB,
+            self::RGBA => true,
+            default => false,
         };
     }
 
     public function getChannels(): array
     {
         return match ($this) {
-            self::RGB,
-            self::RGBA => ['red', 'r', 'green', 'g', 'blue', 'b', 'alpha', 'a'],
             self::HSL,
             self::HSLA => ['hue', 'h', 'saturation', 's', 'lightness', 'l', 'alpha', 'a'],
-            self::HWB => ['hue', 'h', 'whiteness', 'w', 'blackness', 'bl', 'alpha', 'a'],
+            self::HWB  => ['hue', 'h', 'whiteness', 'w', 'blackness', 'bl', 'alpha', 'a'],
             self::LCH,
             self::OKLCH => ['lightness', 'l', 'chroma', 'c', 'hue', 'h', 'alpha', 'a'],
+            self::RGB,
+            self::RGBA => ['red', 'r', 'green', 'g', 'blue', 'b', 'alpha', 'a'],
             default => ['alpha', 'a'],
         };
     }
@@ -79,13 +79,13 @@ enum ColorFormat: string
     public function getPrimaryChannels(): array
     {
         return match ($this) {
-            self::RGB,
-            self::RGBA => ['red', 'green', 'blue'],
             self::HSL,
             self::HSLA => ['hue', 'saturation', 'lightness'],
             self::HWB => ['hue', 'whiteness', 'blackness'],
             self::LCH,
             self::OKLCH => ['lightness', 'chroma', 'hue'],
+            self::RGB,
+            self::RGBA => ['red', 'green', 'blue'],
             default => [],
         };
     }
@@ -106,8 +106,8 @@ enum ColorFormat: string
     public function getBaseFormat(): self
     {
         return match ($this) {
-            self::RGBA => self::RGB,
             self::HSLA => self::HSL,
+            self::RGBA => self::RGB,
             default    => $this,
         };
     }

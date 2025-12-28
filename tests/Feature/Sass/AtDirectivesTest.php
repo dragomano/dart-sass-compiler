@@ -12,6 +12,7 @@ beforeEach(function () {
 it('supports @use directive', function () {
     $scss = <<<'SCSS'
     @use "colors";
+
     body {
         background: colors.$primary;
     }
@@ -30,6 +31,7 @@ it('supports @use directive', function () {
 it('supports @forward directive', function () {
     $scss = <<<'SCSS'
     @forward "colors";
+
     body {
         background: colors.$primary;
     }
@@ -48,6 +50,7 @@ it('supports @forward directive', function () {
 it('supports @forward with configuration', function () {
     $scss = <<<'SCSS'
     @forward "colors" with ($primary: green);
+
     body {
         background: colors.$primary;
     }
@@ -66,6 +69,7 @@ it('supports @forward with configuration', function () {
 it('supports @forward with hide', function () {
     $scss = <<<'SCSS'
     @forward "colors" hide $secondary;
+
     body {
         background: colors.$primary;
     }
@@ -84,6 +88,7 @@ it('supports @forward with hide', function () {
 it('throws error when accessing hidden property', function () {
     $scss = <<<'SCSS'
     @forward "colors" hide $primary;
+
     body {
         background: colors.$primary;
     }
@@ -96,6 +101,7 @@ it('throws error when accessing hidden property', function () {
 it('supports @use with alias', function () {
     $scss = <<<'SCSS'
     @use "_variables" as vars;
+
     body {
         background: vars.$color-checked;
     }
@@ -114,6 +120,7 @@ it('supports @use with alias', function () {
 it('supports @use with global namespace', function () {
     $scss = <<<'SCSS'
     @use "_variables" as *;
+
     body {
         background: $color-checked;
     }
@@ -132,6 +139,7 @@ it('supports @use with global namespace', function () {
 it('supports @use "_colors" as *', function () {
     $scss = <<<'SCSS'
     @use "_colors" as *;
+
     body {
         background: $primary;
     }
@@ -150,6 +158,7 @@ it('supports @use "_colors" as *', function () {
 it('supports @use with default namespace', function () {
     $scss = <<<'SCSS'
     @use "_variables";
+
     body {
         background: variables.$color-checked;
     }
@@ -168,6 +177,7 @@ it('supports @use with default namespace', function () {
 it('supports module variable usage in simple property', function () {
     $scss = <<<'SCSS'
     @use "variables";
+
     .test {
         background: variables.$color-light-gray;
     }
@@ -186,6 +196,7 @@ it('supports module variable usage in simple property', function () {
 it('supports module variable usage in complex property', function () {
     $scss = <<<'SCSS'
     @use "variables";
+
     .test {
         border: 1px solid variables.$color-light-gray;
     }
@@ -204,6 +215,7 @@ it('supports module variable usage in complex property', function () {
 it('supports module variable usage in multiple values', function () {
     $scss = <<<'SCSS'
     @use "variables";
+
     .test {
         margin: 10px variables.$some-margin;
     }
@@ -222,6 +234,7 @@ it('supports module variable usage in multiple values', function () {
 it('supports module variable usage nested in function', function () {
     $scss = <<<'SCSS'
     @use "variables";
+
     .test {
         color: lighten(variables.$color-light-gray, 10%);
     }
@@ -240,6 +253,7 @@ it('supports module variable usage nested in function', function () {
 it('supports module variable usage in calc function', function () {
     $scss = <<<'SCSS'
     @use "variables";
+
     .test {
         width: calc(100% - variables.$some-percent);
     }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Utils;
+namespace DartSass\Modules;
 
 use DartSass\Exceptions\CompilationException;
 use DartSass\Parsers\Nodes\ListNode;
@@ -24,7 +24,7 @@ use function str_ends_with;
 use function str_starts_with;
 use function trim;
 
-class ListFunctions
+class ListModule
 {
     public function append(array $args): SassList
     {

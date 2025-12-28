@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Utils;
+namespace DartSass\Modules;
 
 use DartSass\Exceptions\CompilationException;
+use DartSass\Utils\ValueFormatter;
 
 use function abs;
 use function acos;
@@ -28,14 +29,14 @@ use function mt_getrandmax;
 use function mt_rand;
 use function round;
 use function sin;
+use function sprintf;
 use function sqrt;
 use function tan;
-use function sprintf;
 
 use const M_E;
 use const M_PI;
 
-readonly class MathFunctions
+readonly class MathModule
 {
     public function __construct(private ValueFormatter $valueFormatter) {}
 
@@ -559,12 +560,39 @@ readonly class MathFunctions
 
     private function normalize(mixed $item): ?array
     {
+        // Handle numeric values
         if (is_numeric($item)) {
             return ['value' => (float) $item, 'unit' => ''];
         }
 
+        // Handle array values with value/unit structure
         if (is_array($item) && isset($item['value'])) {
             return ['value' => (float) $item['value'], 'unit' => $item['unit'] ?? ''];
+        }
+
+        // Handle AST NumberNode objects
+        if (is_object($item)) {
+            // Handle NumberNode from AST
+            if (str_ends_with($item::class, 'NumberNode')) {
+                return ['value' => (float) $item->value, 'unit' => $item->unit ?? ''];
+            }
+
+            // Handle other AST nodes that might have numeric values
+            if (property_exists($item, 'value') && is_numeric($item->value)) {
+                $unit = property_exists($item, 'unit') ? $item->unit : '';
+
+                return ['value' => (float) $item->value, 'unit' => $unit];
+            }
+
+            // Handle AST nodes with properties array
+            if (property_exists($item, 'properties') && is_array($item->properties)) {
+                $props = $item->properties;
+                if (isset($props['value']) && is_numeric($props['value'])) {
+                    $unit = $props['unit'] ?? '';
+
+                    return ['value' => (float) $props['value'], 'unit' => $unit];
+                }
+            }
         }
 
         return null;

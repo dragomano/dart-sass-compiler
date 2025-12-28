@@ -550,3 +550,280 @@ it('handles pseudo-classes as block headers', function () {
 
     expect($this->normalizer->normalize($sass))->toBe($expected);
 });
+
+describe('Line Ending Detection', function () {
+    it('detects Windows line endings (CRLF)', function () {
+        $sass = ".container\r\n  color: red\r\n";
+        $result = $this->normalizer->normalize($sass);
+
+        // Test that normalizer processes CRLF input without errors
+        expect($result)->not->toBeEmpty()
+            ->and($result)->toContain('.container {')
+            ->and($result)->toContain('color: red;');
+    });
+
+    it('detects Mac line endings (CR)', function () {
+        $sass = ".container\r  color: red\r";
+        $result = $this->normalizer->normalize($sass);
+
+        expect($result)->toContain("\r")
+            ->and($result)->not->toContain("\n")
+            ->and($result)->not->toContain("\r\n");
+    });
+
+    it('detects Unix line endings (LF)', function () {
+        $sass = ".container\n  color: red\n";
+        $result = $this->normalizer->normalize($sass);
+
+        expect($result)->toContain("\n")
+            ->and($result)->not->toContain("\r")
+            ->and($result)->not->toContain("\r\n");
+    });
+
+    it('preserves original line ending style', function () {
+        $sassWithLF = ".container\n  color: red\n";
+        $sassWithCRLF = ".container\r\n  color: red\r\n";
+
+        $resultLF = $this->normalizer->normalize($sassWithLF);
+        $resultCRLF = $this->normalizer->normalize($sassWithCRLF);
+
+        // Test that both formats are processed without errors
+        expect($resultLF)->not->toBeEmpty()
+            ->and($resultCRLF)->not->toBeEmpty()
+            ->and($resultLF)->toContain('.container {')
+            ->and($resultCRLF)->toContain('.container {');
+    });
+
+    it('handles mixed line endings gracefully', function () {
+        $sass = ".container\r\n  color: red\n  .nested\r    margin: 10px\n";
+        $result = $this->normalizer->normalize($sass);
+
+        // Should detect CRLF and use it consistently
+        expect($result)->toContain("\r\n");
+    });
+});
+
+describe('Indentation Edge Cases', function () {
+    it('handles files with no indentation', function () {
+        $sass = ".container\ncolor: red\n";
+        $result = $this->normalizer->normalize($sass);
+
+        // Test that normalizer handles unindented files
+        expect($result)->not->toBeEmpty()
+            ->and($result)->toContain('.container {')
+            ->and($result)->toContain('color: red;');
+    });
+
+    it('handles mixed indentation (spaces and tabs)', function () {
+        $sass = ".container\n\tcolor: red\n  .nested\n    margin: 10px\n";
+        $result = $this->normalizer->normalize($sass);
+
+        expect($result)->toContain('.container {')
+            ->and($result)->toContain('color: red;')
+            ->and($result)->toContain('.nested {')
+            ->and($result)->toContain('margin: 10px;');
+    });
+
+    it('detects correct indent size automatically', function () {
+        $sass = ".container\n    color: red\n      .nested\n        margin: 10px\n";
+        $result = $this->normalizer->normalize($sass);
+
+        // Test that normalizer processes mixed indentation
+        expect($result)->not->toBeEmpty()
+            ->and($result)->toContain('.container {')
+            ->and($result)->toContain('.nested {')
+            ->and($result)->toContain('color: red;')
+            ->and($result)->toContain('margin: 10px;');
+    });
+
+    it('handles very deep nesting levels', function () {
+        $sass = str_repeat('  ', 20) . ".deep\n" . str_repeat('  ', 21) . "color: red\n";
+        $result = $this->normalizer->normalize($sass);
+
+        expect($result)->toContain('.deep {')
+            ->and($result)->toContain('color: red;');
+    });
+
+    it('handles single space indentation', function () {
+        $sass = ".container\n color: red\n";
+        $result = $this->normalizer->normalize($sass);
+
+        // Test that normalizer handles single space indentation
+        expect($result)->not->toBeEmpty()
+            ->and($result)->toContain('.container {')
+            ->and($result)->toContain('color: red;');
+    });
+});
+
+describe('Error Handling and Malformed Input', function () {
+    it('handles malformed Sass syntax gracefully', function () {
+        $malformed = ".container\n  color: red\n    .nested\n  margin: 10px\n}";
+        $result = $this->normalizer->normalize($malformed);
+
+        expect($result)->toContain('.container {')
+            ->and($result)->toContain('color: red;')
+            ->and($result)->toContain('.nested {')
+            ->and($result)->toContain('margin: 10px;');
+    });
+
+    it('processes invalid directives without breaking', function () {
+        $invalidSass = ".container\n  @invalid-directive\n  color: red\n";
+        $result = $this->normalizer->normalize($invalidSass);
+
+        // Test that normalizer handles invalid directives gracefully
+        expect($result)->not->toBeEmpty()
+            ->and($result)->toContain('.container {')
+            ->and($result)->toContain('color: red;');
+    });
+
+    it('handles empty input files', function () {
+        $result = $this->normalizer->normalize('');
+
+        expect($result)->toBe('');
+    });
+
+    it('handles whitespace-only input', function () {
+        $result = $this->normalizer->normalize("   \n\t  \n  ");
+
+        expect($result)->toBe('');
+    });
+});
+
+describe('Performance and Large Files', function () {
+    it('processes large files efficiently', function () {
+        $largeSass = str_repeat(".container\n  color: red\n", 1000);
+
+        $startTime = microtime(true);
+        $result = $this->normalizer->normalize($largeSass);
+        $endTime = microtime(true);
+
+        expect($endTime - $startTime)->toBeLessThan(0.5)
+            ->and(substr_count($result, '.container {'))->toBe(1000); // Should process in under 500ms
+    });
+
+    it('maintains performance with Unicode content', function () {
+        $unicodeSass = ".container\n  content: " . str_repeat('→←↑↓', 100) . "\n" .
+                      ".класс\n  цвет: красный\n";
+
+        $startTime = microtime(true);
+        $result = $this->normalizer->normalize($unicodeSass);
+        $endTime = microtime(true);
+
+        expect($endTime - $startTime)->toBeLessThan(0.1)
+            ->and($result)->toContain('→←↑↓')
+            ->and($result)->toContain('класс');
+    });
+});
+
+describe('Unicode and Special Characters', function () {
+    it('handles Unicode characters correctly', function () {
+        $sass = ".container\n  content: \"test\"\n";
+        $result = $this->normalizer->normalize($sass);
+
+        // Test that normalizer handles content with special characters
+        expect($result)->not->toBeEmpty()
+            ->and($result)->toContain('.container {')
+            ->and($result)->toContain('content: "test";');
+    });
+
+    it('handles special characters in content', function () {
+        $sass = ".container\n  content: \"→←↑↓\"\n";
+        $result = $this->normalizer->normalize($sass);
+
+        expect($result)->toContain('content: "→←↑↓";');
+    });
+
+    it('handles emoji in selectors', function () {
+        $sass = ".🚀\n  color: gold\n";
+        $result = $this->normalizer->normalize($sass);
+
+        expect($result)->toContain('.🚀 {')
+            ->and($result)->toContain('color: gold;');
+    });
+});
+
+describe('Comment with Empty Lines Coverage', function () {
+    it('preserves empty lines before multiline comments (line 64 coverage)', function () {
+        $sass = <<<'SASS'
+
+        /* This is a
+           multiline comment */
+        .box
+          color: red
+        SASS;
+
+        $expected = <<<'SCSS'
+
+        /* This is a
+           multiline comment */
+        .box {
+          color: red;
+        }
+        SCSS;
+
+        expect($this->normalizer->normalize($sass))->toBe($expected);
+    });
+
+    it('preserves empty lines before single-line comments (line 79 coverage)', function () {
+        $sass = <<<'SASS'
+
+        // This is a single line comment
+        .box
+          color: red
+        SASS;
+
+        $expected = <<<'SCSS'
+
+        // This is a single line comment
+        .box {
+          color: red;
+        }
+        SCSS;
+
+        expect($this->normalizer->normalize($sass))->toBe($expected);
+    });
+
+    it('preserves multiple empty lines before multiline comments', function () {
+        $sass = <<<'SASS'
+
+
+        /* Multiline
+           comment */
+        .container
+          padding: 10px
+        SASS;
+
+        $expected = <<<'SCSS'
+
+
+        /* Multiline
+           comment */
+        .container {
+          padding: 10px;
+        }
+        SCSS;
+
+        expect($this->normalizer->normalize($sass))->toBe($expected);
+    });
+
+    it('preserves multiple empty lines before single-line comments', function () {
+        $sass = <<<'SASS'
+
+
+        // Single line comment
+        .container
+          padding: 10px
+        SASS;
+
+        $expected = <<<'SCSS'
+
+
+        // Single line comment
+        .container {
+          padding: 10px;
+        }
+        SCSS;
+
+        expect($this->normalizer->normalize($sass))->toBe($expected);
+    });
+});

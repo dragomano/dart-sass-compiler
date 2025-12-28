@@ -12,6 +12,7 @@ generated.scss
 result*
 coverage/
 coverage_report/
+coverage-report/
 vendor/
 node_modules/
 examples/

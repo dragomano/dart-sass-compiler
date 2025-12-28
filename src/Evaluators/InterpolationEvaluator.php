@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace DartSass\Evaluators;
 
 use Closure;
-use Exception;
 use DartSass\Utils\ValueFormatter;
+use Exception;
 
 use function is_string;
 use function preg_match;

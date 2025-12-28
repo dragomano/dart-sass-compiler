@@ -2,18 +2,20 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Utils;
+namespace DartSass\Modules;
 
-use InvalidArgumentException;
 use DartSass\Exceptions\CompilationException;
+use InvalidArgumentException;
 
 use function abs;
-use function atan2;
 use function array_flip;
 use function array_merge;
+use function atan2;
 use function cos;
+use function explode;
 use function fmod;
 use function hexdec;
+use function implode;
 use function in_array;
 use function max;
 use function min;
@@ -30,7 +32,7 @@ use function trim;
 
 use const M_PI;
 
-class ColorFunctions
+class ColorModule
 {
     private static array $rgbToHslCache = [];
 
@@ -77,7 +79,7 @@ class ColorFunctions
         '$space'      => true,
     ];
 
-    private const NAMED_COLORS = [
+    public const NAMED_COLORS = [
         'aliceblue'            => '#f0f8ff',
         'antiquewhite'         => '#faebd7',
         'aqua'                 => '#00ffff',
@@ -584,6 +586,7 @@ class ColorFunctions
                     $inTargetSpace['bl'] = ($inTargetSpace['bl'] / $sum) * self::PERCENT_MAX;
                 }
             })(),
+            default => null, // Handle other color spaces (LCH, OKLCH) without modification
         };
 
         $inTargetSpace['a'] = $this->clamp(
@@ -782,8 +785,8 @@ class ColorFunctions
         foreach (ColorFormat::cases() as $format) {
             if (preg_match($format->getPattern(), $color, $matches)) {
                 return match ($format) {
-                    ColorFormat::HEX,
-                    ColorFormat::HEXA  => $this->parseHexColor($matches[1]),
+                    ColorFormat::HEX   => $this->parseHexColor($matches[1]),
+                    ColorFormat::HEXA  => $this->parseHexaColor($matches[1]),
                     ColorFormat::HSL   => $this->parseHslColor($matches),
                     ColorFormat::HSLA  => $this->parseHslaColor($matches),
                     ColorFormat::HWB   => $this->parseHwbColor($matches),
@@ -798,18 +801,53 @@ class ColorFunctions
         throw new CompilationException("Invalid color format: $color");
     }
 
+    public function formatColor(array $colorData): string
+    {
+        return match ($colorData['format']) {
+            ColorFormat::HSL->value,
+            ColorFormat::HSLA->value => $this->formatHslColor($colorData),
+            ColorFormat::HWB->value => $this->formatHwbColor($colorData),
+            ColorFormat::LCH->value => $this->formatLchColor($colorData),
+            ColorFormat::OKLCH->value => $this->formatOklchColor($colorData),
+            ColorFormat::RGB->value,
+            ColorFormat::RGBA->value => $this->formatRgbColor($colorData),
+            default => $this->formatRgbColor($this->ensureRgbFormat($colorData)),
+        };
+    }
+
     private function parseHexColor(string $hex): array
     {
-        if (strlen($hex) === 3 || strlen($hex) === 4) {
+        if (strlen($hex) === 3) {
             $r = hexdec($hex[0] . $hex[0]);
             $g = hexdec($hex[1] . $hex[1]);
             $b = hexdec($hex[2] . $hex[2]);
-            $a = strlen($hex) === 4 ? hexdec($hex[3] . $hex[3]) / self::RGB_MAX : self::ALPHA_MAX;
         } else {
             $r = hexdec(substr($hex, 0, 2));
             $g = hexdec(substr($hex, 2, 2));
             $b = hexdec(substr($hex, 4, 2));
-            $a = strlen($hex) === 8 ? hexdec(substr($hex, 6, 2)) / self::RGB_MAX : self::ALPHA_MAX;
+        }
+
+        return [
+            'r'      => $r,
+            'g'      => $g,
+            'b'      => $b,
+            'a'      => self::ALPHA_MAX,
+            'format' => ColorFormat::RGB->value,
+        ];
+    }
+
+    private function parseHexaColor(string $hex): array
+    {
+        if (strlen($hex) === 4) {
+            $r = hexdec($hex[0] . $hex[0]);
+            $g = hexdec($hex[1] . $hex[1]);
+            $b = hexdec($hex[2] . $hex[2]);
+            $a = hexdec($hex[3] . $hex[3]) / self::RGB_MAX;
+        } else {
+            $r = hexdec(substr($hex, 0, 2));
+            $g = hexdec(substr($hex, 2, 2));
+            $b = hexdec(substr($hex, 4, 2));
+            $a = hexdec(substr($hex, 6, 2)) / self::RGB_MAX;
         }
 
         return [
@@ -817,7 +855,7 @@ class ColorFunctions
             'g'      => $g,
             'b'      => $b,
             'a'      => $a,
-            'format' => $a < self::ALPHA_MAX ? ColorFormat::RGBA->value : ColorFormat::RGB->value,
+            'format' => ColorFormat::RGBA->value,
         ];
     }
 
@@ -1226,41 +1264,6 @@ class ColorFunctions
         };
     }
 
-    private function formatColor(array $colorData): string
-    {
-        return match ($colorData['format']) {
-            ColorFormat::HSL->value,
-            ColorFormat::HSLA->value => $this->formatHslColor($colorData),
-            ColorFormat::HWB->value => $this->formatHwbColor($colorData),
-            ColorFormat::LCH->value => $this->formatLchColor($colorData),
-            ColorFormat::OKLCH->value => $this->formatOklchColor($colorData),
-            ColorFormat::RGB->value,
-            ColorFormat::RGBA->value => $this->formatRgbColor($colorData),
-            default => $this->formatRgbColor($this->ensureRgbFormat($colorData)),
-        };
-    }
-
-    private function formatRgbColor(array $colorData): string
-    {
-        $r = (int) round($colorData['r']);
-        $g = (int) round($colorData['g']);
-        $b = (int) round($colorData['b']);
-        $a = $colorData['a'];
-
-        if ($a < self::ALPHA_MAX) {
-            $aHex = (int) round($a * self::RGB_MAX);
-            return sprintf('#%02x%02x%02x%02x', $r, $g, $b, $aHex);
-        } else {
-            $named = $this->getNamedColor($r, $g, $b);
-
-            if ($named !== null) {
-                return $named;
-            }
-
-            return sprintf('#%02x%02x%02x', $r, $g, $b);
-        }
-    }
-
     private function formatHslColor(array $colorData): string
     {
         $h = round($colorData['h'], 10);
@@ -1326,6 +1329,27 @@ class ColorFunctions
         }
 
         return "oklch($l% $c $h)";
+    }
+
+    private function formatRgbColor(array $colorData): string
+    {
+        $r = (int) round($colorData['r']);
+        $g = (int) round($colorData['g']);
+        $b = (int) round($colorData['b']);
+        $a = $colorData['a'];
+
+        if ($a < self::ALPHA_MAX) {
+            $aHex = (int) round($a * self::RGB_MAX);
+            return sprintf('#%02x%02x%02x%02x', $r, $g, $b, $aHex);
+        } else {
+            $named = $this->getNamedColor($r, $g, $b);
+
+            if ($named !== null) {
+                return $named;
+            }
+
+            return sprintf('#%02x%02x%02x', $r, $g, $b);
+        }
     }
 
     private function rgbToHsl(float $r, float $g, float $b): array

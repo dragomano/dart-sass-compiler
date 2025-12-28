@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use DartSass\Parsers\Nodes\IdentifierNode;
 use DartSass\Utils\LazyValue;
 use DartSass\Utils\ValueFormatter;
 
@@ -165,6 +166,55 @@ describe('ValueFormatter', function () {
             $result = $this->valueFormatter->format(0.0000001);
 
             expect($result)->toBe('1.0E-7');
+        });
+    });
+
+    describe('format with !important', function () {
+        it('formats IdentifierNode with important=true by adding !important', function () {
+            $identifier = new IdentifierNode('red', 1);
+            $identifier->properties['important'] = true;
+
+            $result = $this->valueFormatter->format($identifier);
+
+            expect($result)->toBe('red !important');
+        });
+
+        it('formats IdentifierNode with important=false without adding !important', function () {
+            $identifier = new IdentifierNode('blue', 1);
+            $identifier->properties['important'] = false;
+
+            $result = $this->valueFormatter->format($identifier);
+
+            expect($result)->toBe('blue');
+        });
+
+        it('formats IdentifierNode without important property without adding !important', function () {
+            $identifier = new IdentifierNode('green', 1);
+
+            $result = $this->valueFormatter->format($identifier);
+
+            expect($result)->toBe('green');
+        });
+
+        it('formats regular string without adding !important', function () {
+            $result = $this->valueFormatter->format('yellow');
+
+            expect($result)->toBe('yellow');
+        });
+
+        it('formats number without adding !important', function () {
+            $result = $this->valueFormatter->format(42);
+
+            expect($result)->toBe('42');
+        });
+
+        it('formats IdentifierNode with complex value and important=true', function () {
+            $identifier = new IdentifierNode('rgba(255, 0, 0, 0.5)', 1);
+            $identifier->properties['important'] = true;
+
+            $result = $this->valueFormatter->format($identifier);
+
+            expect($result)->toBe('rgba(255, 0, 0, 0.5) !important');
         });
     });
 });

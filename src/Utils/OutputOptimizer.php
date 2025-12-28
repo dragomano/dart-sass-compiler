@@ -94,8 +94,8 @@ readonly class OutputOptimizer
         }
 
         if ($this->style === 'compressed') {
-            // Remove /* comments */
-            $css = preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', $css);
+            // Remove /* comments */ but preserve sourceMappingURL comments
+            $css = preg_replace('/\/\*(?!#?\s*sourceMappingURL).*?\*\//s', '', $css);
 
             // All whitespace → single space
             $css = preg_replace('/\s+/', ' ', $css);
