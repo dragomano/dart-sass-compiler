@@ -12,19 +12,19 @@ beforeEach(function () {
 });
 
 it('correctly parses hex3 color', function () {
-    $result = $this->accessor->callProtectedMethod('parseColor', ['#f00']);
+    $result = $this->colorModule->parseColor('#f00');
 
     expect($result)->toEqual(['r' => 255, 'g' => 0, 'b' => 0, 'a' => 1.0, 'format' => 'rgb']);
 });
 
 it('correctly parses hex6 color', function () {
-    $result = $this->accessor->callProtectedMethod('parseColor', ['#ff0000']);
+    $result = $this->colorModule->parseColor('#ff0000');
 
     expect($result)->toEqual(['r' => 255, 'g' => 0, 'b' => 0, 'a' => 1.0, 'format' => 'rgb']);
 });
 
 it('correctly parses hex8 color', function () {
-    $result = $this->accessor->callProtectedMethod('parseColor', ['#ff000080']);
+    $result = $this->colorModule->parseColor('#ff000080');
 
     expect($result['r'])->toBe(255)
         ->and($result['g'])->toBe(0)
@@ -34,144 +34,144 @@ it('correctly parses hex8 color', function () {
 });
 
 it('correctly parses rgb color', function () {
-    $result = $this->accessor->callProtectedMethod('parseColor', ['rgb(255, 0, 0)']);
+    $result = $this->colorModule->parseColor('rgb(255, 0, 0)');
 
     expect($result)->toEqual(['r' => 255, 'g' => 0, 'b' => 0, 'a' => 1.0, 'format' => 'rgb']);
 });
 
 it('correctly parses rgba color', function () {
-    $result = $this->accessor->callProtectedMethod('parseColor', ['rgba(255, 0, 0, 0.5)']);
+    $result = $this->colorModule->parseColor('rgba(255, 0, 0, 0.5)');
 
     expect($result)->toEqual(['r' => 255, 'g' => 0, 'b' => 0, 'a' => 0.5, 'format' => 'rgba']);
 });
 
 it('correctly parses hsl color', function () {
-    $result = $this->accessor->callProtectedMethod('parseColor', ['hsl(0, 100%, 50%)']);
+    $result = $this->colorModule->parseColor('hsl(0, 100%, 50%)');
 
     expect($result)->toEqual(['h' => 0, 's' => 100, 'l' => 50, 'a' => 1.0, 'format' => 'hsl']);
 });
 
 it('correctly parses hsla color', function () {
-    $result = $this->accessor->callProtectedMethod('parseColor', ['hsla(0, 100%, 50%, 0.5)']);
+    $result = $this->colorModule->parseColor('hsla(0, 100%, 50%, 0.5)');
 
     expect($result)->toEqual(['h' => 0, 's' => 100, 'l' => 50, 'a' => 0.5, 'format' => 'hsla']);
 });
 
 it('correctly parses hwb color', function () {
-    $result = $this->accessor->callProtectedMethod('parseColor', ['hwb(0, 0%, 50%)']);
+    $result = $this->colorModule->parseColor('hwb(0, 0%, 50%)');
 
     expect($result)->toEqual(['h' => 0, 'w' => 0, 'bl' => 50, 'a' => 1.0, 'format' => 'hwb']);
 });
 
 it('correctly parses lch color', function () {
-    $result = $this->accessor->callProtectedMethod('parseColor', ['lch(60% 40 30deg)']);
+    $result = $this->colorModule->parseColor('lch(60% 40 30deg)');
 
     expect($result)->toEqual(['l' => 60, 'c' => 40, 'h' => 30, 'a' => 1.0, 'format' => 'lch']);
 });
 
 it('correctly parses lch color with alpha', function () {
-    $result = $this->accessor->callProtectedMethod('parseColor', ['lch(60% 40 30deg / 0.5)']);
+    $result = $this->colorModule->parseColor('lch(60% 40 30deg / 0.5)');
 
     expect($result)->toEqual(['l' => 60, 'c' => 40, 'h' => 30, 'a' => 0.5, 'format' => 'lch']);
 });
 
 it('correctly parses oklch color', function () {
-    $result = $this->accessor->callProtectedMethod('parseColor', ['oklch(60% 0.15 30)']);
+    $result = $this->colorModule->parseColor('oklch(60% 0.15 30)');
 
     expect($result)->toEqual(['l' => 60, 'c' => 0.15, 'h' => 30, 'a' => 1.0, 'format' => 'oklch']);
 });
 
 it('correctly parses oklch color with alpha', function () {
-    $result = $this->accessor->callProtectedMethod('parseColor', ['oklch(60% 0.15 30 / 0.5)']);
+    $result = $this->colorModule->parseColor('oklch(60% 0.15 30 / 0.5)');
 
     expect($result)->toEqual(['l' => 60, 'c' => 0.15, 'h' => 30, 'a' => 0.5, 'format' => 'oklch']);
 });
 
 it('correctly parses named colors', function () {
-    $result = $this->accessor->callProtectedMethod('parseColor', ['red']);
+    $result = $this->colorModule->parseColor('red');
 
     expect($result)->toEqual(['r' => 255, 'g' => 0, 'b' => 0, 'a' => 1.0, 'format' => 'rgb']);
 
-    $result = $this->accessor->callProtectedMethod('parseColor', ['blue']);
+    $result = $this->colorModule->parseColor('blue');
 
     expect($result)->toEqual(['r' => 0, 'g' => 0, 'b' => 255, 'a' => 1.0, 'format' => 'rgb']);
 });
 
 it('throws exception for invalid color', function () {
-    expect(fn() => $this->accessor->callProtectedMethod('parseColor', ['invalid']))
+    expect(fn() => $this->colorModule->parseColor('invalid'))
         ->toThrow(CompilationException::class);
 });
 
 it('throws exception for invalid hex color', function () {
-    expect(fn() => $this->accessor->callProtectedMethod('parseColor', ['#ff']))
+    expect(fn() => $this->colorModule->parseColor('#ff'))
         ->toThrow(CompilationException::class);
 });
 
 it('throws exception for invalid rgb with negative values', function () {
-    expect(fn() => $this->accessor->callProtectedMethod('parseColor', ['rgb(-1, 0, 0)']))
+    expect(fn() => $this->colorModule->parseColor('rgb(-1, 0, 0)'))
         ->toThrow(CompilationException::class);
 });
 
 it('throws exception for invalid hsl with out-of-range saturation', function () {
-    expect(fn() => $this->accessor->callProtectedMethod('parseColor', ['hsl(0, 150%, 50%)']))
+    expect(fn() => $this->colorModule->parseColor('hsl(0, 150%, 50%)'))
         ->toThrow(CompilationException::class);
 });
 
 it('throws exception for invalid rgba with out-of-range alpha', function () {
-    expect(fn() => $this->accessor->callProtectedMethod('parseColor', ['rgba(255, 0, 0, 1.5)']))
+    expect(fn() => $this->colorModule->parseColor('rgba(255, 0, 0, 1.5)'))
         ->toThrow(CompilationException::class);
 });
 
 it('throws exception for invalid hsl with out-of-range lightness', function () {
-    expect(fn() => $this->accessor->callProtectedMethod('parseColor', ['hsl(0, 100%, 150%)']))
+    expect(fn() => $this->colorModule->parseColor('hsl(0, 100%, 150%)'))
         ->toThrow(CompilationException::class);
 });
 
 it('throws exception for invalid hsla with out-of-range saturation', function () {
-    expect(fn() => $this->accessor->callProtectedMethod('parseColor', ['hsla(0, 150%, 50%, 0.5)']))
+    expect(fn() => $this->colorModule->parseColor('hsla(0, 150%, 50%, 0.5)'))
         ->toThrow(CompilationException::class);
 });
 
 it('throws exception for invalid hsla with out-of-range lightness', function () {
-    expect(fn() => $this->accessor->callProtectedMethod('parseColor', ['hsla(0, 100%, 150%, 0.5)']))
+    expect(fn() => $this->colorModule->parseColor('hsla(0, 100%, 150%, 0.5)'))
         ->toThrow(CompilationException::class);
 });
 
 it('throws exception for invalid hsla with out-of-range alpha', function () {
-    expect(fn() => $this->accessor->callProtectedMethod('parseColor', ['hsla(0, 100%, 50%, 1.5)']))
+    expect(fn() => $this->colorModule->parseColor('hsla(0, 100%, 50%, 1.5)'))
         ->toThrow(CompilationException::class);
 });
 
 it('correctly formats rgb', function () {
     $colorData = ['r' => 255, 'g' => 0, 'b' => 0, 'a' => 1.0, 'format' => 'rgb'];
 
-    $result = $this->accessor->callProtectedMethod('formatColor', [$colorData]);
+    $result = $this->colorModule->formatColor($colorData);
     expect($result)->toBe('red');
 });
 
 it('correctly formats rgba', function () {
     $colorData = ['r' => 255, 'g' => 0, 'b' => 0, 'a' => 0.5, 'format' => 'rgba'];
 
-    $result = $this->accessor->callProtectedMethod('formatColor', [$colorData]);
+    $result = $this->colorModule->formatColor($colorData);
     expect($result)->toBe('#ff000080');
 });
 
 it('correctly formats hsl', function () {
     $colorData = ['h' => 0, 's' => 100, 'l' => 50, 'a' => 1.0, 'format' => 'hsl'];
 
-    $result = $this->accessor->callProtectedMethod('formatColor', [$colorData]);
+    $result = $this->colorModule->formatColor($colorData);
     expect($result)->toBe('hsl(0, 100%, 50%)');
 });
 
 it('correctly formats hsla', function () {
     $colorData = ['h' => 0, 's' => 100, 'l' => 50, 'a' => 0.5, 'format' => 'hsla'];
 
-    $result = $this->accessor->callProtectedMethod('formatColor', [$colorData]);
+    $result = $this->colorModule->formatColor($colorData);
     expect($result)->toBe('hsla(0, 100%, 50%, 0.5)');
 });
 
 it('correctly converts rgb to hsl', function () {
-    $hsl = $this->accessor->callProtectedMethod('rgbToHsl', [255, 0, 0]);
+    $hsl = $this->accessor->callMethod('rgbToHsl', [255, 0, 0]);
 
     expect($hsl['h'])->toBe(0.0)
         ->and($hsl['s'])->toBe(100.0)
@@ -179,7 +179,7 @@ it('correctly converts rgb to hsl', function () {
 });
 
 it('correctly converts hsl to rgb', function () {
-    $rgb = $this->accessor->callProtectedMethod('hslToRgb', [0, 100, 50]);
+    $rgb = $this->accessor->callMethod('hslToRgb', [0, 100, 50]);
 
     expect($rgb['r'])->toBe(255.0)
         ->and($rgb['g'])->toBe(0.0)
@@ -187,7 +187,7 @@ it('correctly converts hsl to rgb', function () {
 });
 
 it('correctly converts rgb to hwb', function () {
-    $hwb = $this->accessor->callProtectedMethod('rgbToHwb', [255, 255, 255]);
+    $hwb = $this->accessor->callMethod('rgbToHwb', [255, 255, 255]);
 
     expect($hwb['h'])->toBe(0.0)
         ->and($hwb['w'])->toBe(100.0)
@@ -196,7 +196,7 @@ it('correctly converts rgb to hwb', function () {
 
 it('correctly converts rgb to hwb when green component dominates', function () {
     // Pure green color - G > R and G > B
-    $hwb = $this->accessor->callProtectedMethod('rgbToHwb', [0, 255, 0]);
+    $hwb = $this->accessor->callMethod('rgbToHwb', [0, 255, 0]);
 
     expect($hwb['h'])->toBe(120.0)
         ->and($hwb['w'])->toBe(0.0)
@@ -205,7 +205,7 @@ it('correctly converts rgb to hwb when green component dominates', function () {
 
 it('correctly converts rgb to hwb when blue component dominates', function () {
     // Pure blue color - B > R and B > G
-    $hwb = $this->accessor->callProtectedMethod('rgbToHwb', [0, 0, 255]);
+    $hwb = $this->accessor->callMethod('rgbToHwb', [0, 0, 255]);
 
     expect($hwb['h'])->toBe(240.0)
         ->and($hwb['w'])->toBe(0.0)
@@ -214,7 +214,7 @@ it('correctly converts rgb to hwb when blue component dominates', function () {
 
 it('correctly converts rgb to hwb with green dominance and mixed colors', function () {
     // Green-dominant color - G is max, but R and B are not max
-    $hwb = $this->accessor->callProtectedMethod('rgbToHwb', [100, 200, 50]);
+    $hwb = $this->accessor->callMethod('rgbToHwb', [100, 200, 50]);
 
     // Green should dominate with hue around 120 degrees
     expect($hwb['h'])->toBeGreaterThan(90.0)->toBeLessThan(140.0)
@@ -224,7 +224,7 @@ it('correctly converts rgb to hwb with green dominance and mixed colors', functi
 
 it('correctly converts rgb to hwb with blue dominance and mixed colors', function () {
     // Blue-dominant color - B is max, but R and G are not max
-    $hwb = $this->accessor->callProtectedMethod('rgbToHwb', [50, 100, 200]);
+    $hwb = $this->accessor->callMethod('rgbToHwb', [50, 100, 200]);
 
     // Blue should dominate with hue around 240 degrees
     expect($hwb['h'])->toBeGreaterThan(200.0)->toBeLessThan(280.0)
@@ -233,7 +233,7 @@ it('correctly converts rgb to hwb with blue dominance and mixed colors', functio
 });
 
 it('correctly converts hwb to rgb', function () {
-    $rgb = $this->accessor->callProtectedMethod('hwbToRgb', [0, 100.0, 0]);
+    $rgb = $this->accessor->callMethod('hwbToRgb', [0, 100.0, 0]);
 
     expect($rgb['r'])->toBe(255.0)
         ->and($rgb['g'])->toBe(255.0)
@@ -642,14 +642,14 @@ it('correctly combines multiple rgb adjustment parameters', function () {
 
 it('correctly converts rgb to xyz', function () {
     // Red color
-    $xyz = $this->accessor->callProtectedMethod('rgbToXyz', [255, 0, 0]);
+    $xyz = $this->accessor->callMethod('rgbToXyz', [255, 0, 0]);
 
     expect($xyz['x'])->toBeCloseTo(41.24, 0.01)
         ->and($xyz['y'])->toBeCloseTo(21.26, 0.01)
         ->and($xyz['z'])->toBeCloseTo(1.93, 0.01);
 
     // White color
-    $xyz = $this->accessor->callProtectedMethod('rgbToXyz', [255, 255, 255]);
+    $xyz = $this->accessor->callMethod('rgbToXyz', [255, 255, 255]);
 
     expect($xyz['x'])->toBeCloseTo(95.05, 0.01)
         ->and($xyz['y'])->toBeCloseTo(100.0, 0.01)
@@ -658,14 +658,14 @@ it('correctly converts rgb to xyz', function () {
 
 it('correctly converts xyz to rgb', function () {
     // Red color approximation
-    $rgb = $this->accessor->callProtectedMethod('xyzToRgb', [41.24, 21.26, 1.93]);
+    $rgb = $this->accessor->callMethod('xyzToRgb', [41.24, 21.26, 1.93]);
 
     expect($rgb['r'])->toBeCloseTo(255.0, 1.0)
         ->and($rgb['g'])->toBeCloseTo(0.0, 1.0)
         ->and($rgb['b'])->toBeCloseTo(0.0, 1.0);
 
     // White color approximation
-    $rgb = $this->accessor->callProtectedMethod('xyzToRgb', [95.05, 100.0, 108.9]);
+    $rgb = $this->accessor->callMethod('xyzToRgb', [95.05, 100.0, 108.9]);
 
     expect($rgb['r'])->toBeCloseTo(255.0, 1.0)
         ->and($rgb['g'])->toBeCloseTo(255.0, 1.0)
@@ -675,7 +675,7 @@ it('correctly converts xyz to rgb', function () {
 it('correctly ensures rgb format from hwb', function () {
     // HWB values w and bl are in percentage (0-100), not fractions (0-1)
     $colorData = ['h' => 0, 'w' => 0.0, 'bl' => 50.0, 'a' => 1.0, 'format' => 'hwb'];
-    $result = $this->accessor->callProtectedMethod('ensureRgbFormat', [$colorData]);
+    $result = $this->accessor->callMethod('ensureRgbFormat', [$colorData]);
 
     expect($result['format'])->toBe('rgb')
         ->and($result['a'])->toBe(1.0)
@@ -687,7 +687,7 @@ it('correctly ensures rgb format from hwb', function () {
 it('correctly ensures rgb format from hwb with alpha', function () {
     // HWB values w and bl are in percentage (0-100), not fractions (0-1)
     $colorData = ['h' => 120, 'w' => 20.0, 'bl' => 30.0, 'a' => 0.75, 'format' => 'hwb'];
-    $result = $this->accessor->callProtectedMethod('ensureRgbFormat', [$colorData]);
+    $result = $this->accessor->callMethod('ensureRgbFormat', [$colorData]);
 
     expect($result['format'])->toBe('rgb')
         ->and($result['a'])->toBe(0.75)
@@ -699,7 +699,7 @@ it('correctly ensures rgb format from hwb with alpha', function () {
 it('correctly ensures rgb format from hwb with maximum whiteness', function () {
     // HWB values w and bl are in percentage (0-100), not fractions (0-1)
     $colorData = ['h' => 0, 'w' => 100.0, 'bl' => 0.0, 'a' => 1.0, 'format' => 'hwb'];
-    $result = $this->accessor->callProtectedMethod('ensureRgbFormat', [$colorData]);
+    $result = $this->accessor->callMethod('ensureRgbFormat', [$colorData]);
 
     expect($result['format'])->toBe('rgb')
         ->and($result['a'])->toBe(1.0)
@@ -711,7 +711,7 @@ it('correctly ensures rgb format from hwb with maximum whiteness', function () {
 it('correctly ensures rgb format from hwb with maximum blackness', function () {
     // HWB values w and bl are in percentage (0-100), not fractions (0-1)
     $colorData = ['h' => 0, 'w' => 0.0, 'bl' => 100.0, 'a' => 1.0, 'format' => 'hwb'];
-    $result = $this->accessor->callProtectedMethod('ensureRgbFormat', [$colorData]);
+    $result = $this->accessor->callMethod('ensureRgbFormat', [$colorData]);
 
     expect($result['format'])->toBe('rgb')
         ->and($result['a'])->toBe(1.0)
@@ -723,7 +723,7 @@ it('correctly ensures rgb format from hwb with maximum blackness', function () {
 it('correctly ensures rgb format from hwb with balanced whiteness and blackness', function () {
     // HWB values w and bl are in percentage (0-100), not fractions (0-1)
     $colorData = ['h' => 240, 'w' => 40.0, 'bl' => 40.0, 'a' => 0.9, 'format' => 'hwb'];
-    $result = $this->accessor->callProtectedMethod('ensureRgbFormat', [$colorData]);
+    $result = $this->accessor->callMethod('ensureRgbFormat', [$colorData]);
 
     expect($result['format'])->toBe('rgb')
         ->and($result['a'])->toBe(0.9)
@@ -733,9 +733,9 @@ it('correctly ensures rgb format from hwb with balanced whiteness and blackness'
 });
 
 it('correctly clamps value', function () {
-    expect($this->accessor->callProtectedMethod('clamp', [15, 0, 10]))->toBe(10.0)
-        ->and($this->accessor->callProtectedMethod('clamp', [5, 0, 10]))->toBe(5.0)
-        ->and($this->accessor->callProtectedMethod('clamp', [-5, 0, 10]))->toBe(0.0);
+    expect($this->accessor->callMethod('clamp', [15, 0, 10]))->toBe(10.0)
+        ->and($this->accessor->callMethod('clamp', [5, 0, 10]))->toBe(5.0)
+        ->and($this->accessor->callMethod('clamp', [-5, 0, 10]))->toBe(0.0);
 });
 
 it('correctly inverts color with hwb space', function () {
@@ -780,7 +780,7 @@ it('correctly handles oklch color with different formats', function () {
 });
 
 it('correctly parses hwb with alpha', function () {
-    $result = $this->accessor->callProtectedMethod('parseColor', ['hwb(0 0% 50% / 0.5)']);
+    $result = $this->colorModule->parseColor('hwb(0 0% 50% / 0.5)');
     expect($result)->toEqual(['h' => 0, 'w' => 0, 'bl' => 50, 'a' => 0.5, 'format' => 'hwb']);
 });
 
@@ -819,100 +819,100 @@ it('correctly adjusts color with oklch parameters', function () {
 });
 
 it('correctly handles linearize and unlinearize channel methods', function () {
-    expect($this->accessor->callProtectedMethod('linearizeChannel', [0.04045]))->toBeCloseTo(0.04045 / 12.92, 5)
-        ->and($this->accessor->callProtectedMethod('linearizeChannel', [0.5]))->toBeGreaterThan(0.04045 / 12.92)
-        ->and($this->accessor->callProtectedMethod('unLinearizeChannel', [0.0031308]))->toBeCloseTo(12.92 * 0.0031308, 5)
-        ->and($this->accessor->callProtectedMethod('unLinearizeChannel', [0.5]))->toBeGreaterThan(12.92 * 0.0031308);
+    expect($this->accessor->callMethod('linearizeChannel', [0.04045]))->toBeCloseTo(0.04045 / 12.92, 5)
+        ->and($this->accessor->callMethod('linearizeChannel', [0.5]))->toBeGreaterThan(0.04045 / 12.92)
+        ->and($this->accessor->callMethod('unLinearizeChannel', [0.0031308]))->toBeCloseTo(12.92 * 0.0031308, 5)
+        ->and($this->accessor->callMethod('unLinearizeChannel', [0.5]))->toBeGreaterThan(12.92 * 0.0031308);
 });
 
 it('correctly handles scale channel with positive and negative amounts', function () {
     // Test scaleChannel with positive amount
-    expect($this->accessor->callProtectedMethod('scaleChannel', [100, 50, 0, 255]))->toBeGreaterThan(100)
-        ->and($this->accessor->callProtectedMethod('scaleChannel', [100, -50, 0, 255]))->toBeLessThan(100);
+    expect($this->accessor->callMethod('scaleChannel', [100, 50, 0, 255]))->toBeGreaterThan(100)
+        ->and($this->accessor->callMethod('scaleChannel', [100, -50, 0, 255]))->toBeLessThan(100);
 });
 
 it('correctly handles edge cases in parseOklchColor', function () {
     // Test oklch with percentage lightness
-    $result = $this->accessor->callProtectedMethod('parseColor', ['oklch(60% 0.15 30)']);
+    $result = $this->colorModule->parseColor('oklch(60% 0.15 30)');
     expect($result['l'])->toBe(60.0);
 
     // Test oklch with non-percentage lightness (should be multiplied by 100)
-    $result = $this->accessor->callProtectedMethod('parseColor', ['oklch(0.6 0.15 30)']);
+    $result = $this->colorModule->parseColor('oklch(0.6 0.15 30)');
     expect($result['l'])->toBe(60.0);
 });
 
 it('throws exception for invalid alpha in parseOklchColor', function () {
-    expect(fn() => $this->accessor->callProtectedMethod('parseColor', ['oklch(60% 0.15 30 / 1.5)']))
+    expect(fn() => $this->colorModule->parseColor('oklch(60% 0.15 30 / 1.5)'))
         ->toThrow(CompilationException::class, 'Invalid alpha value');
 });
 
 it('correctly formats lch color', function () {
     $colorData = ['l' => 60, 'c' => 40, 'h' => 30, 'a' => 1.0, 'format' => 'lch'];
-    $result = $this->accessor->callProtectedMethod('formatColor', [$colorData]);
+    $result = $this->colorModule->formatColor($colorData);
     expect($result)->toBe('lch(60% 40 30)');
 
     $colorData = ['l' => 60, 'c' => 40, 'h' => 30, 'a' => 0.5, 'format' => 'lch'];
-    $result = $this->accessor->callProtectedMethod('formatColor', [$colorData]);
+    $result = $this->colorModule->formatColor($colorData);
     expect($result)->toBe('lch(60% 40 30 / 0.5)');
 });
 
 it('correctly formats oklch color', function () {
     $colorData = ['l' => 60, 'c' => 0.15, 'h' => 30, 'a' => 1.0, 'format' => 'oklch'];
-    $result = $this->accessor->callProtectedMethod('formatColor', [$colorData]);
+    $result = $this->colorModule->formatColor($colorData);
     expect($result)->toBe('oklch(60% 0.15 30)');
 
     $colorData = ['l' => 60, 'c' => 0.15, 'h' => 30, 'a' => 0.5, 'format' => 'oklch'];
-    $result = $this->accessor->callProtectedMethod('formatColor', [$colorData]);
+    $result = $this->colorModule->formatColor($colorData);
     expect($result)->toBe('oklch(60% 0.15 30 / 0.5)');
 });
 
 it('correctly handles key to channel conversion', function () {
-    expect($this->accessor->callProtectedMethod('keyToChannel', ['$red']))->toBe('r')
-        ->and($this->accessor->callProtectedMethod('keyToChannel', ['$green']))->toBe('g')
-        ->and($this->accessor->callProtectedMethod('keyToChannel', ['$blue']))->toBe('b');
+    expect($this->accessor->callMethod('keyToChannel', ['$red']))->toBe('r')
+        ->and($this->accessor->callMethod('keyToChannel', ['$green']))->toBe('g')
+        ->and($this->accessor->callMethod('keyToChannel', ['$blue']))->toBe('b');
 });
 
 it('throws exception for invalid key in keyToChannel', function () {
-    expect(fn() => $this->accessor->callProtectedMethod('keyToChannel', ['$invalid']))
+    expect(fn() => $this->accessor->callMethod('keyToChannel', ['$invalid']))
         ->toThrow(InvalidArgumentException::class, 'Invalid RGB key');
 });
 
 it('correctly handles key to hsl channel conversion', function () {
-    expect($this->accessor->callProtectedMethod('keyToHslChannel', ['$hue']))->toBe('h')
-        ->and($this->accessor->callProtectedMethod('keyToHslChannel', ['$saturation']))->toBe('s')
-        ->and($this->accessor->callProtectedMethod('keyToHslChannel', ['$lightness']))->toBe('l');
+    expect($this->accessor->callMethod('keyToHslChannel', ['$hue']))->toBe('h')
+        ->and($this->accessor->callMethod('keyToHslChannel', ['$saturation']))->toBe('s')
+        ->and($this->accessor->callMethod('keyToHslChannel', ['$lightness']))->toBe('l');
 });
 
 it('throws exception for invalid key in keyToHslChannel', function () {
-    expect(fn() => $this->accessor->callProtectedMethod('keyToHslChannel', ['$invalid']))
+    expect(fn() => $this->accessor->callMethod('keyToHslChannel', ['$invalid']))
         ->toThrow(InvalidArgumentException::class, 'Invalid HSL key');
 });
 
 it('correctly handles color space detection', function () {
-    expect($this->accessor->callProtectedMethod('getColorSpace', ['hsl']))->toBe('hsl')
-        ->and($this->accessor->callProtectedMethod('getColorSpace', ['hsla']))->toBe('hsl')
-        ->and($this->accessor->callProtectedMethod('getColorSpace', ['hwb']))->toBe('hwb')
-        ->and($this->accessor->callProtectedMethod('getColorSpace', ['lch']))->toBe('lch')
-        ->and($this->accessor->callProtectedMethod('getColorSpace', ['oklch']))->toBe('oklch')
-        ->and($this->accessor->callProtectedMethod('getColorSpace', ['rgb']))->toBe('rgb')
-        ->and($this->accessor->callProtectedMethod('getColorSpace', ['rgba']))->toBe('rgb');
+    expect($this->accessor->callMethod('getColorSpace', ['hsl']))->toBe('hsl')
+        ->and($this->accessor->callMethod('getColorSpace', ['hsla']))->toBe('hsl')
+        ->and($this->accessor->callMethod('getColorSpace', ['hwb']))->toBe('hwb')
+        ->and($this->accessor->callMethod('getColorSpace', ['lch']))->toBe('lch')
+        ->and($this->accessor->callMethod('getColorSpace', ['oklch']))->toBe('oklch')
+        ->and($this->accessor->callMethod('getColorSpace', ['rgb']))->toBe('rgb')
+        ->and($this->accessor->callMethod('getColorSpace', ['rgba']))->toBe('rgb');
 });
 
 it('correctly handles hwb to rgb conversion with edge cases', function () {
     // Test with 0 whiteness and 0 blackness
-    $rgb = $this->accessor->callProtectedMethod('hwbToRgb', [0, 0.0, 0.0]);
+    $rgb = $this->accessor->callMethod('hwbToRgb', [0, 0.0, 0.0]);
     expect($rgb['r'])->toBe(255.0)
         ->and($rgb['g'])->toBe(0.0)
         ->and($rgb['b'])->toBe(0.0);
 
     // Test with 100 whiteness
-    $rgb = $this->accessor->callProtectedMethod('hwbToRgb', [0, 100.0, 0.0]);
+    $rgb = $this->accessor->callMethod('hwbToRgb', [0, 100.0, 0.0]);
     expect($rgb['r'])->toBe(255.0)
         ->and($rgb['g'])->toBe(255.0)
         ->and($rgb['b'])->toBe(255.0);
 
     // Test with 100 blackness
-    $rgb = $this->accessor->callProtectedMethod('hwbToRgb', [0, 0.0, 100.0]);
+    $rgb = $this->accessor->callMethod('hwbToRgb', [0, 0.0, 100.0]);
     expect($rgb['r'])->toBeLessThan(5)
         ->and($rgb['g'])->toBeLessThan(5)
         ->and($rgb['b'])->toBeLessThan(5);
@@ -920,90 +920,90 @@ it('correctly handles hwb to rgb conversion with edge cases', function () {
 
 it('correctly handles edge cases in parseHwbColor', function () {
     // Test with valid whiteness and blackness
-    $result = $this->accessor->callProtectedMethod('parseHwbColor', [['hwb(0, 50%, 30%)', '0', '50', '30']]);
+    $result = $this->accessor->callMethod('parseHwbColor', [['hwb(0, 50%, 30%)', '0', '50', '30']]);
     expect($result['h'])->toBeCloseTo(0, 0)
         ->and($result['w'])->toBe(50)
         ->and($result['bl'])->toBe(30);
 
-    $result = $this->accessor->callProtectedMethod('parseHwbColor', [['hwb(0, 50%, 30%, 0.5)', '0', '50', '30', '0.5']]);
+    $result = $this->accessor->callMethod('parseHwbColor', [['hwb(0, 50%, 30%, 0.5)', '0', '50', '30', '0.5']]);
     expect($result['a'])->toBe(0.5)
-        ->and(fn() => $this->accessor->callProtectedMethod('parseHwbColor', [['hwb(0, 150%, 30%)', '0', '150', '30']]))
+        ->and(fn() => $this->accessor->callMethod('parseHwbColor', [['hwb(0, 150%, 30%)', '0', '150', '30']]))
         ->toThrow(CompilationException::class, 'Invalid whiteness value')
-        ->and(fn() => $this->accessor->callProtectedMethod('parseHwbColor', [['hwb(0, 50%, 150%)', '0', '50', '150']]))
+        ->and(fn() => $this->accessor->callMethod('parseHwbColor', [['hwb(0, 50%, 150%)', '0', '50', '150']]))
         ->toThrow(CompilationException::class, 'Invalid blackness value');
 });
 
 it('correctly handles edge cases in parseHexColor', function () {
     // Test with 3-digit hex
-    $result = $this->accessor->callProtectedMethod('parseHexColor', ['f00']);
+    $result = $this->accessor->callMethod('parseHexColor', ['f00']);
     expect($result['r'])->toBe(255)
         ->and($result['g'])->toBe(0)
         ->and($result['b'])->toBe(0);
 
     // Test with 4-digit hex (with alpha)
-    $result = $this->accessor->callProtectedMethod('parseHexColor', ['f008']); // 50% alpha
+    $result = $this->accessor->callMethod('parseHexColor', ['f008']); // 50% alpha
     expect($result['a'])->toBeCloseTo(136 / 255, 3);
 
     // Test with 6-digit hex
-    $result = $this->accessor->callProtectedMethod('parseHexColor', ['ff0000']);
+    $result = $this->accessor->callMethod('parseHexColor', ['ff0000']);
     expect($result['r'])->toBe(255)
         ->and($result['g'])->toBe(0)
         ->and($result['b'])->toBe(0);
 
     // Test with 8-digit hex (with alpha)
-    $result = $this->accessor->callProtectedMethod('parseHexColor', ['ff000080']); // 50% alpha
+    $result = $this->accessor->callMethod('parseHexColor', ['ff000080']); // 50% alpha
     expect($result['a'])->toBeCloseTo(128 / 255, 3);
 });
 
 it('correctly handles edge cases in parseRgbColor', function () {
     // Test with values in range
-    $result = $this->accessor->callProtectedMethod('parseRgbColor', [['rgb(255, 0, 0)', '255', '0', '0']]);
+    $result = $this->accessor->callMethod('parseRgbColor', [['rgb(255, 0, 0)', '255', '0', '0']]);
     expect($result['r'])->toBeCloseTo(255, 0)
         ->and($result['g'])->toBeCloseTo(0, 0)
         ->and($result['b'])->toBeCloseTo(0, 0);
 
     // Test with values clamped to range
-    $result = $this->accessor->callProtectedMethod('parseRgbColor', [['rgb(300, 0, 0)', '300', '0', '0']]);
+    $result = $this->accessor->callMethod('parseRgbColor', [['rgb(300, 0, 0)', '300', '0', '0']]);
     expect($result['r'])->toBe(255);
 
-    $result = $this->accessor->callProtectedMethod('parseRgbColor', [['rgb(-10, 0, 0)', '-10', '0', '0']]);
+    $result = $this->accessor->callMethod('parseRgbColor', [['rgb(-10, 0, 0)', '-10', '0', '0']]);
     expect($result['r'])->toBe(0);
 });
 
 it('correctly handles edge cases in parseRgbaColor', function () {
-    $result = $this->accessor->callProtectedMethod('parseRgbaColor', [['rgba(255, 0, 0, 0.5)', '255', '0', '0', '0.5']]);
+    $result = $this->accessor->callMethod('parseRgbaColor', [['rgba(255, 0, 0, 0.5)', '255', '0', '0', '0.5']]);
     expect($result['a'])->toBeCloseTo(0.5, 1)
-        ->and(fn() => $this->accessor->callProtectedMethod('parseRgbaColor', [['rgba(255, 0, 0, 1.5)', '255', '0', '0', '1.5']]))
+        ->and(fn() => $this->accessor->callMethod('parseRgbaColor', [['rgba(255, 0, 0, 1.5)', '255', '0', '0', '1.5']]))
         ->toThrow(CompilationException::class);
 });
 
 it('correctly handles edge cases in parseHslColor', function () {
-    $result = $this->accessor->callProtectedMethod('parseHslColor', [['hsl(0, 100%, 50%)', '0', '100', '50']]);
+    $result = $this->accessor->callMethod('parseHslColor', [['hsl(0, 100%, 50%)', '0', '100', '50']]);
     expect($result['h'])->toBeCloseTo(0, 0)
         ->and($result['s'])->toBe(100.0)
         ->and($result['l'])->toBe(50.0)
-        ->and(fn() => $this->accessor->callProtectedMethod('parseHslColor', [['hsl(0, 150%, 50%)', '0', '150', '50']]))
+        ->and(fn() => $this->accessor->callMethod('parseHslColor', [['hsl(0, 150%, 50%)', '0', '150', '50']]))
         ->toThrow(CompilationException::class, 'Invalid saturation value')
-        ->and(fn() => $this->accessor->callProtectedMethod('parseHslColor', [['hsl(0, 100%, 150%)', '0', '100', '150']]))
+        ->and(fn() => $this->accessor->callMethod('parseHslColor', [['hsl(0, 100%, 150%)', '0', '100', '150']]))
         ->toThrow(CompilationException::class, 'Invalid lightness value');
 });
 
 it('correctly handles edge cases in parseHslaColor', function () {
-    $result = $this->accessor->callProtectedMethod('parseHslaColor', [['hsla(0, 100%, 50%, 0.5)', '0', '100', '50', '0.5']]);
+    $result = $this->accessor->callMethod('parseHslaColor', [['hsla(0, 100%, 50%, 0.5)', '0', '100', '50', '0.5']]);
     expect($result['a'])->toBeCloseTo(0.5, 1)
-        ->and(fn() => $this->accessor->callProtectedMethod('parseHslaColor', [['hsla(0, 100%, 50%, 1.5)', '0', '100', '50', '1.5']]))
+        ->and(fn() => $this->accessor->callMethod('parseHslaColor', [['hsla(0, 100%, 50%, 1.5)', '0', '100', '50', '1.5']]))
         ->toThrow(CompilationException::class);
 });
 
 it('correctly handles apply scaling with hue, saturation and lightness', function () {
     $colorData = ['r' => 255, 'g' => 0, 'b' => 0, 'a' => 1.0, 'format' => 'rgb'];
-    $result = $this->accessor->callProtectedMethod('applyScaling', [$colorData, ['$hue' => 30]]);
+    $result = $this->accessor->callMethod('applyScaling', [$colorData, ['$hue' => 30]]);
     expect($result['format'])->toBe('rgb');
 
-    $result = $this->accessor->callProtectedMethod('applyScaling', [$colorData, ['$saturation' => 20]]);
+    $result = $this->accessor->callMethod('applyScaling', [$colorData, ['$saturation' => 20]]);
     expect($result['format'])->toBe('rgb');
 
-    $result = $this->accessor->callProtectedMethod('applyScaling', [$colorData, ['$lightness' => 20]]);
+    $result = $this->accessor->callMethod('applyScaling', [$colorData, ['$lightness' => 20]]);
     expect($result['format'])->toBe('rgb');
 });
 
@@ -1011,19 +1011,19 @@ it('correctly handles apply adjustments with various parameters', function () {
     $colorData = ['r' => 255, 'g' => 0, 'b' => 0, 'a' => 1.0, 'format' => 'rgb'];
 
     // Test with hue adjustment
-    $result = $this->accessor->callProtectedMethod('applyAdjustments', [$colorData, ['$hue' => 60]]);
+    $result = $this->accessor->callMethod('applyAdjustments', [$colorData, ['$hue' => 60]]);
     expect($result['format'])->toBe('rgb');
 
     // Test with saturation adjustment
-    $result = $this->accessor->callProtectedMethod('applyAdjustments', [$colorData, ['$saturation' => 20]]);
+    $result = $this->accessor->callMethod('applyAdjustments', [$colorData, ['$saturation' => 20]]);
     expect($result['format'])->toBe('rgb');
 
     // Test with lightness adjustment
-    $result = $this->accessor->callProtectedMethod('applyAdjustments', [$colorData, ['$lightness' => 20]]);
+    $result = $this->accessor->callMethod('applyAdjustments', [$colorData, ['$lightness' => 20]]);
     expect($result['format'])->toBe('rgb');
 
     // Test with alpha adjustment
-    $result = $this->accessor->callProtectedMethod('applyAdjustments', [$colorData, ['$alpha' => 0.5]]);
+    $result = $this->accessor->callMethod('applyAdjustments', [$colorData, ['$alpha' => 0.5]]);
     expect($result['a'])->toBeCloseTo(0.5, 1);
 });
 
@@ -1080,138 +1080,138 @@ it('correctly handles toGamut with clip method and different spaces', function (
 it('correctly handles edge cases in ensureRgbFormat', function () {
     // Test with RGB format (should return as-is)
     $colorData = ['r' => 255, 'g' => 0, 'b' => 0, 'a' => 1.0, 'format' => 'rgb'];
-    $result = $this->accessor->callProtectedMethod('ensureRgbFormat', [$colorData]);
+    $result = $this->accessor->callMethod('ensureRgbFormat', [$colorData]);
     expect($result)->toEqual($colorData);
 
     // Test with RGBA format (should return as-is)
     $colorData = ['r' => 255, 'g' => 0, 'b' => 0, 'a' => 0.5, 'format' => 'rgba'];
-    $result = $this->accessor->callProtectedMethod('ensureRgbFormat', [$colorData]);
+    $result = $this->accessor->callMethod('ensureRgbFormat', [$colorData]);
     expect($result)->toEqual($colorData);
 
     // Test with HSL format (should convert to RGB)
     $colorData = ['h' => 0, 's' => 100, 'l' => 50, 'a' => 1.0, 'format' => 'hsl'];
-    $result = $this->accessor->callProtectedMethod('ensureRgbFormat', [$colorData]);
+    $result = $this->accessor->callMethod('ensureRgbFormat', [$colorData]);
     expect($result['format'])->toBe('rgb');
 
     // Test with HSLA format (should convert to RGB)
     $colorData = ['h' => 0, 's' => 100, 'l' => 50, 'a' => 0.5, 'format' => 'hsla'];
-    $result = $this->accessor->callProtectedMethod('ensureRgbFormat', [$colorData]);
+    $result = $this->accessor->callMethod('ensureRgbFormat', [$colorData]);
     expect($result['format'])->toBe('rgb');
 
     // Test with HWB format (should convert to RGB)
     $colorData = ['h' => 0, 'w' => 0, 'bl' => 50, 'a' => 1.0, 'format' => 'hwb'];
-    $result = $this->accessor->callProtectedMethod('ensureRgbFormat', [$colorData]);
+    $result = $this->accessor->callMethod('ensureRgbFormat', [$colorData]);
     expect($result['format'])->toBe('rgb');
 });
 
 it('correctly handles edge cases in formatColor with lch', function () {
     $colorData = ['l' => 60.55, 'c' => 40.77, 'h' => 30.77, 'a' => 1.0, 'format' => 'lch'];
-    $result = $this->accessor->callProtectedMethod('formatColor', [$colorData]);
+    $result = $this->colorModule->formatColor($colorData);
     expect($result)->toBe('lch(60.55% 40.77 30.77)');
 
     $colorData = ['l' => 60.55, 'c' => 40.77, 'h' => 30.77, 'a' => 0.75, 'format' => 'lch'];
-    $result = $this->accessor->callProtectedMethod('formatColor', [$colorData]);
+    $result = $this->colorModule->formatColor($colorData);
     expect($result)->toBe('lch(60.55% 40.77 30.77 / 0.75)');
 });
 
 it('correctly handles edge cases in formatColor with oklch', function () {
     $colorData = ['l' => 60.55, 'c' => 0.1545, 'h' => 30.77, 'a' => 1.0, 'format' => 'oklch'];
-    $result = $this->accessor->callProtectedMethod('formatColor', [$colorData]);
+    $result = $this->colorModule->formatColor($colorData);
     expect($result)->toBe('oklch(60.55% 0.1545 30.77)');
 
     $colorData = ['l' => 60.55, 'c' => 0.1545, 'h' => 30.77, 'a' => 0.75, 'format' => 'oklch'];
-    $result = $this->accessor->callProtectedMethod('formatColor', [$colorData]);
+    $result = $this->colorModule->formatColor($colorData);
     expect($result)->toBe('oklch(60.55% 0.1545 30.77 / 0.75)');
 });
 
 it('correctly handles edge cases in formatColor with hwb', function () {
     $colorData = ['h' => 120.7, 'w' => 25.3, 'bl' => 40.9, 'a' => 1.0, 'format' => 'hwb'];
-    $result = $this->accessor->callProtectedMethod('formatColor', [$colorData]);
+    $result = $this->colorModule->formatColor($colorData);
     expect($result)->toBe('hwb(121 25% 41%)');
 
     $colorData = ['h' => 120.7, 'w' => 25.3, 'bl' => 40.9, 'a' => 0.5, 'format' => 'hwb'];
-    $result = $this->accessor->callProtectedMethod('formatColor', [$colorData]);
+    $result = $this->colorModule->formatColor($colorData);
     expect($result)->toBe('hwb(121 25% 41% / 0.5)');
 });
 
 it('correctly handles getNamedColor method', function () {
     // Test with known color
-    $result = $this->accessor->callProtectedMethod('getNamedColor', [255, 0, 0]);
+    $result = $this->accessor->callMethod('getNamedColor', [255, 0, 0]);
     expect($result)->toBe('red');
 
     // Test with unknown color
-    $result = $this->accessor->callProtectedMethod('getNamedColor', [254, 0, 0]);
+    $result = $this->accessor->callMethod('getNamedColor', [254, 0, 0]);
     expect($result)->toBeNull();
 });
 
 it('correctly converts rgb to oklch', function () {
     // Red color - should have high lightness, medium chroma, hue around red
-    $oklch = $this->accessor->callProtectedMethod('rgbToOklch', [255, 0, 0]);
+    $oklch = $this->accessor->callMethod('rgbToOklch', [255, 0, 0]);
     expect($oklch['l'])->toBeGreaterThan(50)->toBeLessThan(80)
         ->and($oklch['c'])->toBeGreaterThan(0.2)->toBeLessThan(0.4)
         ->and($oklch['h'])->toBeGreaterThan(20)->toBeLessThan(40);
 
     // Green color - should have high lightness, medium chroma, hue around green
-    $oklch = $this->accessor->callProtectedMethod('rgbToOklch', [0, 255, 0]);
+    $oklch = $this->accessor->callMethod('rgbToOklch', [0, 255, 0]);
     expect($oklch['l'])->toBeGreaterThan(80)->toBeLessThan(95)
         ->and($oklch['c'])->toBeGreaterThan(0.2)->toBeLessThan(0.4)
         ->and($oklch['h'])->toBeGreaterThan(130)->toBeLessThan(150);
 
     // Blue color - should have medium lightness, medium chroma, hue around blue
-    $oklch = $this->accessor->callProtectedMethod('rgbToOklch', [0, 0, 255]);
+    $oklch = $this->accessor->callMethod('rgbToOklch', [0, 0, 255]);
     expect($oklch['l'])->toBeGreaterThan(40)->toBeLessThan(50)
         ->and($oklch['c'])->toBeGreaterThan(0.2)->toBeLessThan(0.4)
         ->and($oklch['h'])->toBeGreaterThan(250)->toBeLessThan(280);
 
     // White color (edge case) - max lightness, zero chroma
-    $oklch = $this->accessor->callProtectedMethod('rgbToOklch', [255, 255, 255]);
+    $oklch = $this->accessor->callMethod('rgbToOklch', [255, 255, 255]);
     expect($oklch['l'])->toBeCloseTo(100.0, 0.1)
         ->and($oklch['c'])->toBeCloseTo(0.0, 0.01);
 
     // Black color (edge case) - zero lightness, zero chroma
-    $oklch = $this->accessor->callProtectedMethod('rgbToOklch', [0, 0, 0]);
+    $oklch = $this->accessor->callMethod('rgbToOklch', [0, 0, 0]);
     expect($oklch['l'])->toBeCloseTo(0.0, 0.1)
         ->and($oklch['c'])->toBeCloseTo(0.0, 0.01);
 
     // Gray color (edge case) - medium lightness, zero chroma
-    $oklch = $this->accessor->callProtectedMethod('rgbToOklch', [128, 128, 128]);
+    $oklch = $this->accessor->callMethod('rgbToOklch', [128, 128, 128]);
     expect($oklch['l'])->toBeGreaterThan(50)->toBeLessThan(60)
         ->and($oklch['c'])->toBeCloseTo(0.0, 0.01);
 });
 
 it('correctly converts oklch to rgb', function () {
     // Red color conversion back (approximate values)
-    $rgb = $this->accessor->callProtectedMethod('oklchToRgb', [62.8, 0.2577, 29.2]);
+    $rgb = $this->accessor->callMethod('oklchToRgb', [62.8, 0.2577, 29.2]);
     expect($rgb['r'])->toBeCloseTo(255.0, 1.0)
         ->and($rgb['g'])->toBeCloseTo(0.0, 1.0)
         ->and($rgb['b'])->toBeCloseTo(0.0, 1.0);
 
     // Green color conversion back
-    $rgb = $this->accessor->callProtectedMethod('oklchToRgb', [86.6, 0.2948, 142.5]);
+    $rgb = $this->accessor->callMethod('oklchToRgb', [86.6, 0.2948, 142.5]);
     expect($rgb['r'])->toBeCloseTo(0.0, 1.0)
         ->and($rgb['g'])->toBeCloseTo(255.0, 1.0)
         ->and($rgb['b'])->toBeCloseTo(0.0, 1.0);
 
     // Blue color conversion back
-    $rgb = $this->accessor->callProtectedMethod('oklchToRgb', [45.2, 0.313, 264.05]);
+    $rgb = $this->accessor->callMethod('oklchToRgb', [45.2, 0.313, 264.05]);
     expect($rgb['r'])->toBeCloseTo(0.0, 1.0)
         ->and($rgb['g'])->toBeCloseTo(0.0, 1.0)
         ->and($rgb['b'])->toBeCloseTo(255.0, 1.0);
 
     // White color (edge case)
-    $rgb = $this->accessor->callProtectedMethod('oklchToRgb', [100, 0, 0]);
+    $rgb = $this->accessor->callMethod('oklchToRgb', [100, 0, 0]);
     expect($rgb['r'])->toBeCloseTo(255.0, 1.0)
         ->and($rgb['g'])->toBeCloseTo(255.0, 1.0)
         ->and($rgb['b'])->toBeCloseTo(255.0, 1.0);
 
     // Black color (edge case)
-    $rgb = $this->accessor->callProtectedMethod('oklchToRgb', [0, 0, 0]);
+    $rgb = $this->accessor->callMethod('oklchToRgb', [0, 0, 0]);
     expect($rgb['r'])->toBeCloseTo(0.0, 1.0)
         ->and($rgb['g'])->toBeCloseTo(0.0, 1.0)
         ->and($rgb['b'])->toBeCloseTo(0.0, 1.0);
 
     // Gray color (edge case)
-    $rgb = $this->accessor->callProtectedMethod('oklchToRgb', [53.2, 0, 0]);
+    $rgb = $this->accessor->callMethod('oklchToRgb', [53.2, 0, 0]);
     expect($rgb['r'])->toBeCloseTo(108.0, 2.0)
         ->and($rgb['g'])->toBeCloseTo(108.0, 2.0)
         ->and($rgb['b'])->toBeCloseTo(108.0, 2.0);
@@ -1231,8 +1231,8 @@ it('correctly round trips rgb to oklch to rgb', function () {
     ];
 
     foreach ($testColors as $rgb) {
-        $oklch = $this->accessor->callProtectedMethod('rgbToOklch', [$rgb[0], $rgb[1], $rgb[2]]);
-        $rgbBack = $this->accessor->callProtectedMethod('oklchToRgb', [$oklch['l'], $oklch['c'], $oklch['h']]);
+        $oklch = $this->accessor->callMethod('rgbToOklch', [$rgb[0], $rgb[1], $rgb[2]]);
+        $rgbBack = $this->accessor->callMethod('oklchToRgb', [$oklch['l'], $oklch['c'], $oklch['h']]);
 
         expect($rgbBack['r'])->toBeCloseTo($rgb[0], 5.0)
             ->and($rgbBack['g'])->toBeCloseTo($rgb[1], 5.0)
@@ -1242,72 +1242,72 @@ it('correctly round trips rgb to oklch to rgb', function () {
 
 it('correctly converts rgb to lch', function () {
     // Red color
-    $lch = $this->accessor->callProtectedMethod('rgbToLch', [255, 0, 0]);
+    $lch = $this->accessor->callMethod('rgbToLch', [255, 0, 0]);
     expect($lch['l'])->toBeGreaterThan(50)->toBeLessThan(70)
         ->and($lch['c'])->toBeGreaterThan(100)->toBeLessThan(150)
         ->and($lch['h'])->toBeGreaterThan(35)->toBeLessThan(45);
 
     // Green color
-    $lch = $this->accessor->callProtectedMethod('rgbToLch', [0, 255, 0]);
+    $lch = $this->accessor->callMethod('rgbToLch', [0, 255, 0]);
     expect($lch['l'])->toBeGreaterThan(80)->toBeLessThan(95)
         ->and($lch['c'])->toBeGreaterThan(100)->toBeLessThan(150)
         ->and($lch['h'])->toBeGreaterThan(130)->toBeLessThan(140);
 
     // Blue color
-    $lch = $this->accessor->callProtectedMethod('rgbToLch', [0, 0, 255]);
+    $lch = $this->accessor->callMethod('rgbToLch', [0, 0, 255]);
     expect($lch['l'])->toBeGreaterThan(25)->toBeLessThan(40)
         ->and($lch['c'])->toBeGreaterThan(100)->toBeLessThan(150)
         ->and($lch['h'])->toBeGreaterThan(280)->toBeLessThan(320);
 
     // White color (edge case) - max lightness, zero chroma
-    $lch = $this->accessor->callProtectedMethod('rgbToLch', [255, 255, 255]);
+    $lch = $this->accessor->callMethod('rgbToLch', [255, 255, 255]);
     expect($lch['l'])->toBeCloseTo(100.0, 0.1)
         ->and($lch['c'])->toBeCloseTo(0.0, 0.1);
 
     // Black color (edge case) - zero lightness, zero chroma
-    $lch = $this->accessor->callProtectedMethod('rgbToLch', [0, 0, 0]);
+    $lch = $this->accessor->callMethod('rgbToLch', [0, 0, 0]);
     expect($lch['l'])->toBeCloseTo(0.0, 0.1)
         ->and($lch['c'])->toBeCloseTo(0.0, 0.1);
 
     // Gray color (edge case) - medium lightness, zero chroma
-    $lch = $this->accessor->callProtectedMethod('rgbToLch', [128, 128, 128]);
+    $lch = $this->accessor->callMethod('rgbToLch', [128, 128, 128]);
     expect($lch['l'])->toBeGreaterThan(50)->toBeLessThan(60)
         ->and($lch['c'])->toBeCloseTo(0.0, 0.1);
 });
 
 it('correctly converts lch to rgb', function () {
     // Red color conversion back (approximate values)
-    $rgb = $this->accessor->callProtectedMethod('lchToRgb', [53.24, 104.55, 39.95]);
+    $rgb = $this->accessor->callMethod('lchToRgb', [53.24, 104.55, 39.95]);
     expect($rgb['r'])->toBeCloseTo(255.0, 1.0)
         ->and($rgb['g'])->toBeCloseTo(0.0, 1.0)
         ->and($rgb['b'])->toBeCloseTo(0.0, 1.0);
 
     // Green color conversion back
-    $rgb = $this->accessor->callProtectedMethod('lchToRgb', [87.73, 119.78, 136.02]);
+    $rgb = $this->accessor->callMethod('lchToRgb', [87.73, 119.78, 136.02]);
     expect($rgb['r'])->toBeCloseTo(0.0, 1.0)
         ->and($rgb['g'])->toBeCloseTo(255.0, 1.0)
         ->and($rgb['b'])->toBeCloseTo(0.0, 1.0);
 
     // Blue color conversion back
-    $rgb = $this->accessor->callProtectedMethod('lchToRgb', [32.3, 133.81, 306.28]);
+    $rgb = $this->accessor->callMethod('lchToRgb', [32.3, 133.81, 306.28]);
     expect($rgb['r'])->toBeCloseTo(0.0, 1.0)
         ->and($rgb['g'])->toBeCloseTo(0.0, 1.0)
         ->and($rgb['b'])->toBeCloseTo(255.0, 1.0);
 
     // White color (edge case)
-    $rgb = $this->accessor->callProtectedMethod('lchToRgb', [100, 0, 0]);
+    $rgb = $this->accessor->callMethod('lchToRgb', [100, 0, 0]);
     expect($rgb['r'])->toBeCloseTo(255.0, 1.0)
         ->and($rgb['g'])->toBeCloseTo(255.0, 1.0)
         ->and($rgb['b'])->toBeCloseTo(255.0, 1.0);
 
     // Black color (edge case)
-    $rgb = $this->accessor->callProtectedMethod('lchToRgb', [0, 0, 0]);
+    $rgb = $this->accessor->callMethod('lchToRgb', [0, 0, 0]);
     expect($rgb['r'])->toBeCloseTo(0.0, 1.0)
         ->and($rgb['g'])->toBeCloseTo(0.0, 1.0)
         ->and($rgb['b'])->toBeCloseTo(0.0, 1.0);
 
     // Gray color (edge case)
-    $rgb = $this->accessor->callProtectedMethod('lchToRgb', [53.59, 0, 0]);
+    $rgb = $this->accessor->callMethod('lchToRgb', [53.59, 0, 0]);
     expect($rgb['r'])->toBeCloseTo(128.0, 2.0)
         ->and($rgb['g'])->toBeCloseTo(128.0, 2.0)
         ->and($rgb['b'])->toBeCloseTo(128.0, 2.0);
@@ -1327,8 +1327,8 @@ it('correctly round trips rgb to lch to rgb', function () {
     ];
 
     foreach ($testColors as $rgb) {
-        $lch = $this->accessor->callProtectedMethod('rgbToLch', [$rgb[0], $rgb[1], $rgb[2]]);
-        $rgbBack = $this->accessor->callProtectedMethod('lchToRgb', [$lch['l'], $lch['c'], $lch['h']]);
+        $lch = $this->accessor->callMethod('rgbToLch', [$rgb[0], $rgb[1], $rgb[2]]);
+        $rgbBack = $this->accessor->callMethod('lchToRgb', [$lch['l'], $lch['c'], $lch['h']]);
 
         expect($rgbBack['r'])->toBeCloseTo($rgb[0], 5.0)
             ->and($rgbBack['g'])->toBeCloseTo($rgb[1], 5.0)

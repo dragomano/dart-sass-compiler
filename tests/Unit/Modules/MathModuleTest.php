@@ -1009,13 +1009,13 @@ describe('MathFunctions', function () {
 
     describe('normalize', function () {
         it('normalizes numeric string', function () {
-            $result = $this->accessor->callProtectedMethod('normalize', ['42']);
+            $result = $this->accessor->callMethod('normalize', ['42']);
 
             expect($result)->toEqual(['value' => 42.0, 'unit' => '']);
         });
 
         it('normalizes numeric array', function () {
-            $result = $this->accessor->callProtectedMethod('normalize', [
+            $result = $this->accessor->callMethod('normalize', [
                 ['value' => 42, 'unit' => 'px']
             ]);
 
@@ -1023,7 +1023,7 @@ describe('MathFunctions', function () {
         });
 
         it('normalizes array without unit', function () {
-            $result = $this->accessor->callProtectedMethod('normalize', [
+            $result = $this->accessor->callMethod('normalize', [
                 ['value' => 42]
             ]);
 
@@ -1031,29 +1031,29 @@ describe('MathFunctions', function () {
         });
 
         it('returns null for invalid input', function () {
-            expect($this->accessor->callProtectedMethod('normalize', ['invalid']))
+            expect($this->accessor->callMethod('normalize', ['invalid']))
                 ->toBeNull()
-                ->and($this->accessor->callProtectedMethod('normalize', [[]]))
+                ->and($this->accessor->callMethod('normalize', [[]]))
                 ->toBeNull();
         });
     });
 
     describe('areUnitsCompatible', function () {
         it('considers same units as compatible', function () {
-            $result = $this->accessor->callProtectedMethod('areUnitsCompatible', ['px', 'px']);
+            $result = $this->accessor->callMethod('areUnitsCompatible', ['px', 'px']);
 
             expect($result)->toBeTrue();
         });
 
         it('considers empty units as compatible with any unit', function () {
-            expect($this->accessor->callProtectedMethod('areUnitsCompatible', ['', 'px']))
+            expect($this->accessor->callMethod('areUnitsCompatible', ['', 'px']))
                 ->toBeTrue()
-                ->and($this->accessor->callProtectedMethod('areUnitsCompatible', ['px', '']))
+                ->and($this->accessor->callMethod('areUnitsCompatible', ['px', '']))
                 ->toBeTrue();
         });
 
         it('considers different units as incompatible', function () {
-            $result = $this->accessor->callProtectedMethod('areUnitsCompatible', ['px', 'em']);
+            $result = $this->accessor->callMethod('areUnitsCompatible', ['px', 'em']);
 
             expect($result)->toBeFalse();
         });

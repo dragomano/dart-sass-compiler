@@ -322,131 +322,131 @@ it('handles wrapped single element lists', function () {
 
 // Private method tests using ReflectionAccessor
 it('parses list argument with regular array', function () {
-    $result = $this->accessor->callProtectedMethod('parseListArg', [['a', 'b', 'c']]);
+    $result = $this->accessor->callMethod('parseListArg', [['a', 'b', 'c']]);
 
     expect($result)->toEqual(['a', 'b', 'c']);
 });
 
 it('parses list argument with wrapped array', function () {
-    $result = $this->accessor->callProtectedMethod('parseListArg', [[['a', 'b']]]);
+    $result = $this->accessor->callMethod('parseListArg', [[['a', 'b']]]);
 
     expect($result)->toEqual([['a', 'b']]);
 });
 
 it('parses list argument with SassList object', function () {
     $sassList = new SassList(['a', 'b', 'c'], 'space');
-    $result = $this->accessor->callProtectedMethod('parseListArg', [$sassList]);
+    $result = $this->accessor->callMethod('parseListArg', [$sassList]);
 
     expect($result)->toEqual(['a', 'b', 'c']);
 });
 
 it('parses list argument with ListNode object', function () {
     $listNode = new ListNode(['x', 'y', 'z'], 0, 'space', false);
-    $result = $this->accessor->callProtectedMethod('parseListArg', [$listNode]);
+    $result = $this->accessor->callMethod('parseListArg', [$listNode]);
 
     expect($result)->toEqual(['x', 'y', 'z']);
 });
 
 it('parses list argument with space-separated string', function () {
-    $result = $this->accessor->callProtectedMethod('parseListArg', ['a b c']);
+    $result = $this->accessor->callMethod('parseListArg', ['a b c']);
 
     expect($result)->toEqual(['a', 'b', 'c']);
 });
 
 it('parses list argument with comma-separated string', function () {
-    $result = $this->accessor->callProtectedMethod('parseListArg', ['a, b, c']);
+    $result = $this->accessor->callMethod('parseListArg', ['a, b, c']);
 
     expect($result)->toEqual(['a', 'b', 'c']);
 });
 
 it('parses list argument with value array', function () {
-    $result = $this->accessor->callProtectedMethod('parseListArg', [['value' => 'test']]);
+    $result = $this->accessor->callMethod('parseListArg', [['value' => 'test']]);
 
     expect($result)->toEqual([['value' => 'test']]);
 });
 
 it('parses list argument with value and unit array', function () {
-    $result = $this->accessor->callProtectedMethod('parseListArg', [['value' => 10, 'unit' => 'px']]);
+    $result = $this->accessor->callMethod('parseListArg', [['value' => 10, 'unit' => 'px']]);
 
     expect($result)->toEqual([['value' => 10, 'unit' => 'px']]);
 });
 
 it('parses wrapped value with SassList object', function () {
     $sassList = new SassList(['a', 'b'], 'space');
-    $result = $this->accessor->callProtectedMethod('parseWrappedValue', [$sassList]);
+    $result = $this->accessor->callMethod('parseWrappedValue', [$sassList]);
 
     expect($result)->toEqual(['a', 'b']);
 });
 
 it('parses wrapped value with ListNode object', function () {
     $listNode = new ListNode(['x', 'y'], 0, 'comma', false);
-    $result = $this->accessor->callProtectedMethod('parseWrappedValue', [$listNode]);
+    $result = $this->accessor->callMethod('parseWrappedValue', [$listNode]);
 
     expect($result)->toEqual(['x', 'y']);
 });
 
 it('parses wrapped value with string', function () {
-    $result = $this->accessor->callProtectedMethod('parseWrappedValue', ['hello world']);
+    $result = $this->accessor->callMethod('parseWrappedValue', ['hello world']);
 
     expect($result)->toEqual(['hello', 'world']);
 });
 
 it('parses wrapped value with simple value', function () {
-    $result = $this->accessor->callProtectedMethod('parseWrappedValue', ['single_value']);
+    $result = $this->accessor->callMethod('parseWrappedValue', ['single_value']);
 
     expect($result)->toEqual(['single_value']);
 });
 
 it('parses positive index', function () {
-    $result = $this->accessor->callProtectedMethod('parseIndex', [2, 5]);
+    $result = $this->accessor->callMethod('parseIndex', [2, 5]);
 
     expect($result)->toBe(2);
 });
 
 it('parses negative index -1', function () {
-    $result = $this->accessor->callProtectedMethod('parseIndex', [-1, 5]);
+    $result = $this->accessor->callMethod('parseIndex', [-1, 5]);
 
     expect($result)->toBe(5);
 });
 
 it('parses negative index -2', function () {
-    $result = $this->accessor->callProtectedMethod('parseIndex', [-2, 5]);
+    $result = $this->accessor->callMethod('parseIndex', [-2, 5]);
 
     expect($result)->toBe(4);
 });
 
 it('parses negative index -3', function () {
-    $result = $this->accessor->callProtectedMethod('parseIndex', [-3, 5]);
+    $result = $this->accessor->callMethod('parseIndex', [-3, 5]);
 
     expect($result)->toBe(3);
 });
 
 it('parses index from value array', function () {
-    $result = $this->accessor->callProtectedMethod('parseIndex', [['value' => 3], 5]);
+    $result = $this->accessor->callMethod('parseIndex', [['value' => 3], 5]);
 
     expect($result)->toBe(3);
 });
 
 it('parses negative index from value array', function () {
-    $result = $this->accessor->callProtectedMethod('parseIndex', [['value' => -2], 5]);
+    $result = $this->accessor->callMethod('parseIndex', [['value' => -2], 5]);
 
     expect($result)->toBe(4);
 });
 
 it('handles edge case with index 0', function () {
-    $result = $this->accessor->callProtectedMethod('parseIndex', [0, 5]);
+    $result = $this->accessor->callMethod('parseIndex', [0, 5]);
 
     expect($result)->toBe(0);
 });
 
 it('handles edge case with empty list length', function () {
-    $result = $this->accessor->callProtectedMethod('parseIndex', [1, 0]);
+    $result = $this->accessor->callMethod('parseIndex', [1, 0]);
 
     expect($result)->toBe(1);
 });
 
 it('handles edge case with negative index for empty list', function () {
-    $result = $this->accessor->callProtectedMethod('parseIndex', [-1, 0]);
+    $result = $this->accessor->callMethod('parseIndex', [-1, 0]);
 
     expect($result)->toBe(0);
 });
