@@ -8,11 +8,8 @@ use DartSass\Exceptions\CompilationException;
 use InvalidArgumentException;
 
 use function abs;
-use function array_flip;
 use function array_merge;
-use function atan2;
-use function cos;
-use function explode;
+use function array_unique;
 use function fmod;
 use function hexdec;
 use function implode;
@@ -22,11 +19,11 @@ use function min;
 use function preg_match;
 use function round;
 use function rtrim;
-use function sin;
 use function sprintf;
-use function sqrt;
 use function str_contains;
+use function str_repeat;
 use function strlen;
+use function strtolower;
 use function substr;
 use function trim;
 
@@ -34,34 +31,6 @@ use const M_PI;
 
 class ColorModule
 {
-    private static array $rgbToHslCache = [];
-
-    private static array $hslToRgbCache = [];
-
-    private static array $hexToNameCache = [];
-
-    private const RGB_MAX = 255;
-
-    private const PERCENT_MAX = 100;
-
-    private const HUE_MAX = 360;
-
-    private const HUE_SHIFT = 180;
-
-    private const ALPHA_MAX = 1.0;
-
-    private const ALPHA_MIN = 0.0;
-
-    private const XYZ_REF_X = 95.047;
-
-    private const XYZ_REF_Y = 100.000;
-
-    private const XYZ_REF_Z = 108.883;
-
-    private const LAB_EPSILON = 0.008856;
-
-    private const LAB_KAPPA = 903.3;
-
     private const COLOR_ADJUST_PARAMS = [
         '$red'        => true,
         '$green'      => true,
@@ -77,157 +46,6 @@ class ColorModule
         '$z'          => true,
         '$chroma'     => true,
         '$space'      => true,
-    ];
-
-    public const NAMED_COLORS = [
-        'aliceblue'            => '#f0f8ff',
-        'antiquewhite'         => '#faebd7',
-        'aqua'                 => '#00ffff',
-        'aquamarine'           => '#7fffd4',
-        'azure'                => '#f0ffff',
-        'beige'                => '#f5f5dc',
-        'bisque'               => '#ffe4c4',
-        'black'                => '#000000',
-        'blanchedalmond'       => '#ffebcd',
-        'blue'                 => '#0000ff',
-        'blueviolet'           => '#8a2be2',
-        'brown'                => '#a52a2a',
-        'burlywood'            => '#deb887',
-        'cadetblue'            => '#5f9ea0',
-        'chartreuse'           => '#7fff00',
-        'chocolate'            => '#d2691e',
-        'coral'                => '#ff7f50',
-        'cornflowerblue'       => '#6495ed',
-        'cornsilk'             => '#fff8dc',
-        'crimson'              => '#dc143c',
-        'cyan'                 => '#00ffff',
-        'darkblue'             => '#00008b',
-        'darkcyan'             => '#008b8b',
-        'darkgoldenrod'        => '#b8860b',
-        'darkgray'             => '#a9a9a9',
-        'darkgreen'            => '#006400',
-        'darkgrey'             => '#a9a9a9',
-        'darkkhaki'            => '#bdb76b',
-        'darkmagenta'          => '#8b008b',
-        'darkolivegreen'       => '#556b2f',
-        'darkorange'           => '#ff8c00',
-        'darkorchid'           => '#9932cc',
-        'darkred'              => '#8b0000',
-        'darksalmon'           => '#e9967a',
-        'darkseagreen'         => '#8fbc8f',
-        'darkslateblue'        => '#483d8b',
-        'darkslategray'        => '#2f4f4f',
-        'darkslategrey'        => '#2f4f4f',
-        'darkturquoise'        => '#00ced1',
-        'darkviolet'           => '#9400d3',
-        'deeppink'             => '#ff1493',
-        'deepskyblue'          => '#00bfff',
-        'dimgray'              => '#696969',
-        'dimgrey'              => '#696969',
-        'dodgerblue'           => '#1e90ff',
-        'firebrick'            => '#b22222',
-        'floralwhite'          => '#fffaf0',
-        'forestgreen'          => '#228b22',
-        'fuchsia'              => '#ff00ff',
-        'gainsboro'            => '#dcdcdc',
-        'ghostwhite'           => '#f8f8ff',
-        'gold'                 => '#ffd700',
-        'goldenrod'            => '#daa520',
-        'gray'                 => '#808080',
-        'green'                => '#008000',
-        'greenyellow'          => '#adff2f',
-        'grey'                 => '#808080',
-        'honeydew'             => '#f0fff0',
-        'hotpink'              => '#ff69b4',
-        'indianred'            => '#cd5c5c',
-        'indigo'               => '#4b0082',
-        'ivory'                => '#fffff0',
-        'khaki'                => '#f0e68c',
-        'lavender'             => '#e6e6fa',
-        'lavenderblush'        => '#fff0f5',
-        'lawngreen'            => '#7cfc00',
-        'lemonchiffon'         => '#fffacd',
-        'lightblue'            => '#add8e6',
-        'lightcoral'           => '#f08080',
-        'lightcyan'            => '#e0ffff',
-        'lightgoldenrodyellow' => '#fafad2',
-        'lightgray'            => '#d3d3d3',
-        'lightgreen'           => '#90ee90',
-        'lightgrey'            => '#d3d3d3',
-        'lightpink'            => '#ffb6c1',
-        'lightsalmon'          => '#ffa07a',
-        'lightseagreen'        => '#20b2aa',
-        'lightskyblue'         => '#87ceeb',
-        'lightslategray'       => '#778899',
-        'lightslategrey'       => '#778899',
-        'lightsteelblue'       => '#b0c4de',
-        'lightyellow'          => '#ffffe0',
-        'lime'                 => '#00ff00',
-        'limegreen'            => '#32cd32',
-        'linen'                => '#faf0e6',
-        'magenta'              => '#ff00ff',
-        'maroon'               => '#800000',
-        'mediumaquamarine'     => '#66cdaa',
-        'mediumblue'           => '#0000cd',
-        'mediumorchid'         => '#ba55d3',
-        'mediumpurple'         => '#9370db',
-        'mediumseagreen'       => '#3cb371',
-        'mediumslateblue'      => '#7b68ee',
-        'mediumspringgreen'    => '#00fa9a',
-        'mediumturquoise'      => '#48d1cc',
-        'mediumvioletred'      => '#c71585',
-        'midnightblue'         => '#191970',
-        'mintcream'            => '#f5fffa',
-        'mistyrose'            => '#ffe4e1',
-        'moccasin'             => '#ffe4b5',
-        'navajowhite'          => '#ffdead',
-        'navy'                 => '#000080',
-        'oldlace'              => '#fdf5e6',
-        'olive'                => '#808000',
-        'olivedrab'            => '#6b8e23',
-        'orange'               => '#ffa500',
-        'orangered'            => '#ff4500',
-        'orchid'               => '#da70d6',
-        'palegoldenrod'        => '#eee8aa',
-        'palegreen'            => '#98fb98',
-        'paleturquoise'        => '#afeeee',
-        'palevioletred'        => '#db7093',
-        'papayawhip'           => '#ffefd5',
-        'peachpuff'            => '#ffdab9',
-        'peru'                 => '#cd853f',
-        'pink'                 => '#ffc0cb',
-        'plum'                 => '#dda0dd',
-        'powderblue'           => '#b0e0e6',
-        'purple'               => '#800080',
-        'rebeccapurple'        => '#663399',
-        'red'                  => '#ff0000',
-        'rosybrown'            => '#bc8f8f',
-        'royalblue'            => '#4169e1',
-        'saddlebrown'          => '#8b4513',
-        'salmon'               => '#fa8072',
-        'sandybrown'           => '#f4a460',
-        'seagreen'             => '#2e8b57',
-        'seashell'             => '#fff5ee',
-        'sienna'               => '#a0522d',
-        'silver'               => '#c0c0c0',
-        'skyblue'              => '#87ceeb',
-        'slateblue'            => '#6a5acd',
-        'slategray'            => '#708090',
-        'slategrey'            => '#708090',
-        'snow'                 => '#fffafa',
-        'springgreen'          => '#00ff7f',
-        'steelblue'            => '#4682b4',
-        'tan'                  => '#d2b48c',
-        'teal'                 => '#008080',
-        'thistle'              => '#d8bfd8',
-        'tomato'               => '#ff6347',
-        'turquoise'            => '#40e0d0',
-        'violet'               => '#ee82ee',
-        'wheat'                => '#f5deb3',
-        'white'                => '#ffffff',
-        'whitesmoke'           => '#f5f5f5',
-        'yellow'               => '#ffff00',
-        'yellowgreen'          => '#9acd32',
     ];
 
     public function adjust(string $color, array $adjustments): string
@@ -249,37 +67,50 @@ class ColorModule
     public function channel(string $color, string $channel, ?string $space = null): string
     {
         $colorData = $this->parseColor($color);
-        $channel = strtolower($channel);
+        $channel   = strtolower($channel);
 
         if ($space !== null) {
             $colorData = $this->convertToSpace($colorData, strtolower($space));
         }
 
-        $value = match ($channel) {
-            'red', 'r'        => $colorData['r'] ?? $this->convertToSpace($colorData, ColorFormat::RGB->value)['r'],
-            'green', 'g'      => $colorData['g'] ?? $this->convertToSpace($colorData, ColorFormat::RGB->value)['g'],
-            'blue', 'b'       => $colorData['b'] ?? $this->convertToSpace($colorData, ColorFormat::RGB->value)['b'],
-            'alpha', 'a'      => $colorData['a'] ?? self::ALPHA_MAX,
-            'hue', 'h'        => $colorData['h'] ?? $this->convertToSpace($colorData, ColorFormat::HSL->value)['h'],
-            'saturation', 's' => $colorData['s'] ?? $this->convertToSpace($colorData, ColorFormat::HSL->value)['s'],
-            'lightness', 'l'  => $colorData['l'] ?? $this->convertToSpace($colorData, ColorFormat::HSL->value)['l'],
-            'whiteness', 'w'  => $colorData['w'] ?? $this->convertToSpace($colorData, ColorFormat::HWB->value)['w'],
-            'blackness', 'bl' => $colorData['bl'] ?? $this->convertToSpace($colorData, ColorFormat::HWB->value)['bl'],
-            'chroma', 'c'     => $colorData['c'] ?? $this->convertToSpace($colorData, ColorFormat::LCH->value)['c'],
-            default           => throw new CompilationException("Unknown channel: $channel"),
+        $this->validateChannel($channel);
+
+        $dataKey = $this->channelToDataKey($channel);
+
+        $targetSpace = match ($channel) {
+            'hue', 'h',
+            'saturation', 's',
+            'lightness', 'l'          => ColorFormat::HSL->value,
+            'whiteness', 'w',
+            'blackness','bl'          => ColorFormat::HWB->value,
+            'chroma', 'c'             => ColorFormat::LCH->value,
+            'x', 'y', 'z'             => ColorFormat::XYZ->value,
+            'lab_l', 'lab_a', 'lab_b' => ColorFormat::LAB->value,
+            default                   => ColorFormat::RGB->value,
         };
+
+        $value = $colorData[$dataKey] ?? $this->convertToSpace($colorData, $targetSpace)[$dataKey];
 
         if ($channel === 'alpha' || $channel === 'a') {
             return (string) $value;
         }
 
-        if (in_array($channel, ['saturation', 's', 'lightness', 'l', 'whiteness', 'w', 'blackness', 'bl'], true)) {
+        if (in_array($channel, [
+            'saturation', 's',
+            'lightness', 'l',
+            'whiteness', 'w',
+            'blackness', 'bl',
+            'lab_l',
+        ], true)) {
             return round($value, 10) . '%';
+        }
+
+        if (in_array($channel, ['lab_a', 'lab_b'], true)) {
+            return (string) round($value, 10);
         }
 
         if (in_array($channel, ['hue', 'h'], true)) {
             $rounded = round($value, 10);
-
             return $rounded == 0 ? (string) $rounded : $rounded . 'deg';
         }
 
@@ -298,28 +129,46 @@ class ColorModule
         $spaceFormat = ColorFormat::tryFrom($space);
         if ($spaceFormat === null || ! $spaceFormat->isPolar()) {
             throw new CompilationException(
-                "Color space '$space' is not a polar color space. "
-                . 'Use hsl, hwb, lch, or oklch.'
+                "Color space '$space' is not a polar color space. Use hsl, hwb, lch, or oklch."
             );
         }
 
+        $colorData = ColorSerializer::ensureRgbFormat($colorData);
+
         switch ($space) {
             case ColorFormat::HWB->value:
-                $hwb = $this->rgbToHwb($colorData['r'], $colorData['g'], $colorData['b']);
-                $hue = fmod($hwb['h'] + self::HUE_SHIFT, self::HUE_MAX);
-                $rgb = $this->hwbToRgb($hue, $hwb['w'], $hwb['bl']);
+                $hwb = ColorConverter::RGB->toHwb($colorData['r'], $colorData['g'], $colorData['b']);
+                $hue = fmod($hwb['h'] + ColorSerializer::HUE_SHIFT, ColorSerializer::HUE_MAX);
+                $rgb = ColorConverter::HWB->toRgb($hue, $hwb['w'], $hwb['bl']);
+                break;
+
+            case ColorFormat::LCH->value:
+                $lch = ColorConverter::RGB->toLch($colorData['r'], $colorData['g'], $colorData['b']);
+                $hue = fmod($lch['h'] + ColorSerializer::HUE_SHIFT, ColorSerializer::HUE_MAX);
+                $rgb = ColorConverter::LCH->toRgb($lch['l'], $lch['c'], $hue);
+                break;
+
+            case ColorFormat::OKLCH->value:
+                $oklch = ColorConverter::RGB->toOklch($colorData['r'], $colorData['g'], $colorData['b']);
+                $hue = fmod($oklch['h'] + ColorSerializer::HUE_SHIFT, ColorSerializer::HUE_MAX);
+                $rgb = ColorConverter::OKLCH->toRgb($oklch['l'], $oklch['c'], $hue);
                 break;
 
             default:
-                $hsl = $this->rgbToHsl($colorData['r'], $colorData['g'], $colorData['b']);
-                $hue = fmod($hsl['h'] + self::HUE_SHIFT, self::HUE_MAX);
-                $rgb = $this->hslToRgb($hue, $hsl['s'], $hsl['l']);
+                $hsl = ColorConverter::RGB->toHsl($colorData['r'], $colorData['g'], $colorData['b']);
+                $hue = fmod($hsl['h'] + ColorSerializer::HUE_SHIFT, ColorSerializer::HUE_MAX);
+                $rgb = ColorConverter::HSL->toRgb($hue, $hsl['s'], $hsl['l']);
                 break;
         }
 
+        $alpha = $colorData['a'] ?? ColorSerializer::ALPHA_MAX;
+
+        // Ensure high precision for alpha channel preservation
+        $alpha = round($alpha, 15);
+
         return $this->formatColor(
             array_merge($rgb, [
-                'a'      => $colorData['a'] ?? self::ALPHA_MAX,
+                'a'      => $this->clamp($alpha, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX),
                 'format' => ColorFormat::RGB->value,
             ])
         );
@@ -329,12 +178,12 @@ class ColorModule
     {
         $colorData = $this->parseColor($color);
 
-        $hsl = $this->rgbToHsl($colorData['r'], $colorData['g'], $colorData['b']);
-        $rgb = $this->hslToRgb($hsl['h'], 0, $hsl['l']);
+        $hsl = ColorConverter::RGB->toHsl($colorData['r'], $colorData['g'], $colorData['b']);
+        $rgb = ColorConverter::HSL->toRgb($hsl['h'], 0, $hsl['l']);
 
         return $this->formatColor(
             array_merge($rgb, [
-                'a'      => $colorData['a'] ?? self::ALPHA_MAX,
+                'a'      => $colorData['a'] ?? ColorSerializer::ALPHA_MAX,
                 'format' => ColorFormat::RGB->value,
             ])
         );
@@ -344,7 +193,7 @@ class ColorModule
     {
         $colorData = $this->parseColor($color);
 
-        $a = (int) round(($colorData['a'] ?? self::ALPHA_MAX) * self::RGB_MAX);
+        $a = (int) round(($colorData['a'] ?? ColorSerializer::ALPHA_MAX) * ColorSerializer::RGB_MAX);
         $r = (int) round($colorData['r']);
         $g = (int) round($colorData['g']);
         $b = (int) round($colorData['b']);
@@ -356,27 +205,36 @@ class ColorModule
     {
         $colorData = $this->parseColor($color);
         $space ??= ColorFormat::RGB->value;
-        $weightFactor = $this->clamp($weight / self::PERCENT_MAX, self::ALPHA_MIN, self::ALPHA_MAX);
+        $weightFactor = $this->clamp(
+            $weight / ColorSerializer::PERCENT_MAX,
+            ColorSerializer::ALPHA_MIN,
+            ColorSerializer::ALPHA_MAX
+        );
 
         switch ($space) {
             case ColorFormat::HWB->value:
-                $hwb = $this->rgbToHwb($colorData['r'], $colorData['g'], $colorData['b']);
-                $invertedHwb = $this->hwbToRgb(($hwb['h'] + self::HUE_SHIFT) % self::HUE_MAX, $hwb['bl'], $hwb['w']);
+                $hwb = ColorConverter::RGB->toHwb($colorData['r'], $colorData['g'], $colorData['b']);
+                $invertedHwb = ColorConverter::HWB->toRgb(
+                    ($hwb['h'] + ColorSerializer::HUE_SHIFT) % ColorSerializer::HUE_MAX,
+                    $hwb['bl'],
+                    $hwb['w']
+                );
                 $inverted = ['r' => $invertedHwb['r'], 'g' => $invertedHwb['g'], 'b' => $invertedHwb['b']];
                 break;
 
             case ColorFormat::HSL->value:
-                $hsl = $this->rgbToHsl($colorData['r'], $colorData['g'], $colorData['b']);
-                $invertedHue = ($hsl['h'] + self::HUE_SHIFT) % self::HUE_MAX;
-                $invertedHsl = $this->hslToRgb($invertedHue, $hsl['s'], $hsl['l']);
+                $hsl = ColorConverter::RGB->toHsl($colorData['r'], $colorData['g'], $colorData['b']);
+                $invertedHue = ($hsl['h'] + ColorSerializer::HUE_SHIFT) % ColorSerializer::HUE_MAX;
+                $invertedHsl = ColorConverter::HSL->toRgb($invertedHue, $hsl['s'], $hsl['l']);
                 $inverted = ['r' => $invertedHsl['r'], 'g' => $invertedHsl['g'], 'b' => $invertedHsl['b']];
                 break;
 
             default:
+                $colorData = ColorSerializer::ensureRgbFormat($colorData);
                 $inverted = [
-                    'r' => self::RGB_MAX - $colorData['r'],
-                    'g' => self::RGB_MAX - $colorData['g'],
-                    'b' => self::RGB_MAX - $colorData['b'],
+                    'r' => ColorSerializer::RGB_MAX - $colorData['r'],
+                    'g' => ColorSerializer::RGB_MAX - $colorData['g'],
+                    'b' => ColorSerializer::RGB_MAX - $colorData['b'],
                 ];
                 break;
         }
@@ -389,7 +247,7 @@ class ColorModule
             'r'      => round($r),
             'g'      => round($g),
             'b'      => round($b),
-            'a'      => $colorData['a'] ?? self::ALPHA_MAX,
+            'a'      => $colorData['a'] ?? ColorSerializer::ALPHA_MAX,
             'format' => ColorFormat::RGB->value,
         ]);
     }
@@ -397,10 +255,10 @@ class ColorModule
     public function isLegacy(string $color): string
     {
         $colorData = $this->parseColor($color);
-        $format = $colorData['format'] ?? ColorFormat::RGB->value;
+        $format    = $colorData['format'] ?? ColorFormat::RGB->value;
 
         $formatEnum = ColorFormat::tryFrom($format);
-        $isLegacy = $formatEnum?->isLegacy() ?? false;
+        $isLegacy   = $formatEnum?->isLegacy() ?? false;
 
         return $isLegacy ? 'true' : 'false';
     }
@@ -408,20 +266,16 @@ class ColorModule
     public function isMissing(string $color, string $channel): string
     {
         $colorData = $this->parseColor($color);
-        $channel = strtolower(trim($channel, '"\''));
+        $channel   = strtolower(trim($channel, '"\''));
 
-        $missing = match ($channel) {
-            'red', 'r',
-            'green', 'g',
-            'blue', 'b'       => ! isset($colorData[$channel[0]]),
-            'hue', 'h'        => ! isset($colorData['h']),
-            'saturation', 's' => ! isset($colorData['s']),
-            'lightness', 'l'  => ! isset($colorData['l']),
-            'whiteness', 'w'  => ! isset($colorData['w']),
-            'blackness', 'bl' => ! isset($colorData['bl']),
-            'alpha', 'a'      => ! isset($colorData['a']),
-            default           => throw new CompilationException("Unknown channel: $channel"),
-        };
+        if ($channel === 'alpha' || $channel === 'a') {
+            return 'false';
+        }
+
+        $this->validateChannel($channel);
+
+        $dataKey = $this->channelToDataKey($channel);
+        $missing = ! isset($colorData[$dataKey]);
 
         return $missing ? 'true' : 'false';
     }
@@ -430,21 +284,7 @@ class ColorModule
     {
         $channel = strtolower(trim($channel, '"\''));
 
-        $validChannels = [
-            'red', 'r',
-            'green', 'g',
-            'blue', 'b',
-            'alpha', 'a',
-            'hue', 'h',
-            'saturation', 's',
-            'lightness', 'l',
-            'whiteness', 'w',
-            'blackness', 'bl',
-        ];
-
-        if (! in_array($channel, $validChannels, true)) {
-            throw new CompilationException("Unknown channel: $channel");
-        }
+        $this->validateChannel($channel);
 
         if ($space !== null) {
             $spaceFormat = ColorFormat::tryFrom(strtolower($space));
@@ -463,37 +303,42 @@ class ColorModule
         }
 
         $colorData = $this->parseColor($color);
-        $colorData = $this->ensureRgbFormat($colorData);
+        $colorData = ColorSerializer::ensureRgbFormat($colorData);
 
         $r = $colorData['r'];
         $g = $colorData['g'];
         $b = $colorData['b'];
-        $a = $colorData['a'] ?? self::ALPHA_MAX;
+        $a = $colorData['a'] ?? ColorSerializer::ALPHA_MAX;
 
-        $hsl = $this->rgbToHsl($r, $g, $b);
+        $hsl = ColorConverter::RGB->toHsl($r, $g, $b);
 
         return match ($channel) {
-            'hue', 'h' => ($hsl['s'] <= self::ALPHA_MIN) ? 'true' : 'false',
-            'saturation', 's' => ($hsl['l'] <= self::ALPHA_MIN || $hsl['l'] >= self::PERCENT_MAX) ? 'true' : 'false',
+            'hue', 'h' => ($hsl['s'] <= ColorSerializer::ALPHA_MIN) ? 'true' : 'false',
+            'saturation', 's' => ($hsl['l'] <= ColorSerializer::ALPHA_MIN || $hsl['l'] >= ColorSerializer::PERCENT_MAX)
+                ? 'true'
+                : 'false',
             'red', 'r',
             'green', 'g',
             'blue', 'b',
             'whiteness', 'w',
-            'blackness', 'bl' => ($a <= self::ALPHA_MIN) ? 'true' : 'false',
+            'blackness', 'bl' => ($a <= ColorSerializer::ALPHA_MIN) ? 'true' : 'false',
             default => 'false',
         };
     }
 
     public function mix(string $color1, string $color2, float $weight = 0.5): string
     {
-        $c1     = $this->parseColor($color1);
-        $c2     = $this->parseColor($color2);
+        $c1 = $this->parseColor($color1);
+        $c2 = $this->parseColor($color2);
 
         if ($weight > 1) {
             $weight /= 100;
         }
 
-        $weight = $this->clamp($weight, self::ALPHA_MIN, self::ALPHA_MAX);
+        $weight = $this->clamp($weight, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX);
+
+        $c1 = ColorSerializer::ensureRgbFormat($c1);
+        $c2 = ColorSerializer::ensureRgbFormat($c2);
 
         $r = round($c1['r'] * $weight + $c2['r'] * (1 - $weight));
         $g = round($c1['g'] * $weight + $c2['g'] * (1 - $weight));
@@ -501,11 +346,11 @@ class ColorModule
         $a = $c1['a'] * $weight + $c2['a'] * (1 - $weight);
 
         return $this->formatColor([
-            'r'      => $this->clamp($r, 0, self::RGB_MAX),
-            'g'      => $this->clamp($g, 0, self::RGB_MAX),
-            'b'      => $this->clamp($b, 0, self::RGB_MAX),
-            'a'      => $this->clamp($a, self::ALPHA_MIN, self::ALPHA_MAX),
-            'format' => $c1['a'] < self::ALPHA_MAX || $c2['a'] < self::ALPHA_MAX
+            'r'      => $this->clamp($r, 0, ColorSerializer::RGB_MAX),
+            'g'      => $this->clamp($g, 0, ColorSerializer::RGB_MAX),
+            'b'      => $this->clamp($b, 0, ColorSerializer::RGB_MAX),
+            'a'      => $this->clamp($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX),
+            'format' => $c1['a'] < ColorSerializer::ALPHA_MAX || $c2['a'] < ColorSerializer::ALPHA_MAX
                 ? ColorFormat::RGBA->value
                 : ColorFormat::RGB->value,
         ]);
@@ -516,10 +361,15 @@ class ColorModule
         $color1Data = $this->parseColor($color1);
         $color2Data = $this->parseColor($color2);
 
+        $color1Data = ColorSerializer::ensureRgbFormat($color1Data);
+        $color2Data = ColorSerializer::ensureRgbFormat($color2Data);
+
         $rMatch = abs($color1Data['r'] - $color2Data['r']) < 0.5;
         $gMatch = abs($color1Data['g'] - $color2Data['g']) < 0.5;
         $bMatch = abs($color1Data['b'] - $color2Data['b']) < 0.5;
-        $aMatch = abs(($color1Data['a'] ?? self::ALPHA_MAX) - ($color2Data['a'] ?? self::ALPHA_MAX)) < 0.01;
+        $aMatch = abs(
+            ($color1Data['a'] ?? ColorSerializer::ALPHA_MAX) - ($color2Data['a'] ?? ColorSerializer::ALPHA_MAX)
+        ) < 0.01;
 
         return ($rMatch && $gMatch && $bMatch && $aMatch) ? 'true' : 'false';
     }
@@ -555,51 +405,49 @@ class ColorModule
 
         match ($space) {
             ColorFormat::RGB->value => (function () use (&$inTargetSpace): void {
-                $inTargetSpace['r'] = $this->clamp($inTargetSpace['r'], 0, self::RGB_MAX);
-                $inTargetSpace['g'] = $this->clamp($inTargetSpace['g'], 0, self::RGB_MAX);
-                $inTargetSpace['b'] = $this->clamp($inTargetSpace['b'], 0, self::RGB_MAX);
+                $inTargetSpace['r'] = round($this->clamp($inTargetSpace['r'], 0, ColorSerializer::RGB_MAX));
+                $inTargetSpace['g'] = round($this->clamp($inTargetSpace['g'], 0, ColorSerializer::RGB_MAX));
+                $inTargetSpace['b'] = round($this->clamp($inTargetSpace['b'], 0, ColorSerializer::RGB_MAX));
             })(),
             ColorFormat::HSL->value => (function () use (&$inTargetSpace): void {
-                $inTargetSpace['h'] = fmod($inTargetSpace['h'], self::HUE_MAX);
-
-                if ($inTargetSpace['h'] < 0) {
-                    $inTargetSpace['h'] += self::HUE_MAX;
-                }
-
-                $inTargetSpace['s'] = $this->clamp($inTargetSpace['s'], 0, self::PERCENT_MAX);
-                $inTargetSpace['l'] = $this->clamp($inTargetSpace['l'], 0, self::PERCENT_MAX);
+                $inTargetSpace['h'] = fmod($inTargetSpace['h'], ColorSerializer::HUE_MAX);
+                $inTargetSpace['s'] = $this->clamp($inTargetSpace['s'], 0, ColorSerializer::PERCENT_MAX);
+                $inTargetSpace['l'] = $this->clamp($inTargetSpace['l'], 0, ColorSerializer::PERCENT_MAX);
             })(),
             ColorFormat::HWB->value => (function () use (&$inTargetSpace): void {
-                $inTargetSpace['h'] = fmod($inTargetSpace['h'], self::HUE_MAX);
-
-                if ($inTargetSpace['h'] < 0) {
-                    $inTargetSpace['h'] += self::HUE_MAX;
-                }
-
-                $inTargetSpace['w']  = $this->clamp($inTargetSpace['w'], 0, self::PERCENT_MAX);
-                $inTargetSpace['bl'] = $this->clamp($inTargetSpace['bl'], 0, self::PERCENT_MAX);
+                $inTargetSpace['h']  = fmod($inTargetSpace['h'], ColorSerializer::HUE_MAX);
+                $inTargetSpace['w']  = $this->clamp($inTargetSpace['w'], 0, ColorSerializer::PERCENT_MAX);
+                $inTargetSpace['bl'] = $this->clamp($inTargetSpace['bl'], 0, ColorSerializer::PERCENT_MAX);
 
                 $sum = $inTargetSpace['w'] + $inTargetSpace['bl'];
 
-                if ($sum > self::PERCENT_MAX) {
-                    $inTargetSpace['w']  = ($inTargetSpace['w'] / $sum) * self::PERCENT_MAX;
-                    $inTargetSpace['bl'] = ($inTargetSpace['bl'] / $sum) * self::PERCENT_MAX;
+                if ($sum > ColorSerializer::PERCENT_MAX) {
+                    $inTargetSpace['w']  = ($inTargetSpace['w'] / $sum) * ColorSerializer::PERCENT_MAX;
+                    $inTargetSpace['bl'] = ($inTargetSpace['bl'] / $sum) * ColorSerializer::PERCENT_MAX;
                 }
             })(),
-            default => null, // Handle other color spaces (LCH, OKLCH) without modification
+            default => null,
         };
 
         $inTargetSpace['a'] = $this->clamp(
-            $inTargetSpace['a'] ?? self::ALPHA_MAX,
-            self::ALPHA_MIN,
-            self::ALPHA_MAX
+            $inTargetSpace['a'] ?? ColorSerializer::ALPHA_MAX,
+            ColorSerializer::ALPHA_MIN,
+            ColorSerializer::ALPHA_MAX
         );
 
         if ($space !== $originalSpace) {
             return $this->toSpace($this->formatColor($inTargetSpace), $originalSpace);
         }
 
+        // Ensure the format is correct for the target space
         $inTargetSpace['format'] = $originalFormat;
+
+        // Ensure all required keys are present for the format
+        if ($space === ColorFormat::RGB->value || $space === ColorFormat::RGBA->value) {
+            $inTargetSpace['r'] = $inTargetSpace['r'] ?? 0;
+            $inTargetSpace['g'] = $inTargetSpace['g'] ?? 0;
+            $inTargetSpace['b'] = $inTargetSpace['b'] ?? 0;
+        }
 
         return $this->formatColor($inTargetSpace);
     }
@@ -714,72 +562,35 @@ class ColorModule
 
     public function hsl(float $h, float $s, float $l, ?float $a = null): string
     {
-        $a ??= self::ALPHA_MAX;
-
-        return $this->formatColor([
-            'h'      => $h,
-            's'      => $s,
-            'l'      => $l,
-            'a'      => $a,
-            'format' => $a < self::ALPHA_MAX ? ColorFormat::HSLA->value : ColorFormat::HSL->value,
-        ]);
+        return (string) SassColor::hsl($h, $s, $l, $a);
     }
 
     public function hwb(float $h, float $w, float $bl, ?float $a = null): string
     {
-        $a ??= self::ALPHA_MAX;
+        return (string) SassColor::hwb($h, $w, $bl, $a);
+    }
 
-        return $this->formatColor([
-            'h'      => $h,
-            'w'      => $w,
-            'bl'     => $bl,
-            'a'      => $a,
-            'format' => ColorFormat::HWB->value,
-        ]);
+    public function lab(float $l, float $a, float $b, ?float $alpha = null): string
+    {
+        return (string) SassColor::lab($l, $a, $b, $alpha);
     }
 
     public function lch(float $l, float $c, float $h, ?float $a = null): string
     {
-        $a ??= self::ALPHA_MAX;
-
-        if ($h > self::HUE_MAX) {
-            $h /= 2;
-            $a = 0.5;
-        }
-
-        return $this->formatColor([
-            'l'      => $l,
-            'c'      => $c,
-            'h'      => $h,
-            'a'      => $a,
-            'format' => ColorFormat::LCH->value,
-        ]);
+        return (string) SassColor::lch($l, $c, $h, $a);
     }
 
     public function oklch(float $l, float $c, float $h, ?float $a = null): string
     {
-        $a ??= self::ALPHA_MAX;
-
-        if ($h == 300) {
-            $h = 270;
-            $a = 0.9;
-        }
-
-        return $this->formatColor([
-            'l'      => $l,
-            'c'      => $c,
-            'h'      => $h,
-            'a'      => $a,
-            'format' => ColorFormat::OKLCH->value,
-        ]);
+        return (string) SassColor::oklch($l, $c, $h, $a);
     }
 
     public function parseColor(string $color): array
     {
         $color = trim($color);
 
-        if (isset(self::NAMED_COLORS[$color])) {
-            return $this->parseHexColor(substr(self::NAMED_COLORS[$color], 1));
+        if (isset(ColorSerializer::NAMED_COLORS[$color])) {
+            return $this->parseHexColor(substr(ColorSerializer::NAMED_COLORS[$color], 1));
         }
 
         foreach (ColorFormat::cases() as $format) {
@@ -790,10 +601,14 @@ class ColorModule
                     ColorFormat::HSL   => $this->parseHslColor($matches),
                     ColorFormat::HSLA  => $this->parseHslaColor($matches),
                     ColorFormat::HWB   => $this->parseHwbColor($matches),
+                    ColorFormat::LAB   => $this->parseLabColor($matches),
+                    ColorFormat::LABA  => $this->parseLabaColor($matches),
                     ColorFormat::LCH   => $this->parseLchColor($matches),
                     ColorFormat::OKLCH => $this->parseOklchColor($matches),
                     ColorFormat::RGB   => $this->parseRgbColor($matches),
                     ColorFormat::RGBA  => $this->parseRgbaColor($matches),
+                    ColorFormat::XYZ   => $this->parseXyzColor($matches),
+                    ColorFormat::XYZA  => $this->parseXyzaColor($matches),
                 };
             }
         }
@@ -803,24 +618,17 @@ class ColorModule
 
     public function formatColor(array $colorData): string
     {
-        return match ($colorData['format']) {
-            ColorFormat::HSL->value,
-            ColorFormat::HSLA->value => $this->formatHslColor($colorData),
-            ColorFormat::HWB->value => $this->formatHwbColor($colorData),
-            ColorFormat::LCH->value => $this->formatLchColor($colorData),
-            ColorFormat::OKLCH->value => $this->formatOklchColor($colorData),
-            ColorFormat::RGB->value,
-            ColorFormat::RGBA->value => $this->formatRgbColor($colorData),
-            default => $this->formatRgbColor($this->ensureRgbFormat($colorData)),
-        };
+        $sassColor = new SassColor($colorData);
+
+        return (string) $sassColor;
     }
 
     private function parseHexColor(string $hex): array
     {
         if (strlen($hex) === 3) {
-            $r = hexdec($hex[0] . $hex[0]);
-            $g = hexdec($hex[1] . $hex[1]);
-            $b = hexdec($hex[2] . $hex[2]);
+            $r = hexdec(str_repeat($hex[0], 2));
+            $g = hexdec(str_repeat($hex[1], 2));
+            $b = hexdec(str_repeat($hex[2], 2));
         } else {
             $r = hexdec(substr($hex, 0, 2));
             $g = hexdec(substr($hex, 2, 2));
@@ -831,7 +639,7 @@ class ColorModule
             'r'      => $r,
             'g'      => $g,
             'b'      => $b,
-            'a'      => self::ALPHA_MAX,
+            'a'      => ColorSerializer::ALPHA_MAX,
             'format' => ColorFormat::RGB->value,
         ];
     }
@@ -839,15 +647,15 @@ class ColorModule
     private function parseHexaColor(string $hex): array
     {
         if (strlen($hex) === 4) {
-            $r = hexdec($hex[0] . $hex[0]);
-            $g = hexdec($hex[1] . $hex[1]);
-            $b = hexdec($hex[2] . $hex[2]);
-            $a = hexdec($hex[3] . $hex[3]) / self::RGB_MAX;
+            $r = hexdec(str_repeat($hex[0], 2));
+            $g = hexdec(str_repeat($hex[1], 2));
+            $b = hexdec(str_repeat($hex[2], 2));
+            $a = hexdec(str_repeat($hex[3], 2)) / ColorSerializer::RGB_MAX;
         } else {
             $r = hexdec(substr($hex, 0, 2));
             $g = hexdec(substr($hex, 2, 2));
             $b = hexdec(substr($hex, 4, 2));
-            $a = hexdec(substr($hex, 6, 2)) / self::RGB_MAX;
+            $a = hexdec(substr($hex, 6, 2)) / ColorSerializer::RGB_MAX;
         }
 
         return [
@@ -865,40 +673,15 @@ class ColorModule
         $g = str_contains($matches[2], '%') ? $this->parsePercentageValue($matches[2]) * 2.55 : (float) $matches[2];
         $b = str_contains($matches[3], '%') ? $this->parsePercentageValue($matches[3]) * 2.55 : (float) $matches[3];
 
-        return [
-            'r' => (int) round($this->clamp($r, 0, self::RGB_MAX)),
-            'g' => (int) round($this->clamp($g, 0, self::RGB_MAX)),
-            'b' => (int) round($this->clamp($b, 0, self::RGB_MAX)),
-        ];
-    }
-
-    private function parseRgbColor(array $matches): array
-    {
-        $rgb = $this->parseRgbComponents($matches);
-        $a = isset($matches[4]) ? (float) $matches[4] : self::ALPHA_MAX;
+        // Clamp values to valid RGB range before rounding
+        $r = $this->clamp($r, 0, ColorSerializer::RGB_MAX);
+        $g = $this->clamp($g, 0, ColorSerializer::RGB_MAX);
+        $b = $this->clamp($b, 0, ColorSerializer::RGB_MAX);
 
         return [
-            'r'      => $rgb['r'],
-            'g'      => $rgb['g'],
-            'b'      => $rgb['b'],
-            'a'      => $this->clamp($a, self::ALPHA_MIN, self::ALPHA_MAX),
-            'format' => $a < self::ALPHA_MAX ? ColorFormat::RGBA->value : ColorFormat::RGB->value,
-        ];
-    }
-
-    private function parseRgbaColor(array $matches): array
-    {
-        $rgb = $this->parseRgbComponents($matches);
-        $a = (float) $matches[4];
-
-        $this->validateValueRange($a, self::ALPHA_MIN, self::ALPHA_MAX, 'alpha');
-
-        return [
-            'r'      => $rgb['r'],
-            'g'      => $rgb['g'],
-            'b'      => $rgb['b'],
-            'a'      => $this->clamp($a, self::ALPHA_MIN, self::ALPHA_MAX),
-            'format' => ColorFormat::RGBA->value,
+            'r' => (int) round($r),
+            'g' => (int) round($g),
+            'b' => (int) round($b),
         ];
     }
 
@@ -907,18 +690,18 @@ class ColorModule
         $h = $this->parseHueValue($matches[1]);
         $s = $this->parsePercentageValue($matches[2]);
         $l = $this->parsePercentageValue($matches[3]);
-        $a = isset($matches[4]) ? $this->parseAlpha($matches[4]) : self::ALPHA_MAX;
+        $a = isset($matches[4]) ? $this->parseAlpha($matches[4]) : ColorSerializer::ALPHA_MAX;
 
-        $this->validateValueRange($s, 0, self::PERCENT_MAX, 'saturation');
-        $this->validateValueRange($l, 0, self::PERCENT_MAX, 'lightness');
-        $this->validateValueRange($a, self::ALPHA_MIN, self::ALPHA_MAX, 'alpha');
+        $this->validateValueRange($s, 0, ColorSerializer::PERCENT_MAX, 'saturation');
+        $this->validateValueRange($l, 0, ColorSerializer::PERCENT_MAX, 'lightness');
+        $this->validateValueRange($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX, 'alpha');
 
         return [
-            'h'      => $this->clamp($h, 0, self::HUE_MAX),
-            's'      => $this->clamp($s, 0, self::PERCENT_MAX),
-            'l'      => $this->clamp($l, 0, self::PERCENT_MAX),
-            'a'      => $this->clamp($a, self::ALPHA_MIN, self::ALPHA_MAX),
-            'format' => $a < self::ALPHA_MAX ? ColorFormat::HSLA->value : ColorFormat::HSL->value,
+            'h'      => $this->clamp($h, 0, ColorSerializer::HUE_MAX),
+            's'      => $this->clamp($s, 0, ColorSerializer::PERCENT_MAX),
+            'l'      => $this->clamp($l, 0, ColorSerializer::PERCENT_MAX),
+            'a'      => $this->clamp($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX),
+            'format' => $a < ColorSerializer::ALPHA_MAX ? ColorFormat::HSLA->value : ColorFormat::HSL->value,
         ];
     }
 
@@ -929,62 +712,92 @@ class ColorModule
         $l = $this->parsePercentageValue($matches[3]);
         $a = $this->parseAlpha($matches[4]);
 
-        $this->validateValueRange($s, 0, self::PERCENT_MAX, 'saturation');
-        $this->validateValueRange($l, 0, self::PERCENT_MAX, 'lightness');
-        $this->validateValueRange($a, self::ALPHA_MIN, self::ALPHA_MAX, 'alpha');
+        $this->validateValueRange($s, 0, ColorSerializer::PERCENT_MAX, 'saturation');
+        $this->validateValueRange($l, 0, ColorSerializer::PERCENT_MAX, 'lightness');
+        $this->validateValueRange($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX, 'alpha');
 
         return [
-            'h'      => $this->clamp($h, 0, self::HUE_MAX),
-            's'      => $this->clamp($s, 0, self::PERCENT_MAX),
-            'l'      => $this->clamp($l, 0, self::PERCENT_MAX),
-            'a'      => $this->clamp($a, self::ALPHA_MIN, self::ALPHA_MAX),
+            'h'      => $this->clamp($h, 0, ColorSerializer::HUE_MAX),
+            's'      => $this->clamp($s, 0, ColorSerializer::PERCENT_MAX),
+            'l'      => $this->clamp($l, 0, ColorSerializer::PERCENT_MAX),
+            'a'      => $this->clamp($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX),
             'format' => ColorFormat::HSLA->value,
         ];
     }
 
     private function parseHwbColor(array $matches): array
     {
-        $h = $this->parseHueValue($matches[1]);
-        $w = $this->parsePercentageValue($matches[2]);
+        $h  = $this->parseHueValue($matches[1]);
+        $w  = $this->parsePercentageValue($matches[2]);
         $bl = $this->parsePercentageValue($matches[3]);
-        $a = isset($matches[4]) ? $this->parseAlpha($matches[4]) : self::ALPHA_MAX;
+        $a  = isset($matches[4]) ? $this->parseAlpha($matches[4]) : ColorSerializer::ALPHA_MAX;
 
-        $this->validateValueRange($w, 0, self::PERCENT_MAX, 'whiteness');
-        $this->validateValueRange($bl, 0, self::PERCENT_MAX, 'blackness');
-        $this->validateValueRange($a, self::ALPHA_MIN, self::ALPHA_MAX, 'alpha');
+        $this->validateValueRange($w, 0, ColorSerializer::PERCENT_MAX, 'whiteness');
+        $this->validateValueRange($bl, 0, ColorSerializer::PERCENT_MAX, 'blackness');
+        $this->validateValueRange($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX, 'alpha');
 
         return [
-            'h'      => (int) round($this->clamp($h, 0, self::HUE_MAX)),
-            'w'      => (int) round($this->clamp($w, 0, self::PERCENT_MAX)),
-            'bl'     => (int) round($this->clamp($bl, 0, self::PERCENT_MAX)),
-            'a'      => $this->clamp($a, self::ALPHA_MIN, self::ALPHA_MAX),
+            'h'      => (int) round($this->clamp($h, 0, ColorSerializer::HUE_MAX)),
+            'w'      => (int) round($this->clamp($w, 0, ColorSerializer::PERCENT_MAX)),
+            'bl'     => (int) round($this->clamp($bl, 0, ColorSerializer::PERCENT_MAX)),
+            'a'      => $this->clamp($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX),
             'format' => ColorFormat::HWB->value,
+        ];
+    }
+
+    private function parseLabColor(array $matches): array
+    {
+        $lRaw = $matches[1];
+        $a    = (float) $matches[2];
+        $b    = (float) $matches[3];
+
+        $l = str_contains($lRaw, '%') ? $this->parsePercentageValue($lRaw) : (float) $lRaw * ColorSerializer::PERCENT_MAX;
+
+        return [
+            'lab_l'  => $this->clamp($l, 0, ColorSerializer::PERCENT_MAX),
+            'lab_a'  => $a,
+            'lab_b'  => $b,
+            'a'      => ColorSerializer::ALPHA_MAX,
+            'format' => ColorFormat::LAB->value,
+        ];
+    }
+
+    private function parseLabaColor(array $matches): array
+    {
+        $lRaw     = $matches[1];
+        $a        = (float) $matches[2];
+        $b        = (float) $matches[3];
+        $alphaStr = $matches[4];
+
+        $l = str_contains($lRaw, '%') ? $this->parsePercentageValue($lRaw) : (float) $lRaw * ColorSerializer::PERCENT_MAX;
+        $alpha = $this->parseAlpha($alphaStr);
+
+        return [
+            'lab_l'  => $this->clamp($l, 0, ColorSerializer::PERCENT_MAX),
+            'lab_a'  => $a,
+            'lab_b'  => $b,
+            'a'      => $this->clamp($alpha, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX),
+            'format' => ColorFormat::LABA->value,
         ];
     }
 
     private function parseLchLikeColor(string $format, array $matches, float $maxChroma): array
     {
         $lRaw = $matches[1];
-        $l    = str_contains($lRaw, '%') ? $this->parsePercentageValue($lRaw) : (float) $lRaw * self::PERCENT_MAX;
-
-        $c    = (float) $matches[2];
         $hStr = $matches[3];
-        $a    = isset($matches[4]) ? $this->parseAlpha($matches[4]) : self::ALPHA_MAX;
 
-        if ($a == self::ALPHA_MAX && str_contains($hStr, '/')) {
-            [$hStr, $aStr] = explode('/', $hStr, 2);
-            $a = $this->parseAlpha(trim($aStr));
-        }
-
+        $l = str_contains($lRaw, '%') ? $this->parsePercentageValue($lRaw) : (float) $lRaw * ColorSerializer::PERCENT_MAX;
+        $c = (float) $matches[2];
         $h = $this->parseHueValue(trim($hStr));
+        $a = isset($matches[4]) ? $this->parseAlpha($matches[4]) : ColorSerializer::ALPHA_MAX;
 
-        $this->validateValueRange($a, self::ALPHA_MIN, self::ALPHA_MAX, 'alpha');
+        $this->validateValueRange($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX, 'alpha');
 
         return [
-            'l'      => $this->clamp($l, 0, self::PERCENT_MAX),
+            'l'      => $this->clamp($l, 0, ColorSerializer::PERCENT_MAX),
             'c'      => $this->clamp($c, 0, $maxChroma),
-            'h'      => $this->clamp($h, 0, self::HUE_MAX),
-            'a'      => $this->clamp($a, self::ALPHA_MIN, self::ALPHA_MAX),
+            'h'      => $this->clamp($h, 0, ColorSerializer::HUE_MAX),
+            'a'      => $this->clamp($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX),
             'format' => $format,
         ];
     }
@@ -999,9 +812,73 @@ class ColorModule
         return $this->parseLchLikeColor(ColorFormat::OKLCH->value, $matches, 0.5);
     }
 
+    private function parseRgbColor(array $matches): array
+    {
+        $rgb = $this->parseRgbComponents($matches);
+        $a   = isset($matches[4]) ? (float) $matches[4] : ColorSerializer::ALPHA_MAX;
+
+        return [
+            'r'      => $rgb['r'],
+            'g'      => $rgb['g'],
+            'b'      => $rgb['b'],
+            'a'      => $this->clamp($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX),
+            'format' => $a < ColorSerializer::ALPHA_MAX ? ColorFormat::RGBA->value : ColorFormat::RGB->value,
+        ];
+    }
+
+    private function parseRgbaColor(array $matches): array
+    {
+        $rgb = $this->parseRgbComponents($matches);
+        $a   = (float) $matches[4];
+
+        $this->validateValueRange($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX, 'alpha');
+
+        return [
+            'r'      => $rgb['r'],
+            'g'      => $rgb['g'],
+            'b'      => $rgb['b'],
+            'a'      => $this->clamp($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX),
+            'format' => ColorFormat::RGBA->value,
+        ];
+    }
+
+    private function parseXyzColor(array $matches): array
+    {
+        $x = (float) $matches[1];
+        $y = (float) $matches[2];
+        $z = (float) $matches[3];
+        $a = isset($matches[4]) ? $this->parseAlpha($matches[4]) : ColorSerializer::ALPHA_MAX;
+
+        $this->validateValueRange($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX, 'alpha');
+
+        return [
+            'x'      => $this->clamp($x, -1000, 1000),
+            'y'      => $this->clamp($y, -1000, 1000),
+            'z'      => $this->clamp($z, -1000, 1000),
+            'a'      => $this->clamp($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX),
+            'format' => ColorFormat::XYZ->value,
+        ];
+    }
+
+    private function parseXyzaColor(array $matches): array
+    {
+        $x = (float) $matches[1];
+        $y = (float) $matches[2];
+        $z = (float) $matches[3];
+        $a = $this->parseAlpha($matches[4]);
+
+        return [
+            'x'      => $this->clamp($x, -1000, 1000),
+            'y'      => $this->clamp($y, -1000, 1000),
+            'z'      => $this->clamp($z, -1000, 1000),
+            'a'      => $this->clamp($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX),
+            'format' => ColorFormat::XYZA->value,
+        ];
+    }
+
     private function applyAdjustments(array $colorData, array $adjustments): array
     {
-        $result = $this->ensureRgbFormat($colorData);
+        $result = ColorSerializer::ensureRgbFormat($colorData);
 
         $rgbAdjustments = [];
         $hslAdjustments = [];
@@ -1015,19 +892,19 @@ class ColorModule
             match ($key) {
                 '$red',
                 '$green',
-                '$blue' => $rgbAdjustments[ColorFormat::RGB->value][$this->keyToChannel($key)] = $valueNumber,
+                '$blue'      => $rgbAdjustments[ColorFormat::RGB->value][$this->keyToChannel($key)] = $valueNumber,
                 '$hue',
                 '$saturation',
                 '$lightness' => $hslAdjustments[ColorFormat::HSL->value][$this->keyToHslChannel($key)] = $valueNumber,
-                '$alpha' => $rgbAdjustments['alpha'] = ($rgbAdjustments['alpha'] ?? $result['a']) + $valueNumber,
+                '$alpha'     => $rgbAdjustments['alpha'] = ($rgbAdjustments['alpha'] ?? $result['a']) + $valueNumber,
                 '$whiteness' => $rgbAdjustments['whiteness'] = $valueNumber,
                 '$blackness' => $rgbAdjustments['blackness'] = $valueNumber,
-                '$x' => $rgbAdjustments['x'] = $valueNumber,
-                '$y' => $rgbAdjustments['y'] = $valueNumber,
-                '$z' => $rgbAdjustments['z'] = $valueNumber,
-                '$space' => $rgbAdjustments['space'] = $valueNumber,
-                '$chroma' => $rgbAdjustments['chroma'] = $valueNumber,
-                default => throw new CompilationException("Unknown adjustment parameter: $key"),
+                '$x'         => $rgbAdjustments['x'] = $valueNumber,
+                '$y'         => $rgbAdjustments['y'] = $valueNumber,
+                '$z'         => $rgbAdjustments['z'] = $valueNumber,
+                '$space'     => $rgbAdjustments['space'] = $valueNumber,
+                '$chroma'    => $rgbAdjustments['chroma'] = $valueNumber,
+                default      => throw new CompilationException("Unknown adjustment parameter: $key"),
             };
         }
 
@@ -1050,67 +927,70 @@ class ColorModule
             match ($type) {
                 ColorFormat::RGB->value => (function () use (&$result, $value): void {
                     foreach ($value as $channel => $adjustment) {
-                        $result[$channel] = $this->clamp($result[$channel] + $adjustment, 0, self::RGB_MAX);
+                        $result[$channel] = $this->clamp(
+                            $result[$channel] + $adjustment,
+                            0,
+                            ColorSerializer::RGB_MAX
+                        );
                     }
                 })(),
-                'alpha' => $result['a'] = $this->clamp($value, self::ALPHA_MIN, self::ALPHA_MAX),
+                'alpha' => $result['a'] = $this->clamp(
+                    $value,
+                    ColorSerializer::ALPHA_MIN,
+                    ColorSerializer::ALPHA_MAX
+                ),
                 default => null,
             };
         }
 
         // Handle HWB adjustments (whiteness/blackness)
         if (isset($adjustments['whiteness']) || isset($adjustments['blackness'])) {
-            $hwb = $this->rgbToHwb($result['r'], $result['g'], $result['b']);
+            $hwb = ColorConverter::RGB->toHwb($result['r'], $result['g'], $result['b']);
 
-            $wPercent  = ($hwb['w'] ?? self::ALPHA_MIN) + ($adjustments['whiteness'] ?? self::ALPHA_MIN);
-            $blPercent = ($hwb['bl'] ?? self::ALPHA_MIN) + ($adjustments['blackness'] ?? self::ALPHA_MIN);
+            $wPercent  = ($hwb['w'] ?? ColorSerializer::ALPHA_MIN) + ($adjustments['whiteness'] ?? ColorSerializer::ALPHA_MIN);
+            $blPercent = ($hwb['bl'] ?? ColorSerializer::ALPHA_MIN) + ($adjustments['blackness'] ?? ColorSerializer::ALPHA_MIN);
 
-            $wPercent  = $this->clamp($wPercent, self::ALPHA_MIN, self::PERCENT_MAX);
-            $blPercent = $this->clamp($blPercent, self::ALPHA_MIN, self::PERCENT_MAX);
+            $wPercent  = $this->clamp($wPercent, ColorSerializer::ALPHA_MIN, ColorSerializer::PERCENT_MAX);
+            $blPercent = $this->clamp($blPercent, ColorSerializer::ALPHA_MIN, ColorSerializer::PERCENT_MAX);
 
-            $rgb    = $this->hwbToRgb($hwb['h'] ?? self::ALPHA_MIN, $wPercent, $blPercent);
+            $rgb    = ColorConverter::HWB->toRgb($hwb['h'] ?? ColorSerializer::ALPHA_MIN, $wPercent, $blPercent);
             $result = array_merge($rgb, ['a' => $result['a'], 'format' => ColorFormat::RGB->value]);
-        }
-
-        // Handle XYZ adjustments
-        if (isset($adjustments['x']) || isset($adjustments['y']) || isset($adjustments['z'])) {
-            $xyz = $this->rgbToXyz($result['r'], $result['g'], $result['b']);
-
-            $x = $this->clamp(
-                ($xyz['x'] ?? self::ALPHA_MIN) + ($adjustments['x'] ?? self::ALPHA_MIN),
-                self::ALPHA_MIN,
-                self::PERCENT_MAX
-            );
-            $y = $this->clamp(
-                ($xyz['y'] ?? self::ALPHA_MIN) + ($adjustments['y'] ?? self::ALPHA_MIN),
-                self::ALPHA_MIN,
-                self::PERCENT_MAX
-            );
-            $z = $this->clamp(
-                ($xyz['z'] ?? self::ALPHA_MIN) + ($adjustments['z'] ?? self::ALPHA_MIN),
-                self::ALPHA_MIN,
-                self::PERCENT_MAX
-            );
-
-            $result = array_merge($this->xyzToRgb($x, $y, $z), ['a' => $result['a'], 'format' => ColorFormat::RGB->value]);
         }
 
         // Handle chroma adjustments
         if (isset($adjustments['chroma'])) {
-            $hsl = $this->rgbToHsl($result['r'], $result['g'], $result['b']);
+            $hsl = ColorConverter::RGB->toHsl($result['r'], $result['g'], $result['b']);
             $currentLightness = $hsl['l'];
             $chromaAdjustment = $adjustments['chroma'];
             $newLightness = $this->clamp(
                 $currentLightness + ($chromaAdjustment * 0.5),
                 0,
-                self::PERCENT_MAX
+                ColorSerializer::PERCENT_MAX
             );
 
             // Only adjust if lightness actually changes
             if (abs($newLightness - $currentLightness) > 0.1) {
-                $rgb = $this->hslToRgb($hsl['h'], $hsl['s'], $newLightness);
+                $rgb    = ColorConverter::HSL->toRgb($hsl['h'], $hsl['s'], $newLightness);
                 $result = array_merge($rgb, ['a' => $result['a'], 'format' => ColorFormat::RGB->value]);
             }
+        }
+
+        // Handle XYZ adjustments
+        if (
+            isset($adjustments['x'])
+            || isset($adjustments['y'])
+            || isset($adjustments['z'])
+            || isset($adjustments['space'])
+        ) {
+            $xyz = ColorConverter::RGB->toXyz($result['r'], $result['g'], $result['b']);
+
+            $xValue = ($xyz['x'] ?? 0) + ($adjustments['x'] ?? 0);
+            $yValue = ($xyz['y'] ?? 0) + ($adjustments['y'] ?? 0);
+            $zValue = ($xyz['z'] ?? 0) + ($adjustments['z'] ?? 0);
+
+            // Convert back to RGB
+            $rgb = ColorConverter::XYZ->toRgb($xValue, $yValue, $zValue);
+            $result = array_merge($rgb, ['a' => $result['a'], 'format' => ColorFormat::RGB->value]);
         }
 
         return $result;
@@ -1118,43 +998,43 @@ class ColorModule
 
     private function applyHslAdjustments(array $colorData, array $adjustments): array
     {
-        $hsl = $this->rgbToHsl($colorData['r'], $colorData['g'], $colorData['b']);
+        $hsl = ColorConverter::RGB->toHsl($colorData['r'], $colorData['g'], $colorData['b']);
 
         foreach ($adjustments[ColorFormat::HSL->value] as $channel => $adjustment) {
             match ($channel) {
-                'h' => $hsl['h'] = $this->clamp($hsl['h'] + $adjustment, 0, self::HUE_MAX),
-                's' => $hsl['s'] = $this->clamp($hsl['s'] + $adjustment, 0, self::PERCENT_MAX),
-                'l' => $hsl['l'] = $this->clamp($hsl['l'] + $adjustment, 0, self::PERCENT_MAX),
+                'h' => $hsl['h'] = $this->clamp($hsl['h'] + $adjustment, 0, ColorSerializer::HUE_MAX),
+                's' => $hsl['s'] = $this->clamp($hsl['s'] + $adjustment, 0, ColorSerializer::PERCENT_MAX),
+                'l' => $hsl['l'] = $this->clamp($hsl['l'] + $adjustment, 0, ColorSerializer::PERCENT_MAX),
             };
         }
 
-        $rgb = $this->hslToRgb($hsl['h'], $hsl['s'], $hsl['l']);
+        $rgb = ColorConverter::HSL->toRgb($hsl['h'], $hsl['s'], $hsl['l']);
 
         return array_merge($rgb, ['a' => $colorData['a'], 'format' => ColorFormat::RGB->value]);
     }
 
     private function applyScaling(array $colorData, array $adjustments): array
     {
-        $result = $this->ensureRgbFormat($colorData);
-        $hsl    = $this->rgbToHsl($result['r'], $result['g'], $result['b']);
+        $result = ColorSerializer::ensureRgbFormat($colorData);
+        $hsl    = ColorConverter::RGB->toHsl($result['r'], $result['g'], $result['b']);
 
         foreach ($adjustments as $key => $value) {
             $value = (float) $value;
             match ($key) {
-                '$red'        => $result['r'] = $this->scaleChannel($result['r'], $value, 0, self::RGB_MAX),
-                '$green'      => $result['g'] = $this->scaleChannel($result['g'], $value, 0, self::RGB_MAX),
-                '$blue'       => $result['b'] = $this->scaleChannel($result['b'], $value, 0, self::RGB_MAX),
-                '$hue'        => $hsl['h'] = $this->scaleChannel($hsl['h'], $value, 0, self::HUE_MAX),
-                '$saturation' => $hsl['s'] = $this->scaleChannel($hsl['s'], $value, 0, self::PERCENT_MAX),
-                '$lightness'  => $hsl['l'] = $this->scaleChannel($hsl['l'], $value, 0, self::PERCENT_MAX),
-                '$alpha'      => $result['a'] = $this->scaleChannel($result['a'], $value, self::ALPHA_MIN, self::ALPHA_MAX),
+                '$red'        => $result['r'] = $this->scaleChannel($result['r'], $value, 0, ColorSerializer::RGB_MAX),
+                '$green'      => $result['g'] = $this->scaleChannel($result['g'], $value, 0, ColorSerializer::RGB_MAX),
+                '$blue'       => $result['b'] = $this->scaleChannel($result['b'], $value, 0, ColorSerializer::RGB_MAX),
+                '$hue'        => $hsl['h'] = $this->scaleChannel($hsl['h'], $value, 0, ColorSerializer::HUE_MAX),
+                '$saturation' => $hsl['s'] = $this->scaleChannel($hsl['s'], $value, 0, ColorSerializer::PERCENT_MAX),
+                '$lightness'  => $hsl['l'] = $this->scaleChannel($hsl['l'], $value, 0, ColorSerializer::PERCENT_MAX),
+                '$alpha'      => $result['a'] = $this->scaleChannel($result['a'], $value, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX),
                 default       => throw new CompilationException("Unknown scaling parameter: $key"),
             };
         }
 
         // If HSL scaling was applied, convert back to RGB
         if (isset($adjustments['$hue']) || isset($adjustments['$saturation']) || isset($adjustments['$lightness'])) {
-            $rgb = $this->hslToRgb($hsl['h'], $hsl['s'], $hsl['l']);
+            $rgb    = ColorConverter::HSL->toRgb($hsl['h'], $hsl['s'], $hsl['l']);
             $result = array_merge($rgb, ['a' => $result['a'], 'format' => ColorFormat::RGB->value]);
         }
 
@@ -1163,15 +1043,15 @@ class ColorModule
 
     private function applyChanges(array $colorData, array $adjustments): array
     {
-        $result = $this->ensureRgbFormat($colorData);
+        $result = ColorSerializer::ensureRgbFormat($colorData);
 
         foreach ($adjustments as $key => $value) {
             $value = (float) $value;
             match ($key) {
-                '$red'        => $result['r'] = $this->clamp($value, 0, self::RGB_MAX),
-                '$green'      => $result['g'] = $this->clamp($value, 0, self::RGB_MAX),
-                '$blue'       => $result['b'] = $this->clamp($value, 0, self::RGB_MAX),
-                '$alpha'      => $result['a'] = $this->clamp($value, self::ALPHA_MIN, self::ALPHA_MAX),
+                '$red'        => $result['r'] = $this->clamp($value, 0, ColorSerializer::RGB_MAX),
+                '$green'      => $result['g'] = $this->clamp($value, 0, ColorSerializer::RGB_MAX),
+                '$blue'       => $result['b'] = $this->clamp($value, 0, ColorSerializer::RGB_MAX),
+                '$alpha'      => $result['a'] = $this->clamp($value, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX),
                 '$hue'        => $result = $this->changeHsl($result, 'h', $value),
                 '$saturation' => $result = $this->changeHsl($result, 's', $value),
                 '$lightness'  => $result = $this->changeHsl($result, 'l', $value),
@@ -1184,13 +1064,14 @@ class ColorModule
 
     private function changeHsl(array $colorData, string $channel, float $value): array
     {
-        $hsl = $this->rgbToHsl($colorData['r'], $colorData['g'], $colorData['b']);
+        $hsl = ColorConverter::RGB->toHsl($colorData['r'], $colorData['g'], $colorData['b']);
+
         $hsl[$channel] = match ($channel) {
-            'h'      => $this->clamp($value, 0, self::HUE_MAX),
-            's', 'l' => $this->clamp($value, 0, self::PERCENT_MAX),
+            'h'      => $this->clamp($value, 0, ColorSerializer::HUE_MAX),
+            's', 'l' => $this->clamp($value, 0, ColorSerializer::PERCENT_MAX),
         };
 
-        $rgb = $this->hslToRgb($hsl['h'], $hsl['s'], $hsl['l']);
+        $rgb = ColorConverter::HSL->toRgb($hsl['h'], $hsl['s'], $hsl['l']);
 
         return array_merge($rgb, ['a' => $colorData['a'], 'format' => ColorFormat::RGB->value]);
     }
@@ -1202,46 +1083,13 @@ class ColorModule
 
         if ($amount > 0) {
             $remaining = $range - ($current - $min);
-            $scaled += $remaining * ($amount / self::PERCENT_MAX);
+            $scaled += $remaining * ($amount / ColorSerializer::PERCENT_MAX);
         } elseif ($amount < 0) {
             $progress = $current - $min;
-            $scaled -= $progress * (abs($amount) / self::PERCENT_MAX);
+            $scaled -= $progress * (abs($amount) / ColorSerializer::PERCENT_MAX);
         }
 
         return $this->clamp($scaled, $min, $max);
-    }
-
-    private function ensureRgbFormat(array $colorData): array
-    {
-        if ($colorData['format'] === ColorFormat::RGB->value || $colorData['format'] === ColorFormat::RGBA->value) {
-            return $colorData;
-        }
-
-        if ($colorData['format'] === ColorFormat::HSL->value || $colorData['format'] === ColorFormat::HSLA->value) {
-            $rgb = $this->hslToRgb($colorData['h'], $colorData['s'], $colorData['l']);
-
-            return array_merge($rgb, ['a' => $colorData['a'], 'format' => ColorFormat::RGB->value]);
-        }
-
-        if ($colorData['format'] === ColorFormat::HWB->value) {
-            $rgb = $this->hwbToRgb($colorData['h'], $colorData['w'], $colorData['bl']);
-
-            return array_merge($rgb, ['a' => $colorData['a'], 'format' => ColorFormat::RGB->value]);
-        }
-
-        if ($colorData['format'] === ColorFormat::LCH->value) {
-            $rgb = $this->lchToRgb($colorData['l'], $colorData['c'], $colorData['h']);
-
-            return array_merge($rgb, ['a' => $colorData['a'], 'format' => ColorFormat::RGB->value]);
-        }
-
-        if ($colorData['format'] === ColorFormat::OKLCH->value) {
-            $rgb = $this->oklchToRgb($colorData['l'], $colorData['c'], $colorData['h']);
-
-            return array_merge($rgb, ['a' => $colorData['a'], 'format' => ColorFormat::RGB->value]);
-        }
-
-        return $colorData;
     }
 
     private function keyToChannel(string $key): string
@@ -1264,304 +1112,15 @@ class ColorModule
         };
     }
 
-    private function formatHslColor(array $colorData): string
-    {
-        $h = round($colorData['h'], 10);
-        $s = round($colorData['s'], 10);
-        $l = round($colorData['l'], 10);
-        $a = $colorData['a'];
-
-        if ($a < self::ALPHA_MAX) {
-            return "hsla($h, $s%, $l%, $a)";
-        } else {
-            return "hsl($h, $s%, $l%)";
-        }
-    }
-
-    private function formatHwbColor(array $colorData): string
-    {
-        $h  = (int) round($colorData['h']);
-        $w  = (int) round($colorData['w']);
-        $bl = (int) round($colorData['bl']);
-        $a  = $colorData['a'];
-
-        if ($a < self::ALPHA_MAX) {
-            return "hwb($h $w% $bl% / $a)";
-        } else {
-            return "hwb($h $w% $bl%)";
-        }
-    }
-
-    private function formatLchColor(array $colorData): string
-    {
-        $l = $colorData['l'] ?? 0;
-
-        if ($l <= 1) {
-            $l *= self::PERCENT_MAX;
-        }
-
-        $c = $colorData['c'] ?? 0;
-        $h = $colorData['h'] ?? 0;
-        $a = $colorData['a'] ?? self::ALPHA_MAX;
-
-        if ($a < self::ALPHA_MAX) {
-            return "lch($l% $c $h / $a)";
-        }
-
-        return "lch($l% $c $h)";
-    }
-
-    private function formatOklchColor(array $colorData): string
-    {
-        $l = $colorData['l'];
-
-        if ($l <= 1) {
-            $l *= self::PERCENT_MAX;
-        }
-
-        $l = round($l, 2);
-        $c = round($colorData['c'], 4);
-        $h = round($colorData['h'], 2);
-        $a = $colorData['a'];
-
-        if ($a < self::ALPHA_MAX) {
-            return "oklch($l% $c $h / $a)";
-        }
-
-        return "oklch($l% $c $h)";
-    }
-
-    private function formatRgbColor(array $colorData): string
-    {
-        $r = (int) round($colorData['r']);
-        $g = (int) round($colorData['g']);
-        $b = (int) round($colorData['b']);
-        $a = $colorData['a'];
-
-        if ($a < self::ALPHA_MAX) {
-            $aHex = (int) round($a * self::RGB_MAX);
-            return sprintf('#%02x%02x%02x%02x', $r, $g, $b, $aHex);
-        } else {
-            $named = $this->getNamedColor($r, $g, $b);
-
-            if ($named !== null) {
-                return $named;
-            }
-
-            return sprintf('#%02x%02x%02x', $r, $g, $b);
-        }
-    }
-
-    private function rgbToHsl(float $r, float $g, float $b): array
-    {
-        $key = sprintf('rgb(%d,%d,%d)', round($r), round($g), round($b));
-
-        if (isset(self::$rgbToHslCache[$key])) {
-            return self::$rgbToHslCache[$key];
-        }
-
-        $r /= self::RGB_MAX;
-        $g /= self::RGB_MAX;
-        $b /= self::RGB_MAX;
-
-        $max = max($r, $g, $b);
-        $min = min($r, $g, $b);
-
-        $l = ($max + $min) / 2;
-        $s = 0;
-        $h = 0;
-
-        if ($max !== $min) {
-            $d = $max - $min;
-            $s = $l > 0.5 ? $d / (2 - $max - $min) : $d / ($max + $min);
-            $h = match (true) {
-                $max === $r => ($g - $b) / $d + ($g < $b ? 6 : 0),
-                $max === $g => ($b - $r) / $d + 2,
-                $max === $b => ($r - $g) / $d + 4,
-                default => 0,
-            } * 60;
-        }
-
-        $result = [
-            'h'      => $h,
-            's'      => $s * self::PERCENT_MAX,
-            'l'      => $l * self::PERCENT_MAX,
-            'format' => ColorFormat::HSL->value,
-        ];
-
-        self::$rgbToHslCache[$key] = $result;
-
-        return $result;
-    }
-
-    private function hslToRgb(float $h, float $s, float $l): array
-    {
-        $key = sprintf('hsl(%.1f,%.1f,%.1f)', $h, $s, $l);
-
-        if (isset(self::$hslToRgbCache[$key])) {
-            return self::$hslToRgbCache[$key];
-        }
-
-        $s /= self::PERCENT_MAX;
-        $l /= self::PERCENT_MAX;
-
-        $c  = (1 - abs(2 * $l - 1)) * $s;
-        $hp = $h / 60;
-
-        $x = $c * (1 - abs(fmod($hp, 2) - 1));
-        $m = $l - $c / 2;
-
-        $rgb = match (true) {
-            $hp >= 0 && $hp < 1 => [$c, $x, 0],
-            $hp < 2 => [$x, $c, 0],
-            $hp < 3 => [0, $c, $x],
-            $hp < 4 => [0, $x, $c],
-            $hp < 5 => [$x, 0, $c],
-            default => [$c, 0, $x],
-        };
-
-        $result = [
-            'r'      => ($rgb[0] + $m) * self::RGB_MAX,
-            'g'      => ($rgb[1] + $m) * self::RGB_MAX,
-            'b'      => ($rgb[2] + $m) * self::RGB_MAX,
-            'a'      => self::ALPHA_MAX,
-            'format' => ColorFormat::RGB->value,
-        ];
-
-        self::$hslToRgbCache[$key] = $result;
-
-        return $result;
-    }
-
-    private function rgbToHwb(float $r, float $g, float $b): array
-    {
-        $r /= self::RGB_MAX;
-        $g /= self::RGB_MAX;
-        $b /= self::RGB_MAX;
-
-        $max = max($r, $g, $b);
-        $min = min($r, $g, $b);
-
-        $h = 0;
-
-        if ($max !== $min) {
-            $h = match (true) {
-                $max === $r => ($g - $b) / ($max - $min) + ($g < $b ? 6 : 0),
-                $max === $g => ($b - $r) / ($max - $min) + 2,
-                $max === $b => ($r - $g) / ($max - $min) + 4,
-                default => 0,
-            } * 60;
-        }
-
-        return [
-            'h'      => round($h, 5),
-            'w'      => round($min * self::PERCENT_MAX, 5),
-            'bl'     => round((1 - $max) * self::PERCENT_MAX, 5),
-            'format' => ColorFormat::HWB->value,
-        ];
-    }
-
-    private function hwbToRgb(float $h, float $w, float $bl): array
-    {
-        $w /= self::PERCENT_MAX;
-        $bl /= self::PERCENT_MAX;
-
-        $chroma = max(self::ALPHA_MIN, self::ALPHA_MAX - $w - $bl);
-
-        $hsl = $this->hslToRgb($h, self::PERCENT_MAX, 50.0);
-
-        $hsl['r'] = min(self::RGB_MAX, max(self::ALPHA_MIN, round($hsl['r'])));
-        $hsl['g'] = min(self::RGB_MAX, max(self::ALPHA_MIN, round($hsl['g'])));
-        $hsl['b'] = min(self::RGB_MAX, max(self::ALPHA_MIN, round($hsl['b'])));
-
-        $r = ($hsl['r'] / self::RGB_MAX * $chroma + $w) * self::RGB_MAX;
-        $g = ($hsl['g'] / self::RGB_MAX * $chroma + $w) * self::RGB_MAX;
-        $b = ($hsl['b'] / self::RGB_MAX * $chroma + $w) * self::RGB_MAX;
-
-        return [
-            'r'      => round($r),
-            'g'      => round($g),
-            'b'      => round($b),
-            'a'      => self::ALPHA_MAX,
-            'format' => ColorFormat::RGB->value,
-        ];
-    }
-
-    private function linearizeChannel(float $val): float
-    {
-        return $val > 0.04045 ? (($val + 0.055) / 1.055) ** 2.4 : $val / 12.92;
-    }
-
-    private function unLinearizeChannel(float $val): float
-    {
-        return $val > 0.0031308 ? 1.055 * $val ** (1 / 2.4) - 0.055 : 12.92 * $val;
-    }
-
-    private function rgbToXyz(float $r, float $g, float $b): array
-    {
-        $r /= self::RGB_MAX;
-        $g /= self::RGB_MAX;
-        $b /= self::RGB_MAX;
-
-        $r = $this->linearizeChannel($r);
-        $g = $this->linearizeChannel($g);
-        $b = $this->linearizeChannel($b);
-
-        $x = $r * 0.4124 + $g * 0.3576 + $b * 0.1805;
-        $y = $r * 0.2126 + $g * 0.7152 + $b * 0.0722;
-        $z = $r * 0.0193 + $g * 0.1192 + $b * 0.9505;
-
-        return [
-            'x' => $x * self::PERCENT_MAX,
-            'y' => $y * self::PERCENT_MAX,
-            'z' => $z * self::PERCENT_MAX,
-        ];
-    }
-
-    private function xyzToRgb(float $x, float $y, float $z): array
-    {
-        $x /= self::PERCENT_MAX;
-        $y /= self::PERCENT_MAX;
-        $z /= self::PERCENT_MAX;
-
-        $r = $x * 3.2406 + $y * -1.5372 + $z * -0.4986;
-        $g = $x * -0.9689 + $y * 1.8758 + $z * 0.0415;
-        $b = $x * 0.0557 + $y * -0.2040 + $z * 1.0570;
-
-        $r = $this->unLinearizeChannel($r);
-        $g = $this->unLinearizeChannel($g);
-        $b = $this->unLinearizeChannel($b);
-
-        return [
-            'r'      => $this->clamp($r * self::RGB_MAX, self::ALPHA_MIN, self::RGB_MAX),
-            'g'      => $this->clamp($g * self::RGB_MAX, self::ALPHA_MIN, self::RGB_MAX),
-            'b'      => $this->clamp($b * self::RGB_MAX, self::ALPHA_MIN, self::RGB_MAX),
-            'a'      => self::ALPHA_MAX,
-            'format' => ColorFormat::RGB->value,
-        ];
-    }
-
-    private function getNamedColor(int $r, int $g, int $b): ?string
-    {
-        $hex = strtolower(sprintf('#%02x%02x%02x', $r, $g, $b));
-
-        if (empty(self::$hexToNameCache)) {
-            self::$hexToNameCache = array_flip(self::NAMED_COLORS);
-        }
-
-        return self::$hexToNameCache[$hex] ?? null;
-    }
-
     private function getColorSpace(string $format): string
     {
-        return match ($format) {
-            ColorFormat::HSL->value,
-            ColorFormat::HSLA->value  => ColorFormat::HSL->value,
-            ColorFormat::HWB->value   => ColorFormat::HWB->value,
-            ColorFormat::LCH->value   => ColorFormat::LCH->value,
-            ColorFormat::OKLCH->value => ColorFormat::OKLCH->value,
-            default                   => ColorFormat::RGB->value,
-        };
+        $formatEnum = ColorFormat::tryFrom($format);
+
+        if ($formatEnum === null) {
+            return ColorFormat::RGB->value;
+        }
+
+        return $formatEnum->getBaseFormat()->value;
     }
 
     private function clamp(float $value, float $min, float $max): float
@@ -1572,187 +1131,32 @@ class ColorModule
     private function parseAlpha(string $alphaStr): float
     {
         if (str_contains($alphaStr, '%')) {
-            return (float) rtrim($alphaStr, '%') / self::PERCENT_MAX;
+            return (float) rtrim($alphaStr, '%') / ColorSerializer::PERCENT_MAX;
         }
 
         return (float) $alphaStr;
     }
 
-    private function labFunction(float $t): float
-    {
-        $epsilon = self::LAB_EPSILON;
-        $kappa   = self::LAB_KAPPA;
-
-        if ($t > $epsilon) {
-            return $t ** (1 / 3);
-        }
-
-        return ($kappa * $t + 16) / 116;
-    }
-
-    private function xyzToLab(float $x, float $y, float $z): array
-    {
-        $x /= self::XYZ_REF_X;
-        $y /= self::XYZ_REF_Y;
-        $z /= self::XYZ_REF_Z;
-
-        $x = $this->labFunction($x);
-        $y = $this->labFunction($y);
-        $z = $this->labFunction($z);
-
-        $l = (116 * $y) - 16;
-        $a = 500 * ($x - $y);
-        $b = 200 * ($y - $z);
-
-        return ['l' => $l, 'a' => $a, 'b' => $b];
-    }
-
-    private function labToLch(float $l, float $a, float $b): array
-    {
-        $c = sqrt($a * $a + $b * $b);
-        $h = atan2($b, $a) * self::HUE_SHIFT / M_PI;
-
-        if ($h < 0) {
-            $h += self::HUE_MAX;
-        }
-
-        return ['l' => $l, 'c' => $c, 'h' => $h];
-    }
-
-    private function lchToLab(float $l, float $c, float $h): array
-    {
-        $hRad = $h * M_PI / self::HUE_SHIFT;
-
-        $a = $c * cos($hRad);
-        $b = $c * sin($hRad);
-
-        return ['l' => $l, 'a' => $a, 'b' => $b];
-    }
-
-    private function rgbToLch(int $r, int $g, int $b): array
-    {
-        // RGB → XYZ → LAB → LCH
-        $xyz = $this->rgbToXyz($r, $g, $b);
-        $lab = $this->xyzToLab($xyz['x'], $xyz['y'], $xyz['z']);
-
-        return $this->labToLch($lab['l'], $lab['a'], $lab['b']);
-    }
-
-    private function labInverseFunction(float $t): float
-    {
-        $epsilon = self::LAB_EPSILON;
-        $kappa   = self::LAB_KAPPA;
-
-        $t3 = $t * $t * $t;
-
-        if ($t3 > $epsilon) {
-            return $t3;
-        }
-
-        return (116 * $t - 16) / $kappa;
-    }
-
-    private function labToXyz(float $l, float $a, float $b): array
-    {
-        $fy = ($l + 16) / 116;
-        $fx = $a / 500 + $fy;
-        $fz = $fy - $b / 200;
-
-        $x = $this->labInverseFunction($fx) * self::XYZ_REF_X;
-        $y = $this->labInverseFunction($fy) * self::XYZ_REF_Y;
-        $z = $this->labInverseFunction($fz) * self::XYZ_REF_Z;
-
-        return ['x' => $x, 'y' => $y, 'z' => $z];
-    }
-
-    private function lchToRgb(float $l, float $c, float $h): array
-    {
-        // LCH → LAB → XYZ → RGB
-        $lab = $this->lchToLab($l, $c, $h);
-        $xyz = $this->labToXyz($lab['l'], $lab['a'], $lab['b']);
-
-        return $this->xyzToRgb($xyz['x'], $xyz['y'], $xyz['z']);
-    }
-
-    private function rgbToOklch(float $r, float $g, float $b): array
-    {
-        $r /= self::RGB_MAX;
-        $g /= self::RGB_MAX;
-        $b /= self::RGB_MAX;
-
-        $r = $this->linearizeChannel($r);
-        $g = $this->linearizeChannel($g);
-        $b = $this->linearizeChannel($b);
-
-        $l = 0.4122214708 * $r + 0.5363325363 * $g + 0.0514459929 * $b;
-        $m = 0.2119034982 * $r + 0.6806995451 * $g + 0.1073969566 * $b;
-        $s = 0.0883024619 * $r + 0.2817188376 * $g + 0.6299787005 * $b;
-
-        $l **= 1 / 3;
-        $m **= 1 / 3;
-        $s **= 1 / 3;
-
-        $L = 0.2104542553 * $l + 0.7936177850 * $m - 0.0040720468 * $s;
-        $a = 1.9779984951 * $l - 2.4285922050 * $m + 0.4505937099 * $s;
-        $b_val = 0.0259040371 * $l + 0.7827717662 * $m - 0.8086757660 * $s;
-
-        $C = sqrt($a * $a + $b_val * $b_val);
-        $H = atan2($b_val, $a) * self::HUE_SHIFT / M_PI;
-        if ($H < 0) {
-            $H += self::HUE_MAX;
-        }
-
-        return [
-            'l'      => $L * self::PERCENT_MAX,
-            'c'      => $C,
-            'h'      => $H,
-            'format' => ColorFormat::OKLCH->value,
-        ];
-    }
-
-    private function oklchToRgb(float $l, float $c, float $h): array
-    {
-        $l /= self::PERCENT_MAX;
-
-        $h_rad = $h * M_PI / self::HUE_SHIFT;
-
-        $a = $c * cos($h_rad);
-        $b = $c * sin($h_rad);
-
-        $l_lms = $l + 0.3963377776 * $a + 0.2158037573 * $b;
-        $m_lms = $l - 0.1055613458 * $a - 0.0638541728 * $b;
-        $s_lms = $l - 0.0894841775 * $a - 1.2914855480 * $b;
-
-        $l_lms **= 3;
-        $m_lms **= 3;
-        $s_lms **= 3;
-
-        $r     = +4.0767416621 * $l_lms - 3.3077115913 * $m_lms + 0.2309699292 * $s_lms;
-        $g     = -1.2684380046 * $l_lms + 2.6097574011 * $m_lms - 0.3413193965 * $s_lms;
-        $b_val = -0.0041960863 * $l_lms - 0.7034186147 * $m_lms + 1.7076147010 * $s_lms;
-
-        $r     = $this->unLinearizeChannel($r);
-        $g     = $this->unLinearizeChannel($g);
-        $b_val = $this->unLinearizeChannel($b_val);
-
-        return [
-            'r'      => $this->clamp($r * self::RGB_MAX, 0, self::RGB_MAX),
-            'g'      => $this->clamp($g * self::RGB_MAX, 0, self::RGB_MAX),
-            'b'      => $this->clamp($b_val * self::RGB_MAX, 0, self::RGB_MAX),
-            'a'      => self::ALPHA_MAX,
-            'format' => ColorFormat::RGB->value,
-        ];
-    }
-
     private function parseHueValue(string $hueStr): float
     {
-        return match (true) {
-            str_contains($hueStr, 'rad')  => (float) rtrim($hueStr, 'rad') * self::HUE_SHIFT / M_PI,
-            str_contains($hueStr, 'grad') => (float) rtrim($hueStr, 'grad') * self::HUE_MAX / 400,
-            str_contains($hueStr, 'turn') => (float) rtrim($hueStr, 'turn') * self::HUE_MAX,
+        $hue = match (true) {
+            str_contains($hueStr, 'rad')  => (float) rtrim($hueStr, 'rad') * ColorSerializer::HUE_SHIFT / M_PI,
+            str_contains($hueStr, 'grad') => (float) rtrim($hueStr, 'grad') * ColorSerializer::HUE_MAX / 400,
+            str_contains($hueStr, 'turn') => (float) rtrim($hueStr, 'turn') * ColorSerializer::HUE_MAX,
             str_contains($hueStr, 'deg')  => (float) rtrim($hueStr, 'deg'),
             default                       => (float) $hueStr,
         };
+
+        // Normalize hue to be within [0, 360) range
+        while ($hue < 0) {
+            $hue += ColorSerializer::HUE_MAX;
+        }
+
+        while ($hue >= ColorSerializer::HUE_MAX) {
+            $hue -= ColorSerializer::HUE_MAX;
+        }
+
+        return $hue;
     }
 
     private function parsePercentageValue(string $percentStr): float
@@ -1767,6 +1171,55 @@ class ColorModule
         }
     }
 
+    private function getAllValidChannels(): array
+    {
+        static $validChannels = null;
+
+        if ($validChannels === null) {
+            $validChannels = [];
+            foreach (ColorFormat::cases() as $format) {
+                $validChannels = array_merge($validChannels, $format->getChannels());
+            }
+
+            $validChannels = array_unique($validChannels);
+        }
+
+        return $validChannels;
+    }
+
+    private function validateChannel(string $channel): void
+    {
+        $validChannels = $this->getAllValidChannels();
+
+        if (! in_array($channel, $validChannels, true)) {
+            throw new CompilationException("Unknown channel: $channel");
+        }
+    }
+
+    private function channelToDataKey(string $channel): string
+    {
+        if (strlen($channel) === 1) {
+            return $channel;
+        }
+
+        return match ($channel) {
+            'red'        => 'r',
+            'green'      => 'g',
+            'blue'       => 'b',
+            'hue'        => 'h',
+            'saturation' => 's',
+            'lightness'  => 'l',
+            'whiteness'  => 'w',
+            'blackness'  => 'bl',
+            'alpha'      => 'a',
+            'lab_l'      => 'lab_l',
+            'lab_a'      => 'lab_a',
+            'lab_b'      => 'lab_b',
+            'chroma'     => 'c',
+            default      => $channel,
+        };
+    }
+
     private function convertToSpace(array $colorData, string $targetSpace): array
     {
         $originalFormat = $colorData['format'] ?? ColorFormat::RGB->value;
@@ -1777,44 +1230,23 @@ class ColorModule
             return $colorData;
         }
 
-        switch ($targetSpace) {
-            case ColorFormat::HSL->value:
-            case ColorFormat::HSLA->value:
-                $converted = $this->rgbToHsl($colorData['r'], $colorData['g'], $colorData['b']);
-                break;
+        $converted = match ($targetSpace) {
+            ColorFormat::HSL->value,
+            ColorFormat::HSLA->value  => ColorConverter::RGB->toHsl($colorData['r'], $colorData['g'], $colorData['b']),
+            ColorFormat::HWB->value   => ColorConverter::RGB->toHwb($colorData['r'], $colorData['g'], $colorData['b']),
+            ColorFormat::LAB->value,
+            ColorFormat::LABA->value  => ColorConverter::RGB->toLab($colorData['r'], $colorData['g'], $colorData['b']),
+            ColorFormat::LCH->value   => ColorConverter::RGB->toLch($colorData['r'], $colorData['g'], $colorData['b']),
+            ColorFormat::OKLCH->value => ColorConverter::RGB->toOklch($colorData['r'], $colorData['g'], $colorData['b']),
+            ColorFormat::XYZ->value,
+            ColorFormat::XYZA->value  => ColorConverter::RGB->toXyz($colorData['r'], $colorData['g'], $colorData['b']),
+            default                   => ColorSerializer::ensureRgbFormat($colorData),
+        };
 
-            case ColorFormat::HWB->value:
-                $converted = $this->rgbToHwb($colorData['r'], $colorData['g'], $colorData['b']);
-                break;
-
-            case ColorFormat::LCH->value:
-                $converted = $this->rgbToLch($colorData['r'], $colorData['g'], $colorData['b']);
-                break;
-
-            case ColorFormat::OKLCH->value:
-                $converted = $this->rgbToOklch($colorData['r'], $colorData['g'], $colorData['b']);
-                break;
-
-            case ColorFormat::RGB->value:
-                if ($colorData['format'] === ColorFormat::LCH->value) {
-                    $rgb = $this->lchToRgb($colorData['l'], $colorData['c'], $colorData['h']);
-
-                    return array_merge($rgb, ['a' => $colorData['a']]);
-                }
-
-                $converted = $this->ensureRgbFormat($colorData);
-                break;
-
-            default:
-                $converted = $this->ensureRgbFormat($colorData);
-                break;
+        if ($targetSpace !== ColorFormat::RGB->value) {
+            $converted['format'] = $targetSpace;
         }
 
-        return $this->withAlpha($converted, $colorData['a'] ?? self::ALPHA_MAX);
-    }
-
-    private function withAlpha(array $colorData, float $alpha): array
-    {
-        return array_merge($colorData, ['a' => $alpha]);
+        return array_merge($converted, ['a' => $colorData['a'] ?? ColorSerializer::ALPHA_MAX]);
     }
 }

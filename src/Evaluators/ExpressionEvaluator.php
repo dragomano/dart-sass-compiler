@@ -16,6 +16,7 @@ use DartSass\Parsers\Nodes\VariableNode;
 use DartSass\Utils\ValueFormatter;
 
 use function array_map;
+use function end;
 use function explode;
 use function implode;
 use function is_array;
@@ -164,32 +165,88 @@ class ExpressionEvaluator
 
     private function evaluateFunctionExpression(AstNode $expr)
     {
+        $name = $expr->properties['name'];
+        $args = $expr->properties['args'] ?? [];
+
         if ($expr->properties['name'] === 'if') {
-            $result = $this->functionHandler->call('if', $expr->properties['args'] ?? []);
+            $result = $this->functionHandler->call('if', $args);
 
             return $this->evaluate($result);
         }
 
-        $args = $this->evaluateArguments($expr->properties['args'] ?? []);
-
-        if ($expr->properties['name'] === 'url') {
-            $argString = implode(', ', array_map(
-                fn(mixed $arg): mixed => is_string($arg) && ! preg_match('/^[\'\"].*[\'\"]$/', $arg)
-                    ? '"' . $arg . '"'
-                    : (is_array($arg) && isset($arg['value']) ? $arg['value'] . ($arg['unit'] ?? '') : $arg),
-                $args
-            ));
-
-            return 'url(' . $argString . ')';
+        if ($name === 'calc') {
+            return $this->calcEvaluator->evaluate($args, $this->evaluate(...));
         }
 
-        if ($expr->properties['name'] === 'calc') {
-            return $this->calcEvaluator->evaluate($expr->properties['args'] ?? [], $this->evaluate(...));
+        if ($this->hasSlashSeparator($args)) {
+            $args = $this->evaluateArgumentsWithSlashSeparator($args);
+        } else {
+            $args = $this->evaluateArguments($args);
         }
 
-        $name = $expr->properties['name'];
+        if ($name === 'url') {
+            return $this->evaluateUrlFunction($args);
+        }
 
         return $this->functionHandler->call($name, $args);
+    }
+
+    private function hasSlashSeparator(array $args): bool
+    {
+        if (empty($args)) {
+            return false;
+        }
+
+        $lastArg = end($args);
+
+        return $this->containsDivisionOperation($lastArg);
+    }
+
+    private function containsDivisionOperation($arg): bool
+    {
+        if (! $arg instanceof AstNode) {
+            return false;
+        }
+
+        // Check if this is an operation node with division
+        if ($arg->type === 'operation' && isset($arg->properties['operator'])) {
+            return $arg->properties['operator'] === '/';
+        }
+
+        return false;
+    }
+
+    private function evaluateArgumentsWithSlashSeparator(array $args): array
+    {
+        $processedArgs = [];
+
+        foreach ($args as $arg) {
+            // Check if this argument contains a division operation
+            if ($this->containsDivisionOperation($arg)) {
+                // Split the division operation: left operand is hue, right operand is alpha
+                $hueArg   = $this->evaluate($arg->properties['left'] ?? $arg);
+                $alphaArg = $this->evaluate($arg->properties['right'] ?? null);
+
+                $processedArgs[] = $hueArg;
+                $processedArgs[] = $alphaArg;
+            } else {
+                $processedArgs[] = $this->evaluate($arg);
+            }
+        }
+
+        return $processedArgs;
+    }
+
+    private function evaluateUrlFunction(array $args): string
+    {
+        $argString = implode(', ', array_map(
+            fn(mixed $arg): mixed => is_string($arg) && ! preg_match('/^[\'\"].*[\'\"]$/', $arg)
+                ? '"' . $arg . '"'
+                : (is_array($arg) && isset($arg['value']) ? $arg['value'] . ($arg['unit'] ?? '') : $arg),
+            $args
+        ));
+
+        return 'url(' . $argString . ')';
     }
 
     private function evaluatePropertyAccessExpression(AstNode $expr): mixed
