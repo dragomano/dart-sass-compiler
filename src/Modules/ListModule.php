@@ -16,7 +16,6 @@ use function explode;
 use function is_array;
 use function is_bool;
 use function is_numeric;
-use function is_object;
 use function is_string;
 use function min;
 use function str_contains;
@@ -95,17 +94,9 @@ class ListModule
     public function length(array $args): int
     {
         $value = $args[0] ?? throw new CompilationException('Missing list for length');
-        $value = $this->extractValue($value);
+        $value = $this->toArray($value);
 
-        if (is_array($value)) {
-            return count($value);
-        }
-
-        if (is_string($value)) {
-            return $this->countStringItems($value);
-        }
-
-        return 1;
+        return count($value);
     }
 
     public function nth(array $args): mixed
@@ -178,7 +169,7 @@ class ListModule
             return [];
         }
 
-        $sassLists = array_map([$this, 'toSassList'], $args);
+        $sassLists = array_map($this->toSassList(...), $args);
         $values    = array_map(fn($sl): array => $sl->value, $sassLists);
         $minLength = min(array_map(count(...), $values));
         $result    = [];
@@ -209,39 +200,6 @@ class ListModule
         return is_bool($bracketed) ? $bracketed : $list1->bracketed;
     }
 
-    private function extractValue(mixed $value): mixed
-    {
-        if ($value instanceof ListNode) {
-            return $value->values;
-        }
-
-        if ($value instanceof SassList) {
-            return $value->value;
-        }
-
-        if (is_object($value) && isset($value->value)) {
-            return $value->value;
-        }
-
-        if (is_array($value) && isset($value['value'])) {
-            return $value['value'];
-        }
-
-        return $value;
-    }
-
-    private function countStringItems(string $value): int
-    {
-        $separator = str_contains($value, ',') ? ',' : ' ';
-
-        $items = array_filter(
-            explode($separator, $value),
-            fn(string $item): bool => trim($item) !== ''
-        );
-
-        return count($items);
-    }
-
     private function parseListArg(mixed $listArg): array
     {
         // Handle wrapped single-element array
@@ -263,11 +221,7 @@ class ListModule
                 : $listArg;
         }
 
-        if (is_string($listArg)) {
-            return $this->parseStringToList($listArg);
-        }
-
-        return [$listArg];
+        return is_string($listArg) ? $this->parseStringToList($listArg) : [$listArg];
     }
 
     private function parseWrappedValue(mixed $innerValue): array
@@ -312,19 +266,15 @@ class ListModule
 
     private function toArray(mixed $value): array
     {
-        if ($value instanceof SassList) {
-            return $value->value;
-        }
-
         if ($value instanceof ListNode) {
             return $value->values;
         }
 
-        if (is_array($value) && isset($value['value'])) {
-            if ($value['value'] instanceof SassList) {
-                return $value['value']->value;
-            }
+        if ($value instanceof SassList) {
+            return $value->value;
+        }
 
+        if (is_array($value) && isset($value['value'])) {
             $unit = $value['unit'] ?? '';
 
             return [$value['value'] . $unit];
@@ -334,15 +284,7 @@ class ListModule
             return $value;
         }
 
-        if (is_string($value)) {
-            return $this->parseStringToList($value);
-        }
-
-        if (is_object($value) && isset($value->value)) {
-            return $this->toArray($value->value);
-        }
-
-        return [$value];
+        return is_string($value) ? $this->parseStringToList($value) : [$value];
     }
 
     private function toSassList(mixed $value): SassList

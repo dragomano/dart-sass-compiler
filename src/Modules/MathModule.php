@@ -570,31 +570,6 @@ readonly class MathModule
             return ['value' => (float) $item['value'], 'unit' => $item['unit'] ?? ''];
         }
 
-        // Handle AST NumberNode objects
-        if (is_object($item)) {
-            // Handle NumberNode from AST
-            if (str_ends_with($item::class, 'NumberNode')) {
-                return ['value' => (float) $item->value, 'unit' => $item->unit ?? ''];
-            }
-
-            // Handle other AST nodes that might have numeric values
-            if (property_exists($item, 'value') && is_numeric($item->value)) {
-                $unit = property_exists($item, 'unit') ? $item->unit : '';
-
-                return ['value' => (float) $item->value, 'unit' => $unit];
-            }
-
-            // Handle AST nodes with properties array
-            if (property_exists($item, 'properties') && is_array($item->properties)) {
-                $props = $item->properties;
-                if (isset($props['value']) && is_numeric($props['value'])) {
-                    $unit = $props['unit'] ?? '';
-
-                    return ['value' => (float) $props['value'], 'unit' => $unit];
-                }
-            }
-        }
-
         return null;
     }
 

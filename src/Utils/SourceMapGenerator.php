@@ -32,7 +32,7 @@ class SourceMapGenerator
 
         if ($options['includeSources'] ?? false) {
             $sourceMap['sourcesContent'] = [
-                is_string($options['sourceContent'] ?? '') ? $options['sourceContent'] : ''
+                is_string($options['sourceContent'] ?? '') ? $options['sourceContent'] : '',
             ];
         }
 
@@ -73,7 +73,7 @@ class SourceMapGenerator
                 $this->encodeVLQ($generatedColumn - $lastGenCol),
                 $this->encodeVLQ($sourceIndex - $lastSourceIdx),
                 $this->encodeVLQ($originalLine - $lastOrigLine),
-                $this->encodeVLQ($originalColumn - $lastOrigCol)
+                $this->encodeVLQ($originalColumn - $lastOrigCol),
             ]);
 
             $currentLineMappings[] = $segment;

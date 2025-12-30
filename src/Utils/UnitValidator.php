@@ -12,12 +12,8 @@ use function preg_match;
 
 class UnitValidator
 {
-    public function validate(array $args): bool
+    public function validate(array $args = []): bool
     {
-        if (empty($args)) {
-            return true;
-        }
-
         $units = [];
         foreach ($args as $arg) {
             $unit = $this->extractUnit($arg);

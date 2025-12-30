@@ -117,11 +117,11 @@ class Lexer implements LexerInterface
 
     private function updatePosition(string $content, int $length): void
     {
-        $lines = substr_count($content, PHP_EOL);
+        $lines = substr_count($content, "\n");
         $this->line += $lines;
 
         if ($lines > 0) {
-            $lastNewLinePos = strrpos($content, PHP_EOL);
+            $lastNewLinePos = strrpos($content, "\n");
             $this->column = $length - $lastNewLinePos;
         } else {
             $this->column += $length;

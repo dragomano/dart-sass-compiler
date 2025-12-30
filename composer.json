@@ -49,10 +49,11 @@
     "test-fix": "./vendor/bin/php-cs-fixer check",
     "rector": "vendor/bin/rector process --clear-cache",
     "check": "vendor/bin/rector process --dry-run --clear-cache",
-    "tests": "vendor/bin/pest --colors=always",
-    "tests-coverage": "vendor/bin/pest --colors=always --coverage --min=86",
-    "tests-coverage-clover": "vendor/bin/pest --colors=always --min=86 --coverage-clover coverage.xml",
-    "tests-coverage-html": "vendor/bin/pest --colors=always --min=86 --coverage-html coverage"
+    "tests": "vendor/bin/pest --colors=always --display-warnings",
+    "tests-coverage": "vendor/bin/pest --colors=always --coverage --min=90",
+    "tests-coverage-clover": "vendor/bin/pest --colors=always --min=90 --coverage-clover coverage.xml",
+    "tests-coverage-html": "vendor/bin/pest --colors=always --min=90 --coverage-html coverage",
+    "tests-mutate": "vendor/bin/pest --colors=always --mutate --covered-only --parallel --path=src/Modules"
   },
   "config": {
     "optimize-autoloader": true,
