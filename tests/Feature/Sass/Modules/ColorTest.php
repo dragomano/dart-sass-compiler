@@ -548,6 +548,7 @@ describe('sass:color', function () {
             space-red: color.space(red);
             space-hsl: color.space(hsl(0, 100%, 50%));
             space-hwb: color.space(color.hwb(0, 0%, 0%));
+            space-lab: color.space(lab(60% 40 30 / 0.5));
             space-lch: color.space(lch(60% 40 30deg));
             space-oklch: color.space(oklch(1% 20 40 / 0.5));
         }
@@ -558,6 +559,7 @@ describe('sass:color', function () {
           space-red: rgb;
           space-hsl: hsl;
           space-hwb: hwb;
+          space-lab: lab;
           space-lch: lch;
           space-oklch: oklch;
         }

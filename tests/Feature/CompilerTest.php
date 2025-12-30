@@ -6,7 +6,9 @@ use DartSass\Compiler;
 use DartSass\Exceptions\CompilationException;
 use DartSass\Exceptions\InvalidColorException;
 use DartSass\Loaders\LoaderInterface;
+use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Syntax;
+use Tests\ReflectionAccessor;
 
 dataset('scss styles', [
   'basic SCSS' => [
@@ -302,4 +304,16 @@ describe('SASS', function () {
         expect($this->compiler->compileString($sass, Syntax::SASS))
             ->toEqualCss($expected);
     })->with('sass styles');
+});
+
+describe('Unknown AST Node Type Coverage', function () {
+    it('throws CompilationException for unknown AST node type', function () {
+        $compiler = new Compiler();
+        $accessor = new ReflectionAccessor($compiler);
+
+        $unknownNode = new AstNode('unknown_type', []);
+
+        expect(fn() => $accessor->callMethod('compileAst', [[$unknownNode]]))
+            ->toThrow(CompilationException::class, 'Unknown AST node type: unknown_type');
+    });
 });

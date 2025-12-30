@@ -106,7 +106,7 @@ describe('ValueFormatter', function () {
         it('formats nested array with values', function () {
             $result = $this->valueFormatter->format([
                 ['value' => 10, 'unit' => 'px'],
-                ['value' => 20, 'unit' => 'em']
+                ['value' => 20, 'unit' => 'em'],
             ]);
 
             expect($result)->toBe('10px, 20em');

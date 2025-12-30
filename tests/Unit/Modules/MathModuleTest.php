@@ -57,7 +57,7 @@ describe('MathFunctions', function () {
             $result = $this->mathModule->clamp([
               ['value' => 5, 'unit' => 'px'],
               ['value' => 10, 'unit' => 'px'],
-              ['value' => 15, 'unit' => 'px']
+              ['value' => 15, 'unit' => 'px'],
             ]);
 
             expect($result)->toEqual(['value' => 10, 'unit' => 'px']);
@@ -67,7 +67,7 @@ describe('MathFunctions', function () {
             $result = $this->mathModule->clamp([
               ['value' => 3, 'unit' => 'px'],
               ['value' => 10, 'unit' => 'px'],
-              ['value' => 15, 'unit' => 'px']
+              ['value' => 15, 'unit' => 'px'],
             ]);
 
             expect($result)->toEqual(['value' => 10, 'unit' => 'px']);
@@ -77,7 +77,7 @@ describe('MathFunctions', function () {
             $result = $this->mathModule->clamp([
               ['value' => 20, 'unit' => 'px'],
               ['value' => 5, 'unit' => 'px'],
-              ['value' => 15, 'unit' => 'px']
+              ['value' => 15, 'unit' => 'px'],
             ]);
 
             expect($result)->toEqual(['value' => 15, 'unit' => 'px']);
@@ -87,7 +87,7 @@ describe('MathFunctions', function () {
             $result = $this->mathModule->clamp([
               ['value' => 5, 'unit' => 'px'],
               ['value' => 10, 'unit' => 'em'],
-              ['value' => 15, 'unit' => 'px']
+              ['value' => 15, 'unit' => 'px'],
             ]);
 
             expect($result)->toBe('clamp(5px, 10em, 15px)');
@@ -156,7 +156,7 @@ describe('MathFunctions', function () {
             $result = $this->mathModule->max([
               ['value' => 10, 'unit' => 'px'],
               ['value' => 5, 'unit' => 'px'],
-              ['value' => 8, 'unit' => 'px']
+              ['value' => 8, 'unit' => 'px'],
             ]);
 
             expect($result)->toEqual(['value' => 10, 'unit' => 'px']);
@@ -165,7 +165,7 @@ describe('MathFunctions', function () {
         it('returns maximum of mixed units as CSS function', function () {
             $result = $this->mathModule->max([
               ['value' => 10, 'unit' => 'px'],
-              ['value' => 5, 'unit' => 'em']
+              ['value' => 5, 'unit' => 'em'],
             ]);
 
             expect($result)->toBe('max(10px, 5em)');
@@ -194,7 +194,7 @@ describe('MathFunctions', function () {
             $result = $this->mathModule->min([
               ['value' => 10, 'unit' => 'px'],
               ['value' => 5, 'unit' => 'px'],
-              ['value' => 8, 'unit' => 'px']
+              ['value' => 8, 'unit' => 'px'],
             ]);
 
             expect($result)->toEqual(['value' => 5, 'unit' => 'px']);
@@ -203,7 +203,7 @@ describe('MathFunctions', function () {
         it('returns minimum of mixed units as CSS function', function () {
             $result = $this->mathModule->min([
               ['value' => 10, 'unit' => 'px'],
-              ['value' => 5, 'unit' => 'em']
+              ['value' => 5, 'unit' => 'em'],
             ]);
 
             expect($result)->toBe('min(10px, 5em)');
@@ -332,6 +332,18 @@ describe('MathFunctions', function () {
             expect(fn() => $this->mathModule->hypot([['value' => 3, 'unit' => 'px'], ['value' => 4, 'unit' => 'em']]))
                 ->toThrow(CompilationException::class, 'arguments must have the same unit');
         });
+
+        it('throws exception for empty arguments array', function () {
+            expect(fn() => $this->mathModule->hypot([]))
+                ->toThrow(CompilationException::class, 'hypot() requires at least one argument');
+        });
+
+        it('throws exception for non-numeric arguments', function () {
+            expect(fn() => $this->mathModule->hypot(['invalid']))
+                ->toThrow(CompilationException::class, 'hypot() argument must be a number')
+                ->and(fn() => $this->mathModule->hypot([3, 'invalid']))
+                ->toThrow(CompilationException::class, 'hypot() argument must be a number');
+        });
     });
 
     describe('log', function () {
@@ -379,6 +391,16 @@ describe('MathFunctions', function () {
 
         it('throws exception for arguments with units', function () {
             expect(fn() => $this->mathModule->log([['value' => 10, 'unit' => 'px']]))
+                ->toThrow(CompilationException::class, 'arguments must be unitless');
+        });
+
+        it('throws exception for second argument null', function () {
+            expect(fn() => $this->mathModule->log([10, 'invalid']))
+                ->toThrow(CompilationException::class, 'second argument must be a number');
+        });
+
+        it('throws exception for second argument with units', function () {
+            expect(fn() => $this->mathModule->log([10, ['value' => 2, 'unit' => 'px']]))
                 ->toThrow(CompilationException::class, 'arguments must be unitless');
         });
     });
@@ -736,7 +758,7 @@ describe('MathFunctions', function () {
             it('returns true for compatible units', function () {
                 $result = $this->mathModule->compatible([
                     ['value' => 10, 'unit' => 'px'],
-                    ['value' => 5, 'unit' => 'px']
+                    ['value' => 5, 'unit' => 'px'],
                 ]);
 
                 expect($result)->toEqual(['value' => 'true', 'unit' => '']);
@@ -751,7 +773,7 @@ describe('MathFunctions', function () {
             it('returns true for unitless and unit values', function () {
                 $result = $this->mathModule->compatible([
                     ['value' => 10, 'unit' => ''],
-                    ['value' => 5, 'unit' => 'px']
+                    ['value' => 5, 'unit' => 'px'],
                 ]);
 
                 expect($result)->toEqual(['value' => 'true', 'unit' => '']);
@@ -760,7 +782,7 @@ describe('MathFunctions', function () {
             it('returns false for incompatible units', function () {
                 $result = $this->mathModule->compatible([
                     ['value' => 10, 'unit' => 'px'],
-                    ['value' => 5, 'unit' => 'em']
+                    ['value' => 5, 'unit' => 'em'],
                 ]);
 
                 expect($result)->toEqual(['value' => 'false', 'unit' => '']);
@@ -845,7 +867,7 @@ describe('MathFunctions', function () {
             it('divides numbers with same units', function () {
                 $result = $this->mathModule->div([
                     ['value' => 10, 'unit' => 'px'],
-                    ['value' => 2, 'unit' => 'px']
+                    ['value' => 2, 'unit' => 'px'],
                 ]);
 
                 expect($result)->toEqual(['value' => 5.0, 'unit' => '']);
@@ -854,7 +876,7 @@ describe('MathFunctions', function () {
             it('divides numbers with different units', function () {
                 $result = $this->mathModule->div([
                     ['value' => 10, 'unit' => 'px'],
-                    ['value' => 2, 'unit' => 'em']
+                    ['value' => 2, 'unit' => 'em'],
                 ]);
 
                 expect($result)->toEqual(['value' => 5.0, 'unit' => 'px/em']);
@@ -863,7 +885,7 @@ describe('MathFunctions', function () {
             it('divides unitless number by number with unit', function () {
                 $result = $this->mathModule->div([
                     10,
-                    ['value' => 2, 'unit' => 'px']
+                    ['value' => 2, 'unit' => 'px'],
                 ]);
 
                 expect($result)->toEqual(['value' => 5.0, 'unit' => '/px']);
@@ -872,7 +894,7 @@ describe('MathFunctions', function () {
             it('divides number with unit by unitless number', function () {
                 $result = $this->mathModule->div([
                     ['value' => 10, 'unit' => 'px'],
-                    2
+                    2,
                 ]);
 
                 expect($result)->toEqual(['value' => 5.0, 'unit' => 'px']);
@@ -1016,7 +1038,7 @@ describe('MathFunctions', function () {
 
         it('normalizes numeric array', function () {
             $result = $this->accessor->callMethod('normalize', [
-                ['value' => 42, 'unit' => 'px']
+                ['value' => 42, 'unit' => 'px'],
             ]);
 
             expect($result)->toEqual(['value' => 42.0, 'unit' => 'px']);
@@ -1024,7 +1046,7 @@ describe('MathFunctions', function () {
 
         it('normalizes array without unit', function () {
             $result = $this->accessor->callMethod('normalize', [
-                ['value' => 42]
+                ['value' => 42],
             ]);
 
             expect($result)->toEqual(['value' => 42.0, 'unit' => '']);

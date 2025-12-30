@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace DartSass\Handlers;
 
 use DartSass\Exceptions\CompilationException;
+use DartSass\Modules\ColorFormat;
 use DartSass\Modules\ColorModule;
+use DartSass\Modules\ColorSerializer;
 
 use function array_slice;
 use function count;
@@ -26,7 +28,7 @@ class ColorModuleHandler extends BaseModuleHandler
 {
     private const SUPPORTED_FUNCTIONS = [
         // Basic color constructors
-        'hsl', 'lch', 'oklch', 'hwb',
+        'hsl', 'hwb', 'lab', 'lch', 'oklch',
         // Color manipulation
         'adjust', 'change', 'channel', 'complement', 'grayscale',
         'ie-hex-str', 'invert', 'is-legacy', 'is-missing',
@@ -69,6 +71,7 @@ class ColorModuleHandler extends BaseModuleHandler
         return match ($functionName) {
             'hsl'    => $this->handleColorConstructor('hsl', $processedArgs),
             'hwb'    => $this->handleColorConstructor('hwb', $processedArgs),
+            'lab'    => $this->handleColorConstructor('lab', $processedArgs),
             'lch'    => $this->handleColorConstructor('lch', $processedArgs),
             'oklch'  => $this->handleColorConstructor('oklch', $processedArgs),
             'adjust' => $this->handleAdjustmentFunction('adjust', $processedArgs),
@@ -235,18 +238,19 @@ class ColorModuleHandler extends BaseModuleHandler
 
         $color = trim($color);
 
-        // Check for hex colors
-        if (preg_match('/^#[0-9a-fA-F]+$/', $color)) {
-            return true;
-        }
-
         // Check for named colors
-        if (isset(ColorModule::NAMED_COLORS[$color])) {
+        if (isset(ColorSerializer::NAMED_COLORS[$color])) {
             return true;
         }
 
-        // Check for functional color notations
-        return (bool) preg_match('/^(rgb|rgba|hsl|hsla|hwb|lch|oklch)\(/i', $color);
+        // Check for functional color notations using ColorFormat patterns
+        foreach (ColorFormat::cases() as $format) {
+            if (preg_match($format->getPattern(), $color)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function formatArgument(mixed $arg): string

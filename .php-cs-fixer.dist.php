@@ -24,6 +24,8 @@ return (new Config())
 
         'cast_spaces' => ['space' => 'single'],
 
+        'trailing_comma_in_multiline' => ['elements' => ['arrays']],
+
         'function_declaration' => [
             'closure_function_spacing' => 'one',
             'closure_fn_spacing'       => 'none',

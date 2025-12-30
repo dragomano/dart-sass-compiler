@@ -703,7 +703,7 @@ describe('Performance and Large Files', function () {
 
     it('maintains performance with Unicode content', function () {
         $unicodeSass = ".container\n  content: " . str_repeat('→←↑↓', 100) . "\n" .
-                      ".класс\n  цвет: красный\n";
+                      ".text\n  content: 'класс'\n";
 
         $startTime = microtime(true);
         $result = $this->normalizer->normalize($unicodeSass);
@@ -742,8 +742,8 @@ describe('Unicode and Special Characters', function () {
     });
 });
 
-describe('Comment with Empty Lines Coverage', function () {
-    it('preserves empty lines before multiline comments (line 64 coverage)', function () {
+describe('Comment with empty lines coverage', function () {
+    it('preserves empty lines before multiline comments', function () {
         $sass = <<<'SASS'
 
         /* This is a
@@ -764,7 +764,7 @@ describe('Comment with Empty Lines Coverage', function () {
         expect($this->normalizer->normalize($sass))->toBe($expected);
     });
 
-    it('preserves empty lines before single-line comments (line 79 coverage)', function () {
+    it('preserves empty lines before single-line comments', function () {
         $sass = <<<'SASS'
 
         // This is a single line comment

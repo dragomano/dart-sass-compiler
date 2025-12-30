@@ -54,7 +54,7 @@ class HttpLoader implements LoaderInterface
             'http' => [
                 'timeout' => 5,
                 'ignore_errors' => true,
-            ]
+            ],
         ]);
 
         $content = @file_get_contents($url, false, $context);

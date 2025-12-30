@@ -227,4 +227,4 @@ describe('UnitValidator', function () {
             expect($this->validator->validate($args))->toBeFalse();
         });
     });
-});
+})->covers(UnitValidator::class);
