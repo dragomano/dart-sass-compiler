@@ -33,6 +33,7 @@ readonly class MixinCompiler
 
         if (str_contains($includeName, '.')) {
             [$namespace, $property] = explode('.', $includeName, 2);
+
             return $this->handleModuleMixinCall(
                 $namespace,
                 $property,

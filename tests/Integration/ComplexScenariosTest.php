@@ -30,25 +30,24 @@ describe('integration tests for complex SCSS', function () {
         }
         SCSS;
 
-        $expected = /** @lang text */
-            <<<'CSS'
-            .btn {
-              background-color: #007bff;
-              font-size: 16px;
-            }
-            .btn:hover {
-              background-color: #0062cc;
-            }
-            .col-1 {
-              width: 33.333333333333%;
-            }
-            .col-2 {
-              width: 66.666666666667%;
-            }
-            .col-3 {
-              width: 100%;
-            }
-            CSS;
+        $expected /** @lang text */ = <<<'CSS'
+        .btn {
+          background-color: #007bff;
+          font-size: 16px;
+        }
+        .btn:hover {
+          background-color: #0062cc;
+        }
+        .col-1 {
+          width: 33.333333333333%;
+        }
+        .col-2 {
+          width: 66.666666666667%;
+        }
+        .col-3 {
+          width: 100%;
+        }
+        CSS;
 
         expect($this->compiler->compileString($scss))
             ->toEqualCss($expected);
@@ -85,22 +84,21 @@ describe('integration tests for complex SCSS', function () {
         }
         SCSS;
 
-        $expected = /** @lang text */
-            <<<'CSS'
-            .for-class-1 {
-              background-color: #76828d;
-              border: 1px solid #537696;
-              padding: max(8px, min(10px, 2vw)) max(15px, calc(min(10px, 2vw) * 2));
-              width: 10px;
-              height: 22px;
-              border-radius: 3px;
-              filter: hue-rotate(18deg);
-            }
-            .for-class-1:hover {
-              background-color: #757575;
-              transform: scale(1.05);
-            }
-            CSS;
+        $expected /** @lang text */ = <<<'CSS'
+        .for-class-1 {
+          background-color: #76828d;
+          border: 1px solid #537696;
+          padding: max(8px, min(10px, 2vw)) max(15px, calc(min(10px, 2vw) * 2));
+          width: 10px;
+          height: 22px;
+          border-radius: 3px;
+          filter: hue-rotate(18deg);
+        }
+        .for-class-1:hover {
+          background-color: #757575;
+          transform: scale(1.05);
+        }
+        CSS;
 
         expect($this->compiler->compileString($scss))
             ->toEqualCss($expected);
@@ -127,33 +125,32 @@ describe('integration tests for complex SCSS', function () {
         }
         SCSS;
 
-        $expected = /** @lang text */
-            <<<'CSS'
-            .color-red {
-              background-color: #ff3333;
-              border: 2px solid red;
-            }
-            .color-red:hover {
-              background-color: #ec1313;
-              transform: rotate(calc(var(--rotation, 0deg) + 5deg));
-            }
-            .color-green {
-              background-color: #33ff33;
-              border: 2px solid lime;
-            }
-            .color-green:hover {
-              background-color: #13ec13;
-              transform: rotate(calc(var(--rotation, 0deg) + 5deg));
-            }
-            .color-blue {
-              background-color: #3333ff;
-              border: 2px solid blue;
-            }
-            .color-blue:hover {
-              background-color: #1313ec;
-              transform: rotate(calc(var(--rotation, 0deg) + 5deg));
-            }
-            CSS;
+        $expected /** @lang text */ = <<<'CSS'
+        .color-red {
+          background-color: #ff3333;
+          border: 2px solid red;
+        }
+        .color-red:hover {
+          background-color: #ec1313;
+          transform: rotate(calc(var(--rotation, 0deg) + 5deg));
+        }
+        .color-green {
+          background-color: #33ff33;
+          border: 2px solid lime;
+        }
+        .color-green:hover {
+          background-color: #13ec13;
+          transform: rotate(calc(var(--rotation, 0deg) + 5deg));
+        }
+        .color-blue {
+          background-color: #3333ff;
+          border: 2px solid blue;
+        }
+        .color-blue:hover {
+          background-color: #1313ec;
+          transform: rotate(calc(var(--rotation, 0deg) + 5deg));
+        }
+        CSS;
 
         expect($this->compiler->compileString($scss))
             ->toEqualCss($expected);

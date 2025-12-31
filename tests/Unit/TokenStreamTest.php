@@ -439,4 +439,24 @@ describe('TokenStream', function () {
             expect($stream->current())->toBeNull();
         });
     });
-});
+
+    describe('Iterator Interface', function () {
+        it('implements IteratorAggregate', function () {
+            expect($this->tokenStream)->toBeInstanceOf(IteratorAggregate::class)
+                ->and($this->tokenStream->getIterator())->toBeInstanceOf(Traversable::class);
+        });
+
+        it('is traversable', function () {
+            expect(iterator_to_array($this->tokenStream))
+                ->toBe($this->tokenStream->getTokens());
+        });
+
+        it('iterates independently of internal pointer', function () {
+            $this->tokenStream->advance(3);
+
+            expect(iterator_to_array($this->tokenStream))
+                ->toHaveCount(11)
+                ->toBe($this->tokenStream->getTokens());
+        });
+    });
+})->covers(TokenStream::class);

@@ -7,13 +7,13 @@ namespace DartSass\Parsers\Nodes;
 final class EachNode extends AstNode
 {
     public function __construct(
-        public string $variable,
+        public array $variables,
         public AstNode $condition,
         public array $body,
         public int $line
     ) {
         parent::__construct('each', [
-            'variable'  => $variable,
+            'variables' => $variables,
             'condition' => $condition,
             'body'      => $body,
             'line'      => $line,

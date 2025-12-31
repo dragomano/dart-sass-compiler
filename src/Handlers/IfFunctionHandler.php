@@ -6,7 +6,7 @@ namespace DartSass\Handlers;
 
 use function count;
 
-class BuiltinFunctionHandler implements LazyEvaluationHandlerInterface
+class IfFunctionHandler implements LazyEvaluationHandlerInterface
 {
     private const BUILTIN_FUNCTIONS = [
         'if' => true,
@@ -25,14 +25,6 @@ class BuiltinFunctionHandler implements LazyEvaluationHandlerInterface
     }
 
     public function handle(string $functionName, array $args): mixed
-    {
-        return match ($functionName) {
-            'if'    => $this->handleIf($args),
-            default => null,
-        };
-    }
-
-    private function handleIf(array $args): mixed
     {
         if (isset($args['condition']) && isset($args['then']) && isset($args['else'])) {
             $condition  = $args['condition'];

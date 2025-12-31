@@ -31,10 +31,9 @@ readonly class InterpolationEvaluator
             // Process #{...} interpolations
             $string = $this->processHashInterpolations($string, $evaluateExpression);
 
-            // Process inline $variables
             $string = $this->processInlineVariables($string, $evaluateExpression);
 
-        } while ($string !== $old); // Repeat until no more changes
+        } while ($string !== $old);
 
         return $string;
     }
@@ -54,6 +53,7 @@ readonly class InterpolationEvaluator
             if (str_starts_with($expr, '$')) {
                 try {
                     $value = $evaluateExpression($expr);
+
                     return $this->unwrapQuotedValue($value);
                 } catch (Exception) {
                     return $expr;

@@ -19,6 +19,11 @@ use function substr;
 
 use const M_E;
 use const M_PI;
+use const PHP_FLOAT_EPSILON;
+use const PHP_FLOAT_MAX;
+use const PHP_FLOAT_MIN;
+use const PHP_INT_MAX;
+use const PHP_INT_MIN;
 
 class ModuleHandler
 {
@@ -268,13 +273,13 @@ class ModuleHandler
             // Remove 'sass:' prefix
             $actualNamespace = substr($path, 5);
 
-            $this->forwardedProperties[$actualNamespace]['$e'] = M_E;
-            $this->forwardedProperties[$actualNamespace]['$epsilon'] = 1e-12;
-            $this->forwardedProperties[$actualNamespace]['$max-number'] = 1e308;
-            $this->forwardedProperties[$actualNamespace]['$max-safe-integer'] = 9e15;
-            $this->forwardedProperties[$actualNamespace]['$min-number'] = -1e308;
-            $this->forwardedProperties[$actualNamespace]['$min-safe-integer'] = -9e15;
-            $this->forwardedProperties[$actualNamespace]['$pi'] = M_PI;
+            $this->forwardedProperties[$actualNamespace]['$e']                = M_E;
+            $this->forwardedProperties[$actualNamespace]['$epsilon']          = PHP_FLOAT_EPSILON;
+            $this->forwardedProperties[$actualNamespace]['$max-number']       = PHP_FLOAT_MAX;
+            $this->forwardedProperties[$actualNamespace]['$min-number']       = PHP_FLOAT_MIN;
+            $this->forwardedProperties[$actualNamespace]['$max-safe-integer'] = PHP_INT_MAX;
+            $this->forwardedProperties[$actualNamespace]['$min-safe-integer'] = PHP_INT_MIN;
+            $this->forwardedProperties[$actualNamespace]['$pi']               = M_PI;
         }
     }
 }

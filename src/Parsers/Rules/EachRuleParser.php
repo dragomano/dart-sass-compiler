@@ -32,16 +32,34 @@ class EachRuleParser extends AtRuleParser
             $this->incrementTokenIndex();
         }
 
-        if ($this->peek('variable')) {
-            $varToken = $this->consume('variable');
-            $variable = $varToken->value;
-        } else {
-            throw new SyntaxException(
-                'Expected variable for @each loop',
-                $token->line,
-                $token->column
-            );
-        }
+        $variables = [];
+
+        do {
+            if ($this->peek('variable')) {
+                $varToken = $this->consume('variable');
+                $variables[] = $varToken->value;
+            } else {
+                throw new SyntaxException(
+                    'Expected variable for @each loop',
+                    $token->line,
+                    $token->column
+                );
+            }
+
+            while ($this->currentToken() && $this->peek('whitespace')) {
+                $this->incrementTokenIndex();
+            }
+
+            if ($this->peek('operator') && $this->currentToken()->value === ',') {
+                $this->consume('operator');
+
+                while ($this->currentToken() && $this->peek('whitespace')) {
+                    $this->incrementTokenIndex();
+                }
+            } else {
+                break;
+            }
+        } while (true);
 
         while ($this->currentToken() && $this->peek('whitespace')) {
             $this->incrementTokenIndex();
@@ -78,8 +96,8 @@ class EachRuleParser extends AtRuleParser
         $this->consume('brace_open');
 
         $block = $this->parser->parseBlock();
-        $body = array_merge($block['declarations'], $block['nested']);
+        $body  = array_merge($block['declarations'], $block['nested']);
 
-        return new EachNode($variable, $condition, $body, $token->line);
+        return new EachNode($variables, $condition, $body, $token->line);
     }
 }

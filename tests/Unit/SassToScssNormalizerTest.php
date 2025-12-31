@@ -702,8 +702,8 @@ describe('Performance and Large Files', function () {
     });
 
     it('maintains performance with Unicode content', function () {
-        $unicodeSass = ".container\n  content: " . str_repeat('→←↑↓', 100) . "\n" .
-                      ".text\n  content: 'класс'\n";
+        $unicodeSass = ".container\n  content: " . str_repeat('→←↑↓', 100) . "\n"
+                      . ".text\n  content: 'класс'\n";
 
         $startTime = microtime(true);
         $result = $this->normalizer->normalize($unicodeSass);

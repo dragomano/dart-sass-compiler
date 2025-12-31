@@ -62,6 +62,37 @@ dataset('control flow scss styles', [
         CSS,
     ],
 
+    '@each directive with two params' => [
+        <<<'SCSS'
+        $sizes: (sm: 16px, md: 24px, lg: 32px);
+
+        @each $name, $size in $sizes {
+            .icon-#{$name} {
+                background-image: url('../icons/icon-#{$name}.svg');
+                width: $size;
+                height: $size;
+            }
+        }
+        SCSS,
+        /** @lang text */ <<<'CSS'
+        .icon-sm {
+          background-image: url("../icons/icon-sm.svg");
+          width: 16px;
+          height: 16px;
+        }
+        .icon-md {
+          background-image: url("../icons/icon-md.svg");
+          width: 24px;
+          height: 24px;
+        }
+        .icon-lg {
+          background-image: url("../icons/icon-lg.svg");
+          width: 32px;
+          height: 32px;
+        }
+        CSS,
+    ],
+
     '@for directive' => [
         <<<'SCSS'
         @for $i from 1 through 3 {
@@ -380,6 +411,35 @@ dataset('control flow sass styles', [
         }
         .box-blue {
           background: blue;
+        }
+        CSS,
+    ],
+
+    '@each directive with two params' => [
+        <<<'SASS'
+        $sizes: (sm: 16px, md: 24px, lg: 32px)
+
+        @each $name, $size in $sizes
+          .icon-#{$name}
+            background-image: url('../icons/icon-#{$name}.svg')
+              width: $size
+              height: $size
+        SASS,
+        /** @lang text */ <<<'CSS'
+        .icon-sm {
+          background-image: url("../icons/icon-sm.svg");
+          width: 16px;
+          height: 16px;
+        }
+        .icon-md {
+          background-image: url("../icons/icon-md.svg");
+          width: 24px;
+          height: 24px;
+        }
+        .icon-lg {
+          background-image: url("../icons/icon-lg.svg");
+          width: 32px;
+          height: 32px;
         }
         CSS,
     ],

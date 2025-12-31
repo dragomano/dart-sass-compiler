@@ -25,7 +25,7 @@ class VariableHandler
 
     public function exitScope(): void
     {
-        if (count($this->scopes) > 1) {
+        if (! empty($this->scopes)) {
             array_pop($this->scopes);
         }
     }
@@ -36,7 +36,7 @@ class VariableHandler
             return;
         }
 
-        if ($global) {
+        if ($global || empty($this->scopes)) {
             $this->globalVariables[$name] = $value;
         } else {
             $this->scopes[array_key_last($this->scopes)][$name] = $value;
@@ -77,8 +77,13 @@ class VariableHandler
 
     private function variableExists(string $name): bool
     {
-        $currentScope = $this->scopes[array_key_last($this->scopes)];
+        if (! empty($this->scopes)) {
+            $currentScope = $this->scopes[array_key_last($this->scopes)];
+            if (array_key_exists($name, $currentScope)) {
+                return true;
+            }
+        }
 
-        return array_key_exists($name, $currentScope) || array_key_exists($name, $this->globalVariables);
+        return array_key_exists($name, $this->globalVariables);
     }
 }

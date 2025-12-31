@@ -66,9 +66,9 @@ readonly class MathModule
         $v3 = $this->normalize($args[2]);
 
         if (
-            $v1 && $v2 && $v3 &&
-            $this->areUnitsCompatible($v1['unit'], $v2['unit']) &&
-            $this->areUnitsCompatible($v1['unit'], $v3['unit'])
+            $v1 && $v2 && $v3
+            && $this->areUnitsCompatible($v1['unit'], $v2['unit'])
+            && $this->areUnitsCompatible($v1['unit'], $v3['unit'])
         ) {
             $val1 = $v1['value'];
             $val2 = $v2['value'];
@@ -624,6 +624,7 @@ readonly class MathModule
         foreach ($normalized as $norm) {
             if ($norm['unit'] === '') {
                 $allHaveUnits = false;
+
                 break;
             }
         }

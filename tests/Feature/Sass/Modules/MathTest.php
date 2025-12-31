@@ -26,10 +26,10 @@ describe('sass:math', function () {
         $expected = /** @lang text */ <<<'CSS'
         .class {
           width: 2.718281828459px;
-          height: 1.0E-12px;
+          height: 0;
           top: 3.1415926535898px;
-          right: 1.0E+305px;
-          bottom: -1.0E+305px;
+          right: 1.7976931348623E+305px;
+          bottom: 0;
           left: 0;
         }
         CSS;

@@ -626,6 +626,7 @@ describe('Lexer', function () {
             foreach ($tokens as $token) {
                 if (isset($token->line) && $token->line > 0) {
                     $hasLineInfo = true;
+
                     break;
                 }
             }
