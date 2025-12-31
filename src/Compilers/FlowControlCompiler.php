@@ -14,7 +14,13 @@ use DartSass\Parsers\Nodes\IfNode;
 use DartSass\Parsers\Nodes\WhileNode;
 
 use function count;
+use function explode;
 use function is_array;
+use function is_object;
+use function is_string;
+use function key;
+use function property_exists;
+use function str_contains;
 
 readonly class FlowControlCompiler
 {
@@ -31,7 +37,7 @@ readonly class FlowControlCompiler
             $node instanceof EachNode  => $this->compileEach($node, $nestingLevel, $evaluateExpression, $compileAst),
             $node instanceof ForNode   => $this->compileFor($node, $nestingLevel, $evaluateExpression, $compileAst),
             $node instanceof WhileNode => $this->compileWhile($node, $nestingLevel, $evaluateExpression, $compileAst),
-            default                    => throw new CompilationException('Unknown control flow node type: ' . $node::class),
+            default => throw new CompilationException('Unknown control flow node type: ' . $node::class),
         };
     }
 
@@ -68,14 +74,54 @@ readonly class FlowControlCompiler
             $list = [$list];
         }
 
-        $varName = $node->variable ?? throw new CompilationException('Missing variable name for @each');
+        $variables = $node->variables ?? throw new CompilationException('Missing variables for @each');
 
         $css = '';
         $this->variableHandler->enterScope();
 
-        foreach ($list as $value) {
-            $this->variableHandler->define($varName, $value);
-            $css .= $compileAst($node->body, '', $nestingLevel);
+        $numVars = count($variables);
+
+        if ($numVars === 1) {
+            $varName = $variables[0];
+            foreach ($list as $value) {
+                $this->variableHandler->define($varName, $value);
+                $css .= $compileAst($node->body, '', $nestingLevel);
+            }
+        } else {
+            // For multiple variables, assume map or list of lists
+            foreach ($list as $key => $value) {
+                if ($numVars === 2) {
+                    if (is_array($value) && count($value) === 1) {
+                        // Map entry: key => value as array
+                        $entryKey = key($value);
+                        $entryValue = $value[$entryKey];
+
+                        $this->variableHandler->define($variables[0], $entryKey);
+                        $this->variableHandler->define($variables[1], $entryValue);
+                    } elseif (is_array($value) && count($value) === 2) {
+                        // List of pairs
+                        [$val1, $val2] = $value;
+
+                        $this->variableHandler->define($variables[0], $val1);
+                        $this->variableHandler->define($variables[1], $val2);
+                    } else {
+                        // Map: key => value, or string 'key: value'
+                        if (is_string($value) && str_contains($value, ':')) {
+                            [$entryKey, $entryValue] = explode(': ', $value, 2);
+
+                            $this->variableHandler->define($variables[0], $entryKey);
+                            $this->variableHandler->define($variables[1], $entryValue);
+                        } else {
+                            $this->variableHandler->define($variables[0], $key);
+                            $this->variableHandler->define($variables[1], $value);
+                        }
+                    }
+                } elseif ($numVars > 2) {
+                    throw new CompilationException('Multiple variables in @each with more than 2 not supported');
+                }
+
+                $css .= $compileAst($node->body, '', $nestingLevel);
+            }
         }
 
         $this->variableHandler->exitScope();
