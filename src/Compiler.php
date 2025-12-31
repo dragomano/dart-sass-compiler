@@ -15,13 +15,14 @@ use DartSass\Evaluators\ExpressionEvaluator;
 use DartSass\Evaluators\InterpolationEvaluator;
 use DartSass\Evaluators\OperationEvaluator;
 use DartSass\Exceptions\CompilationException;
-use DartSass\Handlers\BuiltinFunctionHandler;
 use DartSass\Handlers\ColorModuleHandler;
+use DartSass\Handlers\CssFunctionHandler;
 use DartSass\Handlers\CustomFunctionHandler;
 use DartSass\Handlers\ExtendHandler;
 use DartSass\Handlers\FormatFunctionHandler;
 use DartSass\Handlers\FunctionHandler;
 use DartSass\Handlers\FunctionRouter;
+use DartSass\Handlers\IfFunctionHandler;
 use DartSass\Handlers\ListModuleHandler;
 use DartSass\Handlers\MathModuleHandler;
 use DartSass\Handlers\MixinHandler;
@@ -35,6 +36,7 @@ use DartSass\Loaders\LoaderInterface;
 use DartSass\Modules\ColorModule;
 use DartSass\Modules\ListModule;
 use DartSass\Modules\MathModule;
+use DartSass\Parsers\Nodes\AtRuleNode;
 use DartSass\Parsers\Nodes\ForwardNode;
 use DartSass\Parsers\Nodes\FunctionNode;
 use DartSass\Parsers\Nodes\IncludeNode;
@@ -380,7 +382,7 @@ class Compiler
         $this->extendHandler   = new ExtendHandler();
         $this->moduleHandler   = new ModuleHandler($this->loader, $this->parserFactory);
 
-        $builtinFunctionHandler = new BuiltinFunctionHandler($this->evaluateExpression(...));
+        $builtinFunctionHandler = new IfFunctionHandler($this->evaluateExpression(...));
         $urlFunctionHandler     = new UrlFunctionHandler();
         $formatFunctionHandler  = new FormatFunctionHandler($this->valueFormatter);
         $colorModuleHandler     = new ColorModuleHandler(new ColorModule());
@@ -393,8 +395,12 @@ class Compiler
             $this->valueFormatter
         );
 
+        $resultFormatter    = new ResultFormatter($this->valueFormatter);
+        $cssFunctionHandler = new CssFunctionHandler($resultFormatter);
+
         $moduleRegistry = new ModuleRegistry();
         $moduleRegistry->register($builtinFunctionHandler);
+        $moduleRegistry->register($cssFunctionHandler);
         $moduleRegistry->register($urlFunctionHandler);
         $moduleRegistry->register($formatFunctionHandler);
         $moduleRegistry->register($colorModuleHandler);
@@ -404,8 +410,7 @@ class Compiler
 
         $customFunctionHandler->setRegistry($moduleRegistry);
 
-        $resultFormatter = new ResultFormatter($this->valueFormatter);
-        $functionRouter  = new FunctionRouter($moduleRegistry, $resultFormatter);
+        $functionRouter = new FunctionRouter($moduleRegistry, $resultFormatter);
 
         $this->functionHandler = new FunctionHandler(
             $this->moduleHandler,
@@ -665,7 +670,7 @@ class Compiler
         }
     }
 
-    private function compileImportNode(\DartSass\Parsers\Nodes\AtRuleNode $node): void
+    private function compileImportNode(AtRuleNode $node): void
     {
         $path = $node->properties['value'] ?? '';
 

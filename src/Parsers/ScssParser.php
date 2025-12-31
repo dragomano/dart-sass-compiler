@@ -1143,25 +1143,6 @@ class ScssParser implements TokenAwareParserInterface
 
                 $this->stream->consume('paren_close');
 
-                if ($funcName === 'linear-gradient' && count($args) >= 2) {
-                    $formattedArgs = array_map($this->formatExpressionForSelector(...), $args);
-                    if ($formattedArgs[0] === 'to' && $formattedArgs[1] === 'bottom') {
-                        $mergedArgs = ['to bottom'];
-                        for ($i = 2; $i < count($args); $i++) {
-                            $mergedArgs[] = $args[$i];
-                        }
-
-                        $args = $mergedArgs;
-                    } elseif ($formattedArgs[0] === 'to' && $formattedArgs[1] === 'right') {
-                        $mergedArgs = ['to right'];
-                        for ($i = 2; $i < count($args); $i++) {
-                            $mergedArgs[] = $args[$i];
-                        }
-
-                        $args = $mergedArgs;
-                    }
-                }
-
                 return new FunctionNode($funcName, $args, line: $token->line);
             })(),
 
