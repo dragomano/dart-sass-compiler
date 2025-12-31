@@ -57,14 +57,16 @@ use DartSass\Utils\UnitValidator;
 use DartSass\Utils\ValueFormatter;
 
 use function array_merge;
+use function basename;
 use function explode;
 use function file_put_contents;
 use function in_array;
 use function is_array;
 use function preg_match;
-use function str_contains;
+use function rtrim;
 use function str_repeat;
 use function str_starts_with;
+use function substr_count;
 use function trim;
 
 class Compiler
@@ -341,6 +343,11 @@ class Compiler
 
                     break;
 
+                case 'include':
+                    $css .= $this->compileIncludeNode($node, $parentSelector, $nestingLevel);
+
+                    break;
+
                 default:
                     throw new CompilationException("Unknown AST node type: $node->type");
             }
@@ -561,18 +568,32 @@ class Compiler
                 $lines            = explode("\n", rtrim($itemCss));
                 $declarationsPart = '';
                 $nestedPart       = '';
+                $braceLevel       = 0;
                 $inNestedRule     = false;
 
                 foreach ($lines as $line) {
                     $trimmedLine = trim($line);
+                    $openBraces  = substr_count($line, '{');
+                    $closeBraces = substr_count($line, '}');
 
-                    if (preg_match('/^[a-zA-Z.#-]/', $trimmedLine) && str_contains($trimmedLine, '{')) {
+                    if (
+                        ! $inNestedRule
+                        && (
+                            preg_match('/^[a-zA-Z.#-]/', $trimmedLine)
+                            || str_starts_with($trimmedLine, '@')
+                        ) && $openBraces > 0
+                    ) {
                         $inNestedRule = true;
+
                         $nestedPart .= $line . "\n";
+                        $braceLevel += $openBraces - $closeBraces;
                     } elseif ($inNestedRule) {
                         $nestedPart .= $line . "\n";
-                        if ($trimmedLine === '}') {
+                        $braceLevel += $openBraces - $closeBraces;
+
+                        if ($braceLevel <= 0) {
                             $inNestedRule = false;
+                            $braceLevel   = 0;
                         }
                     } else {
                         $declarationsPart .= $line . "\n";

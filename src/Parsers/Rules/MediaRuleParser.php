@@ -19,6 +19,7 @@ class MediaRuleParser extends AtRuleParser
         $query = $this->parseMediaQuery();
 
         $this->consume('brace_open');
+
         $body = $this->parseBlock();
 
         return $this->createNode($query, $body, $token->line);
@@ -185,6 +186,10 @@ class MediaRuleParser extends AtRuleParser
 
         if ($currentToken->type === 'logical_operator') {
             return true;
+        }
+
+        if ($currentToken->type === 'identifier' && preg_match('/\d$/', $query) === 1) {
+            return false;
         }
 
         if ($currentToken->type === 'identifier') {

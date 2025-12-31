@@ -61,6 +61,10 @@ readonly class OutputOptimizer
 
     public function optimize(string $css): string
     {
+        if (preg_match('/[^\x00-\x7F]/u', $css)) {
+            $css = '@charset "UTF-8";' . "\n" . $css;
+        }
+
         $css = $this->removeRedundantProperties($css);
 
         if ($this->style === 'expanded') {
@@ -226,7 +230,9 @@ readonly class OutputOptimizer
             if (str_ends_with($trimmed, '{')) {
                 $selector = rtrim(substr($trimmed, 0, -1));
 
-                if (str_contains($selector, ',')) {
+                if (str_starts_with($selector, '@')) {
+                    $result[] = $line;
+                } elseif (str_contains($selector, ',')) {
                     preg_match('/^(\s*)/', $line, $matches);
 
                     $indent = $matches[1] ?? '';
