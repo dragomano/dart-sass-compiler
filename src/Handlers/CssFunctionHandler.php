@@ -11,6 +11,7 @@ use function array_map;
 use function count;
 use function implode;
 use function in_array;
+use function preg_match;
 
 class CssFunctionHandler extends BaseModuleHandler
 {
@@ -29,7 +30,7 @@ class CssFunctionHandler extends BaseModuleHandler
     {
         return match ($functionName) {
             'linear-gradient' => $this->handleLinearGradient($args),
-            default           => $this->formatCssFunction($functionName, $args),
+            default => $this->formatCssFunction($functionName, $args),
         };
     }
 
@@ -50,19 +51,80 @@ class CssFunctionHandler extends BaseModuleHandler
         }
 
         $formattedArgs = array_map($this->resultFormatter->format(...), $args);
+        $reconstructedArgs = $this->reconstructArguments($formattedArgs);
 
-        if ($formattedArgs[0] === 'to' && in_array($formattedArgs[1], ['bottom', 'right'], true)) {
-            $direction  = $formattedArgs[0] . ' ' . $formattedArgs[1];
-            $mergedArgs = [$direction];
+        return 'linear-gradient(' . implode(', ', $reconstructedArgs) . ')';
+    }
 
-            for ($i = 2; $i < count($args); $i++) {
-                $mergedArgs[] = $this->resultFormatter->format($args[$i]);
+    private function reconstructArguments(array $args): array
+    {
+        $reconstructed = [];
+        $count = count($args);
+        $i = 0;
+
+        while ($i < $count) {
+            $current = $args[$i];
+
+            if ($current === 'to' && isset($args[$i + 1])) {
+                $direction = $current . ' ' . $args[$i + 1];
+                $skip = 1;
+
+                if (isset($args[$i + 2]) && $this->isDirectionKeyword($args[$i + 2])) {
+                    $direction .= ' ' . $args[$i + 2];
+                    $skip = 2;
+                }
+
+                $reconstructed[] = $direction;
+                $i += $skip + 1;
+
+                continue;
             }
 
-            return 'linear-gradient(' . implode(', ', $mergedArgs) . ')';
+            if (isset($args[$i + 1]) && $this->isValidNumberUnitPair($current, $args[$i + 1])) {
+                $reconstructed[] = $current . $args[$i + 1];
+                $i += 2;
+
+                continue;
+            }
+
+            if (isset($args[$i + 1]) && $this->isValidColorStopPair($current, $args[$i + 1])) {
+                $reconstructed[] = $current . ' ' . $args[$i + 1];
+                $i += 2;
+
+                continue;
+            }
+
+            $reconstructed[] = $current;
+            $i++;
         }
 
-        return $this->formatCssFunction('linear-gradient', $args);
+        return $reconstructed;
+    }
+
+    private function isDirectionKeyword(string $value): bool
+    {
+        return in_array($value, ['top', 'bottom', 'left', 'right', 'center'], true);
+    }
+
+    private function isValidNumberUnitPair(string $number, string $unit): bool
+    {
+        return preg_match('/^-?(\d*\.)?\d+$/', $number) === 1
+            && in_array($unit, ['deg', 'grad', 'rad', 'turn'], true);
+    }
+
+    private function isValidColorStopPair(string $color, string $position): bool
+    {
+        return $this->isColorLike($color) && $this->isPositionLike($position);
+    }
+
+    private function isColorLike(string $value): bool
+    {
+        return preg_match('/^(#[0-9a-fA-F]{3,8}|[a-zA-Z]+|[a-z]+\(.*\))$/', $value) === 1;
+    }
+
+    private function isPositionLike(string $value): bool
+    {
+        return $value === '0' || preg_match('/^-?(\d*\.)?\d+([a-zA-Z%]+)$/', $value) === 1;
     }
 
     private function formatCssFunction(string $functionName, array $args): string

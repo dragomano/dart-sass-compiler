@@ -55,6 +55,11 @@ readonly class OperationEvaluator
             }
         }
 
+        // Handle CSS background-size separator
+        if ($operator === '/' && is_string($left) && is_string($right)) {
+            return $left . ' / ' . $right;
+        }
+
         [$leftValue, $leftUnit, $rightValue, $rightUnit] = $this->extractNumericValues($left, $right);
 
         if ($leftValue !== null && $rightValue !== null) {
