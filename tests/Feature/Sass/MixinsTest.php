@@ -376,3 +376,92 @@ it('compiles mixin with @for directive', function () {
     expect($this->compiler->compileString($scss))
         ->toEqualCss($expected);
 });
+
+it('handles mixin with @media and url()', function () {
+    $scss = <<<'SCSS'
+    @mixin retina-background($file, $type, $width, $height) {
+        background-image: url('#{$file}.#{$type}');
+
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            background-image: url('#{$file}@2x.#{$type}');
+            background-size: $width $height;
+        }
+    }
+
+    .logo {
+        @include retina-background('logo', 'png', 200px, 100px);
+    }
+    SCSS;
+
+    $expected = /** @lang text */ <<<'CSS'
+    .logo {
+      background-image: url("logo.png");
+    }
+    @media (-webkit-min-device-pixel-ratio: 2),(min-resolution: 192dpi) {
+      .logo {
+        background-image: url("logo@2x.png");
+        background-size: 200px 100px;
+      }
+    }
+    CSS;
+
+    expect($this->compiler->compileString($scss))
+        ->toEqualCss($expected);
+});
+
+
+it('handles mixin with Unicode', function () {
+    $scss = <<<'SCSS'
+    @mixin define-emoji($name, $glyph) {
+        span.emoji-#{$name} {
+            font-family: IconFont;
+            font-variant: normal;
+            font-weight: normal;
+            content: $glyph;
+        }
+    }
+
+    @include define-emoji("women-holding-hands", "👭");
+    SCSS;
+
+    $expected = /** @lang text */ <<<'CSS'
+    @charset "UTF-8";
+    span.emoji-women-holding-hands {
+      font-family: IconFont;
+      font-variant: normal;
+      font-weight: normal;
+      content: "👭";
+    }
+    CSS;
+
+    expect($this->compiler->compileString($scss))
+        ->toEqualCss($expected);
+});
+
+it('compiles mixin with declarations and @media', function () {
+    $scss = <<<'SCSS'
+    @mixin test {
+        border: 1px solid black;
+        @media (min-width: 600px) {
+            color: red;
+        }
+    }
+    .rule {
+        @include test;
+    }
+    SCSS;
+
+    $expected = /** @lang text */ <<<'CSS'
+    .rule {
+      border: 1px solid black;
+    }
+    @media (min-width: 600px) {
+      .rule {
+        color: red;
+      }
+    }
+    CSS;
+
+    expect($this->compiler->compileString($scss))
+        ->toEqualCss($expected);
+});

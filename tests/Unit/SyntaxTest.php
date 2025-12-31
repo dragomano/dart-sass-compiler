@@ -14,6 +14,11 @@ describe('Syntax enum', function () {
     });
 
     describe('fromPath method', function () {
+        it('detects CSS syntax from file with path and .css extension', function () {
+            $syntax = Syntax::fromPath('/path/to/styles.css');
+            expect($syntax)->toBe(Syntax::CSS);
+        });
+
         it('detects SASS syntax from .sass extension', function () {
             $syntax = Syntax::fromPath('styles.sass');
             expect($syntax)->toBe(Syntax::SASS);
@@ -50,11 +55,6 @@ describe('Syntax enum', function () {
         });
 
         it('throws exception for unsupported extensions', function () {
-            expect(fn() => Syntax::fromPath('styles.css'))
-                ->toThrow(InvalidArgumentException::class);
-        });
-
-        it('throws exception for unknown file extensions', function () {
             expect(fn() => Syntax::fromPath('styles.txt'))
                 ->toThrow(InvalidArgumentException::class);
         });

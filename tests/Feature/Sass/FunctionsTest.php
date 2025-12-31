@@ -46,3 +46,26 @@ it('allows adding custom PHP function', function () {
     expect($this->compiler->compileString($scss))
         ->toEqualCss($expected);
 });
+
+it('handles function with url()', function () {
+    $scss = <<<'SCSS'
+    $image-path: '../images';
+
+    @function asset-url($filename) {
+        @return url('#{$image-path}/#{$filename}');
+    }
+
+    .dynamic {
+        background: asset-url('background.jpg');
+    }
+    SCSS;
+
+    $expected = /** @lang text */ <<<'CSS'
+    .dynamic {
+      background: url("../images/background.jpg");
+    }
+    CSS;
+
+    expect($this->compiler->compileString($scss))
+        ->toEqualCss($expected);
+});

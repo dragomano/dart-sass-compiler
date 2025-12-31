@@ -28,16 +28,15 @@ describe('sass:list', function () {
         }
         SCSS;
 
-        $expected = /** @lang text */
-            <<<'CSS'
-            .demo {
-              padding: 10px 20px 30px;
-              border-color: blue, red, green;
-              margin: 10px 20px;
-              gap: 10px;
-              background: linear-gradient(to right, blue red green);
-            }
-            CSS;
+        $expected /** @lang text */ = <<<'CSS'
+        .demo {
+          padding: 10px 20px 30px;
+          border-color: blue, red, green;
+          margin: 10px 20px;
+          gap: 10px;
+          background: linear-gradient(to right, blue red green);
+        }
+        CSS;
 
         expect($this->compiler->compileString($scss))
             ->toEqualCss($expected);
@@ -60,14 +59,13 @@ describe('sass:list', function () {
         }
         SCSS;
 
-        $expected = /** @lang text */
-            <<<'CSS'
-            .demo {
-              z-index: 1;
-              order: 2;
-              opacity: .5;
-            }
-            CSS;
+        $expected /** @lang text */ = <<<'CSS'
+        .demo {
+          z-index: 1;
+          order: 2;
+          opacity: .5;
+        }
+        CSS;
 
         expect($this->compiler->compileString($scss))
             ->toEqualCss($expected);
@@ -90,13 +88,12 @@ describe('sass:list', function () {
         }
         SCSS;
 
-        $expected = /** @lang text */
-            <<<'CSS'
-            .demo {
-              margin: 10px;
-              padding: 20px;
-            }
-            CSS;
+        $expected /** @lang text */ = <<<'CSS'
+        .demo {
+          margin: 10px;
+          padding: 20px;
+        }
+        CSS;
 
         expect($this->compiler->compileString($scss))
             ->toEqualCss($expected);
@@ -130,18 +127,17 @@ describe('sass:list', function () {
         }
         SCSS;
 
-        $expected = /** @lang text */
-            <<<'CSS'
-            .demo {
-              padding: 10px 20px 30px 40px;
-              border-color: blue, red, #abc, #def;
-              margin: 10px 20px;
-              gap: 10px;
-              background: linear-gradient(to right, blue red #abc #def);
-              outline-width: 10px;
-              border-width: 10px 20px;
-            }
-            CSS;
+        $expected /** @lang text */ = <<<'CSS'
+        .demo {
+          padding: 10px 20px 30px 40px;
+          border-color: blue, red, #abc, #def;
+          margin: 10px 20px;
+          gap: 10px;
+          background: linear-gradient(to right, blue red #abc #def);
+          outline-width: 10px;
+          border-width: 10px 20px;
+        }
+        CSS;
 
         expect($this->compiler->compileString($scss))
             ->toEqualCss($expected);
@@ -158,14 +154,13 @@ describe('sass:list', function () {
         }
         SCSS;
 
-        $expected = /** @lang text */
-            <<<'CSS'
-            .demo {
-              z-index: 1;
-              order: 3;
-              flex: 2;
-            }
-            CSS;
+        $expected /** @lang text */ = <<<'CSS'
+        .demo {
+          z-index: 1;
+          order: 3;
+          flex: 2;
+        }
+        CSS;
 
         expect($this->compiler->compileString($scss))
             ->toEqualCss($expected);
@@ -198,15 +193,14 @@ describe('sass:list', function () {
         }
         SCSS;
 
-        $expected = /** @lang text */
-            <<<'CSS'
-            .demo {
-              margin: 10px;
-              padding: 20px;
-              border: 1px solid;
-              outline: 2px solid;
-            }
-            CSS;
+        $expected /** @lang text */ = <<<'CSS'
+        .demo {
+          margin: 10px;
+          padding: 20px;
+          border: 1px solid;
+          outline: 2px solid;
+        }
+        CSS;
 
         expect($this->compiler->compileString($scss))
             ->toEqualCss($expected);
@@ -222,13 +216,12 @@ describe('sass:list', function () {
         }
         SCSS;
 
-        $expected = /** @lang text */
-            <<<'CSS'
-            .demo {
-              font-size: 12px;
-              grid-row: line3;
-            }
-            CSS;
+        $expected /** @lang text */ = <<<'CSS'
+        .demo {
+          font-size: 12px;
+          grid-row: line3;
+        }
+        CSS;
 
         expect($this->compiler->compileString($scss))
             ->toEqualCss($expected);
@@ -245,14 +238,13 @@ describe('sass:list', function () {
         }
         SCSS;
 
-        $expected = /** @lang text */
-            <<<'CSS'
-            .demo {
-              padding: 2em 20px 30px;
-              margin: 10px 20px 8em;
-              font-family: Helvetica, Arial, Roboto;
-            }
-            CSS;
+        $expected /** @lang text */ = <<<'CSS'
+        .demo {
+          padding: 2em 20px 30px;
+          margin: 10px 20px 8em;
+          font-family: Helvetica, Arial, Roboto;
+        }
+        CSS;
 
         expect($this->compiler->compileString($scss))
             ->toEqualCss($expected);
@@ -267,12 +259,11 @@ describe('sass:list', function () {
         }
         SCSS;
 
-        $expected = /** @lang text */
-            <<<'CSS'
-            .demo {
-              border-radius: 1px / 50px / 100px;
-            }
-            CSS;
+        $expected /** @lang text */ = <<<'CSS'
+        .demo {
+          border-radius: 1px / 50px / 100px;
+        }
+        CSS;
 
         expect($this->compiler->compileString($scss))
             ->toEqualCss($expected);
@@ -293,13 +284,12 @@ describe('sass:list', function () {
         }
         SCSS;
 
-        $expected = /** @lang text */
-            <<<'CSS'
-            .demo {
-              width: 10px;
-              height: 50px;
-            }
-            CSS;
+        $expected /** @lang text */ = <<<'CSS'
+        .demo {
+          width: 10px;
+          height: 50px;
+        }
+        CSS;
 
         expect($this->compiler->compileString($scss))
             ->toEqualCss($expected);
