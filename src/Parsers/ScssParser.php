@@ -43,10 +43,12 @@ use DartSass\Parsers\Rules\WhileRuleParser;
 use function array_filter;
 use function array_merge;
 use function count;
+use function in_array;
 use function is_array;
 use function preg_match;
 use function preg_replace;
 use function sprintf;
+use function str_contains;
 use function str_ends_with;
 use function str_starts_with;
 use function trim;
@@ -972,14 +974,78 @@ class ScssParser implements TokenAwareParserInterface
 
         $this->stream->skipWhitespace();
 
-        $pathToken = $this->stream->expectAny('string', 'identifier');
-
-        $path = trim($pathToken->value, '"\'');
+        $rawValue = $this->captureImportValue();
+        $normalizedValue = $this->normalizeImportPath($rawValue);
 
         $this->stream->consume('semicolon');
 
-        return new AtRuleNode('@import', $path, null, $token->line);
+        return new AtRuleNode('@import', $normalizedValue, null, $token->line);
     }
+
+    private function captureImportValue(): string
+    {
+        $value = '';
+        $previousToken = null;
+
+        while ($this->stream->current() && ! $this->stream->matches('semicolon')) {
+            $currentToken = $this->stream->current();
+
+            if ($previousToken && $this->shouldAddSpace($previousToken, $currentToken)) {
+                $value .= ' ';
+            }
+
+            $value .= $currentToken->value;
+            $previousToken = $currentToken;
+
+            $this->stream->advance();
+        }
+
+        return trim($value);
+    }
+
+    private function shouldAddSpace(Token $previous, Token $current): bool
+    {
+        if (in_array($current->type, ['colon', 'comma', 'semicolon', 'paren_close'], true)) {
+            return false;
+        }
+
+        if ($current->type === 'paren_open') {
+            return in_array($previous->type, ['identifier', 'logical_operator'], true);
+        }
+
+        if ($previous->type === 'paren_open') {
+            return false;
+        }
+
+        if ($previous->type === 'colon') {
+            return $current->type === 'identifier';
+        }
+
+        return true;
+    }
+
+    private function normalizeImportPath(string $value): string
+    {
+        if (str_starts_with($value, 'url(')) {
+            $content = preg_replace('/^url\((.*)\)$/s', '$1', $value);
+            $content = trim($content);
+
+            if (str_starts_with($content, "'") && str_ends_with($content, "'")) {
+                $content = '"' . trim($content, "'") . '"';
+            } elseif (! str_starts_with($content, '"') && ! str_ends_with($content, '"')) {
+                $content = '"' . $content . '"';
+            }
+
+            return 'url(' . $content . ')';
+        }
+
+        if (! str_contains($value, ' ')) {
+            return trim($value, '"\'');
+        }
+
+        return $value;
+    }
+
 
     /**
      * @throws SyntaxException

@@ -64,6 +64,7 @@ use function in_array;
 use function is_array;
 use function preg_match;
 use function rtrim;
+use function str_contains;
 use function str_repeat;
 use function str_starts_with;
 use function substr_count;
@@ -278,7 +279,14 @@ class Compiler
             }
 
             if ($node->type === 'at-rule' && ($node->properties['name'] ?? '') === '@import') {
-                $this->compileImportNode($node);
+                $path = $node->properties['value'] ?? '';
+                $path = $this->evaluateInterpolationsInString($path);
+
+                if (str_starts_with($path, 'url(') || str_contains($path, ' ')) {
+                    $css .= "@import $path;\n";
+                } else {
+                    $this->compileImportNode($node);
+                }
 
                 continue;
             }
