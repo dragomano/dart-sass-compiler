@@ -18,9 +18,9 @@ return (new Config())
     ->setRules([
         '@PSR12' => true,
 
-        'heredoc_indentation' => [
-            'indentation' => 'same_as_start',
-        ],
+        'heredoc_indentation' => ['indentation' => 'same_as_start'],
+
+        'operator_linebreak' => ['position' => 'beginning'],
 
         'cast_spaces' => ['space' => 'single'],
 
@@ -28,7 +28,7 @@ return (new Config())
 
         'function_declaration' => [
             'closure_function_spacing' => 'one',
-            'closure_fn_spacing'       => 'none',
+            'closure_fn_spacing' => 'none',
         ],
 
         'ordered_imports' => [
@@ -41,11 +41,12 @@ return (new Config())
         ],
 
         'global_namespace_import' => [
-            'import_classes'   => true,
+            'import_classes' => true,
             'import_constants' => true,
             'import_functions' => true,
         ],
 
+        'blank_line_before_statement' => true,
         'not_operator_with_successor_space' => true,
         'single_line_empty_body' => true,
         'method_chaining_indentation' => true,

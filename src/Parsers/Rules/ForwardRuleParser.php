@@ -75,6 +75,7 @@ class ForwardRuleParser extends AtRuleParser
                         }
 
                         $config = $this->parseConfig();
+
                         break;
 
                     case 'hide':
@@ -83,6 +84,7 @@ class ForwardRuleParser extends AtRuleParser
                         }
 
                         $hide = $this->parseVariableList();
+
                         break;
 
                     case 'show':
@@ -91,6 +93,7 @@ class ForwardRuleParser extends AtRuleParser
                         }
 
                         $show = $this->parseVariableList();
+
                         break;
 
                     default:

@@ -59,6 +59,7 @@ class Lexer implements LexerInterface
 
                     if (in_array($type, ['comment', 'whitespace', 'newline'], true)) {
                         $this->updatePosition($matchValue, $matchLength);
+
                         continue 2;
                     }
 

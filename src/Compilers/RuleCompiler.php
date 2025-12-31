@@ -45,7 +45,9 @@ readonly class RuleCompiler
         $body   = rtrim($declarationsCss . $nestedCss);
         $indent = str_repeat('  ', $currentNestingLevel);
 
-        return "$indent{$node->properties['name']} $value {\n$body\n$indent}\n";
+        $valuePart = $value !== '' ? " $value" : '';
+
+        return "$indent{$node->properties['name']}$valuePart {\n$body\n$indent}\n";
     }
 
     public function compileConditionalRule(

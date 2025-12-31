@@ -74,12 +74,14 @@ readonly class OutputOptimizer
 
                 if ($trimmed === '') {
                     $line = '';
+
                     continue;
                 }
 
                 if ($trimmed === '}') {
                     $depth = max(0, $depth - 1);
                     $line = str_repeat('  ', $depth) . '}';
+
                     continue;
                 }
 
@@ -156,6 +158,7 @@ readonly class OutputOptimizer
 
                 $resultLines[] = $line;
                 $inBlock = true;
+
                 continue;
             }
 
@@ -172,6 +175,7 @@ readonly class OutputOptimizer
                 }
 
                 $resultLines[] = $line;
+
                 continue;
             }
 

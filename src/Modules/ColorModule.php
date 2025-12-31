@@ -111,6 +111,7 @@ class ColorModule
 
         if (in_array($channel, ['hue', 'h'], true)) {
             $rounded = round($value, 10);
+
             return $rounded == 0 ? (string) $rounded : $rounded . 'deg';
         }
 
@@ -140,24 +141,28 @@ class ColorModule
                 $hwb = ColorConverter::RGB->toHwb($colorData['r'], $colorData['g'], $colorData['b']);
                 $hue = fmod($hwb['h'] + ColorSerializer::HUE_SHIFT, ColorSerializer::HUE_MAX);
                 $rgb = ColorConverter::HWB->toRgb($hue, $hwb['w'], $hwb['bl']);
+
                 break;
 
             case ColorFormat::LCH->value:
                 $lch = ColorConverter::RGB->toLch($colorData['r'], $colorData['g'], $colorData['b']);
                 $hue = fmod($lch['h'] + ColorSerializer::HUE_SHIFT, ColorSerializer::HUE_MAX);
                 $rgb = ColorConverter::LCH->toRgb($lch['l'], $lch['c'], $hue);
+
                 break;
 
             case ColorFormat::OKLCH->value:
                 $oklch = ColorConverter::RGB->toOklch($colorData['r'], $colorData['g'], $colorData['b']);
                 $hue = fmod($oklch['h'] + ColorSerializer::HUE_SHIFT, ColorSerializer::HUE_MAX);
                 $rgb = ColorConverter::OKLCH->toRgb($oklch['l'], $oklch['c'], $hue);
+
                 break;
 
             default:
                 $hsl = ColorConverter::RGB->toHsl($colorData['r'], $colorData['g'], $colorData['b']);
                 $hue = fmod($hsl['h'] + ColorSerializer::HUE_SHIFT, ColorSerializer::HUE_MAX);
                 $rgb = ColorConverter::HSL->toRgb($hue, $hsl['s'], $hsl['l']);
+
                 break;
         }
 
@@ -220,6 +225,7 @@ class ColorModule
                     $hwb['w']
                 );
                 $inverted = ['r' => $invertedHwb['r'], 'g' => $invertedHwb['g'], 'b' => $invertedHwb['b']];
+
                 break;
 
             case ColorFormat::HSL->value:
@@ -227,6 +233,7 @@ class ColorModule
                 $invertedHue = ($hsl['h'] + ColorSerializer::HUE_SHIFT) % ColorSerializer::HUE_MAX;
                 $invertedHsl = ColorConverter::HSL->toRgb($invertedHue, $hsl['s'], $hsl['l']);
                 $inverted = ['r' => $invertedHsl['r'], 'g' => $invertedHsl['g'], 'b' => $invertedHsl['b']];
+
                 break;
 
             default:
@@ -236,6 +243,7 @@ class ColorModule
                     'g' => ColorSerializer::RGB_MAX - $colorData['g'],
                     'b' => ColorSerializer::RGB_MAX - $colorData['b'],
                 ];
+
                 break;
         }
 
@@ -295,6 +303,7 @@ class ColorModule
 
             if (! $spaceFormat->hasChannel($channel)) {
                 $validChannels = implode(', ', $spaceFormat->getPrimaryChannels());
+
                 throw new CompilationException(
                     "Channel '$channel' is not valid for color space '$space'. "
                     . "Valid channels: $validChannels, alpha"
@@ -444,9 +453,9 @@ class ColorModule
 
         // Ensure all required keys are present for the format
         if ($space === ColorFormat::RGB->value || $space === ColorFormat::RGBA->value) {
-            $inTargetSpace['r'] = $inTargetSpace['r'] ?? 0;
-            $inTargetSpace['g'] = $inTargetSpace['g'] ?? 0;
-            $inTargetSpace['b'] = $inTargetSpace['b'] ?? 0;
+            $inTargetSpace['r'] ??= 0;
+            $inTargetSpace['g'] ??= 0;
+            $inTargetSpace['b'] ??= 0;
         }
 
         return $this->formatColor($inTargetSpace);

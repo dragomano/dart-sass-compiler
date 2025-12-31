@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace DartSass\Parsers;
 
+use ArrayIterator;
 use DartSass\Exceptions\SyntaxException;
+use IteratorAggregate;
+use Traversable;
 
 use function count;
 use function implode;
 use function in_array;
 use function sprintf;
 
-class TokenStream implements TokenStreamInterface
+class TokenStream implements TokenStreamInterface, IteratorAggregate
 {
     private readonly int $count;
 
@@ -22,6 +25,11 @@ class TokenStream implements TokenStreamInterface
     public function __construct(private readonly array $tokens)
     {
         $this->count = count($tokens);
+    }
+
+    public function getIterator(): Traversable
+    {
+        return new ArrayIterator($this->getTokens());
     }
 
     public function advance(int $amount = 1): void

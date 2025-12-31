@@ -43,8 +43,8 @@ class SourceMapGenerator
     {
         usort(
             $mappings,
-            fn($a, $b): int =>
-            ($a['generated']['line'] ?? 0) <=> ($b['generated']['line'] ?? 0)
+            fn($a, $b): int
+                => ($a['generated']['line'] ?? 0) <=> ($b['generated']['line'] ?? 0)
                 ?: ($a['generated']['column'] ?? 0) <=> ($b['generated']['column'] ?? 0)
         );
 
@@ -77,8 +77,9 @@ class SourceMapGenerator
             ]);
 
             $currentLineMappings[] = $segment;
-            [$lastGenCol, $lastOrigLine, $lastOrigCol, $lastSourceIdx] =
-                [$generatedColumn, $originalLine, $originalColumn, $sourceIndex];
+
+            [$lastGenCol, $lastOrigLine, $lastOrigCol, $lastSourceIdx]
+                = [$generatedColumn, $originalLine, $originalColumn, $sourceIndex];
         }
 
         if ($currentLineMappings) {

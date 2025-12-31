@@ -46,6 +46,7 @@ readonly class SassToScssNormalizer implements SourceNormalizer
 
             if ($trimmed === '') {
                 $pendingEmptyLines[] = '';
+
                 continue;
             }
 
@@ -104,6 +105,7 @@ readonly class SassToScssNormalizer implements SourceNormalizer
             if (preg_match('/,\s*$/', $trimmed)) {
                 $lineToAdd = rtrim($trimmed);
                 $result[] = str_repeat(' ', $level * $indentSize) . $lineToAdd;
+
                 continue;
             }
 

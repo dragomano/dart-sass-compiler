@@ -68,8 +68,8 @@ class ForRuleParser extends AtRuleParser
         }
 
         if (
-            ! $this->peek('identifier') ||
-            ($this->currentToken()->value !== 'to' && $this->currentToken()->value !== 'through')
+            ! $this->peek('identifier')
+            || ($this->currentToken()->value !== 'to' && $this->currentToken()->value !== 'through')
         ) {
             throw new SyntaxException(
                 'Expected "to" or "through" keyword in @for rule',

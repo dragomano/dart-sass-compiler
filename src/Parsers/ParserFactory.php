@@ -19,6 +19,7 @@ final class ParserFactory
         foreach ($this->getNormalizers() as $normalizer) {
             if ($normalizer->supports($syntax)) {
                 $content = $normalizer->normalize($content);
+
                 break;
             }
         }
