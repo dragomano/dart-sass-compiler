@@ -19,6 +19,7 @@ use DartSass\Handlers\BuiltinFunctionHandler;
 use DartSass\Handlers\ColorModuleHandler;
 use DartSass\Handlers\CustomFunctionHandler;
 use DartSass\Handlers\ExtendHandler;
+use DartSass\Handlers\FormatFunctionHandler;
 use DartSass\Handlers\FunctionHandler;
 use DartSass\Handlers\FunctionRouter;
 use DartSass\Handlers\ListModuleHandler;
@@ -27,13 +28,13 @@ use DartSass\Handlers\MixinHandler;
 use DartSass\Handlers\ModuleHandler;
 use DartSass\Handlers\ModuleRegistry;
 use DartSass\Handlers\NestingHandler;
+use DartSass\Handlers\UrlFunctionHandler;
 use DartSass\Handlers\VariableHandler;
 use DartSass\Loaders\FileLoader;
 use DartSass\Loaders\LoaderInterface;
 use DartSass\Modules\ColorModule;
 use DartSass\Modules\ListModule;
 use DartSass\Modules\MathModule;
-use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\ForwardNode;
 use DartSass\Parsers\Nodes\FunctionNode;
 use DartSass\Parsers\Nodes\IncludeNode;
@@ -41,6 +42,7 @@ use DartSass\Parsers\Nodes\MixinNode;
 use DartSass\Parsers\Nodes\OperationNode;
 use DartSass\Parsers\Nodes\RuleNode;
 use DartSass\Parsers\Nodes\SelectorNode;
+use DartSass\Parsers\Nodes\UseNode;
 use DartSass\Parsers\Nodes\VariableDeclarationNode;
 use DartSass\Parsers\ParserFactory;
 use DartSass\Parsers\Syntax;
@@ -136,6 +138,8 @@ class Compiler
     {
         $syntax ??= Syntax::SCSS;
 
+        $this->mappings = [];
+
         $this->positionTracker->setSourceCode($string);
 
         $parser = $this->parserFactory->create($string, $syntax);
@@ -143,8 +147,6 @@ class Compiler
         $ast = $parser->parse();
 
         $this->variableHandler->enterScope();
-
-        $this->mappings = [];
 
         $compiled = $this->compileAst($ast);
 
@@ -192,20 +194,10 @@ class Compiler
 
     public function compileInIsolatedContext(string $string, ?Syntax $syntax = null): string
     {
-        $syntax ??= Syntax::SCSS;
-
         $this->pushState();
 
         try {
-            $this->variableHandler->enterScope();
-            $this->positionTracker->setSourceCode($string);
-            $this->mappings = [];
-
-            $result = $this->compileString($string, $syntax);
-
-            $this->variableHandler->exitScope();
-
-            return $result;
+            return $this->compileString($string, $syntax);
         } finally {
             $this->popState();
         }
@@ -270,38 +262,46 @@ class Compiler
         foreach ($ast as $node) {
             if (is_array($node)) {
                 $css .= $this->compileDeclarations([$node], $nestingLevel, $parentSelector);
+
                 continue;
             }
 
             if ($node->type === 'at-rule' && ($node->name ?? '') === '@extend') {
                 $targetSelector = trim((string) $this->evaluateExpression($node->value ?? ''));
                 $this->extendHandler->registerExtend($parentSelector, $targetSelector);
+
                 continue;
             }
 
             switch ($node->type) {
                 case 'variable':
                     $this->compileVariableNode($node);
+
                     break;
 
                 case 'mixin':
                     $this->compileMixinNode($node);
+
                     break;
 
                 case 'rule':
                     $css .= $this->compileRuleNode($node, $parentSelector, $nestingLevel);
+
                     break;
 
                 case 'use':
                     $this->compileUseNode($node, $nestingLevel, $css);
+
                     break;
 
                 case 'forward':
                     $this->compileForwardNode($node);
+
                     break;
 
                 case 'function':
                     $this->compileFunctionNode($node);
+
                     break;
 
                 case 'if':
@@ -314,6 +314,7 @@ class Compiler
                         $this->evaluateExpression(...),
                         $this->compileAst(...)
                     );
+
                     break;
 
                 case 'media':
@@ -329,6 +330,7 @@ class Compiler
                         $this->compileAst(...),
                         $this->evaluateInterpolationsInString(...)
                     );
+
                     break;
 
                 default:
@@ -372,13 +374,12 @@ class Compiler
         $this->extendHandler   = new ExtendHandler();
         $this->moduleHandler   = new ModuleHandler($this->loader, $this->parserFactory);
 
-        $resultFormatter = new ResultFormatter($this->valueFormatter);
-        $moduleRegistry  = new ModuleRegistry();
-
-        $customFunctionHandler  = new CustomFunctionHandler();
         $builtinFunctionHandler = new BuiltinFunctionHandler($this->evaluateExpression(...));
+        $urlFunctionHandler     = new UrlFunctionHandler();
+        $formatFunctionHandler  = new FormatFunctionHandler($this->valueFormatter);
         $colorModuleHandler     = new ColorModuleHandler(new ColorModule());
         $listModuleHandler      = new ListModuleHandler(new ListModule());
+        $customFunctionHandler  = new CustomFunctionHandler();
 
         $mathModuleHandler = new MathModuleHandler(
             new MathModule($this->valueFormatter),
@@ -386,7 +387,10 @@ class Compiler
             $this->valueFormatter
         );
 
+        $moduleRegistry = new ModuleRegistry();
         $moduleRegistry->register($builtinFunctionHandler);
+        $moduleRegistry->register($urlFunctionHandler);
+        $moduleRegistry->register($formatFunctionHandler);
         $moduleRegistry->register($colorModuleHandler);
         $moduleRegistry->register($listModuleHandler);
         $moduleRegistry->register($mathModuleHandler);
@@ -394,7 +398,8 @@ class Compiler
 
         $customFunctionHandler->setRegistry($moduleRegistry);
 
-        $functionRouter = new FunctionRouter($moduleRegistry, $resultFormatter);
+        $resultFormatter = new ResultFormatter($this->valueFormatter);
+        $functionRouter  = new FunctionRouter($moduleRegistry, $resultFormatter);
 
         $this->functionHandler = new FunctionHandler(
             $this->moduleHandler,
@@ -518,9 +523,9 @@ class Compiler
 
         $this->variableHandler->enterScope();
 
-        $includesCss      = '';
-        $controlFlowCss  = '';
-        $otherNestedCss  = '';
+        $includesCss    = '';
+        $controlFlowCss = '';
+        $otherNestedCss = '';
 
         foreach ($node->properties['nested'] ?? [] as $nestedItem) {
             if ($nestedItem->type === 'include') {
@@ -610,7 +615,7 @@ class Compiler
         return $css;
     }
 
-    private function compileUseNode(AstNode $node, int $nestingLevel, string &$css): void
+    private function compileUseNode(UseNode $node, int $nestingLevel, string &$css): void
     {
         $path = $node->properties['path'];
         $namespace = $node->properties['namespace'] ?? null;

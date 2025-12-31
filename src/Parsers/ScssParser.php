@@ -44,6 +44,7 @@ use function array_merge;
 use function count;
 use function is_array;
 use function preg_match;
+use function preg_replace;
 use function sprintf;
 use function str_ends_with;
 use function str_starts_with;
@@ -213,7 +214,8 @@ class ScssParser implements TokenAwareParserInterface
      */
     public function parseDeclaration(): array
     {
-        $propertyToken = $this->stream->consume('identifier');
+        $propertyToken = $this->stream->expectAny('identifier', 'css_custom_property');
+
         $property = $propertyToken->value;
 
         $this->stream->consume('colon');
@@ -241,12 +243,14 @@ class ScssParser implements TokenAwareParserInterface
             $token = $this->stream->current();
             if ($token && $token->type === 'operator' && $token->value === ',') {
                 $isCommaSeparated = true;
+
                 $this->stream->advance();
                 $this->stream->skipWhitespace();
 
                 $values[] = $this->parseExpression();
             } else {
                 $nextToken = $this->stream->current();
+
                 if ($nextToken && isset(self::DECLARATION_VALUE_TYPES[$nextToken->type])) {
                     if (isset(self::IDENTIFIER_VARIABLE_TYPES[$nextToken->type])) {
                         $values[] = $this->parseExpression();
@@ -431,11 +435,13 @@ class ScssParser implements TokenAwareParserInterface
                         default    => $this->parseAtRule(),
                     };
                     $nested[] = $item;
+
                     break;
 
                 case 'variable':
                     $item = $this->parseVariable();
                     $nested[] = $item;
+
                     break;
 
                 case 'selector':
@@ -443,6 +449,7 @@ class ScssParser implements TokenAwareParserInterface
                 case 'attribute_selector':
                     $item = $this->parseRule();
                     $nested[] = $item;
+
                     break;
 
                 case 'operator':
@@ -500,6 +507,7 @@ class ScssParser implements TokenAwareParserInterface
                 default:
                     $item = $this->parseDeclaration();
                     $declarations[] = $item;
+
                     break;
             }
 
@@ -566,6 +574,7 @@ class ScssParser implements TokenAwareParserInterface
                 }
 
                 $this->stream->consume('paren_close');
+
                 break;
             }
 
@@ -698,6 +707,7 @@ class ScssParser implements TokenAwareParserInterface
             $opToken = $this->stream->current();
             if ($opToken && $opToken->type === 'operator' && $opToken->value === ',') {
                 $this->stream->advance();
+
                 continue;
             }
 
@@ -1030,19 +1040,7 @@ class ScssParser implements TokenAwareParserInterface
         $this->stream->advance();
 
         return match ($token->type) {
-            'number' => (function () use ($token) {
-                $valueStr = $token->value;
-
-                if (preg_match('/^(-?\d*\.?\d+)(.*)$/', $valueStr, $matches)) {
-                    $value = (float) $matches[1];
-                    $unit = trim($matches[2]) ?: null;
-                } else {
-                    $value = 0.0;
-                    $unit = null;
-                }
-
-                return new NumberNode($value, $token->line, $unit);
-            })(),
+            'number' => $this->parseNumber($token),
 
             'identifier' => (function () use ($token) {
                 if ($this->stream->matches('colon')) {
@@ -1061,6 +1059,16 @@ class ScssParser implements TokenAwareParserInterface
             'variable' => new VariableNode($token->value, $token->line),
 
             'css_custom_property' => new CssCustomPropertyNode($token->value, $token->line),
+
+            'url_function' => (function () use ($token) {
+                $fullContent = preg_replace('/^url\((.*)\)$/s', '$1', $token->value);
+                $fullContent = trim($fullContent);
+
+                // Pass the original content to UrlFunctionHandler for quote detection
+                $urlNode = new StringNode($fullContent, $token->line);
+
+                return new FunctionNode('url', [$urlNode], line: $token->line);
+            })(),
 
             'function' => (function () use ($token) {
                 $funcName = $token->value;
@@ -1085,7 +1093,6 @@ class ScssParser implements TokenAwareParserInterface
                             $this->stream->consume('colon');
                             $this->stream->skipWhitespace();
 
-                            // Parse function argument value (stop at comma or paren_close)
                             $argValue = $this->parseBinaryExpression(0);
 
                             $args[$argName] = $argValue;
@@ -1277,5 +1284,20 @@ class ScssParser implements TokenAwareParserInterface
         }
 
         return 'expression';
+    }
+
+    private function parseNumber(Token $token): AstNode
+    {
+        $valueStr = $token->value;
+
+        if (preg_match('/^(-?\d*\.?\d+)(.*)$/', $valueStr, $matches)) {
+            $value = (float) $matches[1];
+            $unit  = trim($matches[2]) ?: null;
+        } else {
+            $value = 0.0;
+            $unit  = null;
+        }
+
+        return new NumberNode($value, $token->line, $unit);
     }
 }

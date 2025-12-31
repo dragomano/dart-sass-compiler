@@ -18,7 +18,6 @@ use DartSass\Utils\ValueFormatter;
 use function array_map;
 use function end;
 use function explode;
-use function implode;
 use function is_array;
 use function is_numeric;
 use function is_string;
@@ -168,7 +167,7 @@ class ExpressionEvaluator
         $name = $expr->properties['name'];
         $args = $expr->properties['args'] ?? [];
 
-        if ($expr->properties['name'] === 'if') {
+        if ($name === 'if') {
             $result = $this->functionHandler->call('if', $args);
 
             return $this->evaluate($result);
@@ -180,13 +179,17 @@ class ExpressionEvaluator
 
         if ($this->hasSlashSeparator($args)) {
             $args = $this->evaluateArgumentsWithSlashSeparator($args);
-        } else {
-            $args = $this->evaluateArguments($args);
+
+            return $this->functionHandler->call($name, $args);
         }
 
         if ($name === 'url') {
-            return $this->evaluateUrlFunction($args);
+            $args = $this->evaluateUrlArguments($args);
+
+            return $this->functionHandler->call('url', $args);
         }
+
+        $args = $this->evaluateArguments($args);
 
         return $this->functionHandler->call($name, $args);
     }
@@ -202,13 +205,56 @@ class ExpressionEvaluator
         return $this->containsDivisionOperation($lastArg);
     }
 
+    private function evaluateUrlArguments(array $args): array
+    {
+        $processedArgs = [];
+
+        foreach ($args as $arg) {
+            if ($arg instanceof AstNode && $arg->type === 'string') {
+                $processedArgs[] = $this->evaluateUrlString($arg);
+            } else {
+                $processedArgs[] = $this->evaluate($arg);
+            }
+        }
+
+        return $processedArgs;
+    }
+
+    private function evaluateUrlString(AstNode $arg): array
+    {
+        $originalContent = $arg->properties['value'];
+
+        if (str_contains($originalContent, '#{$')) {
+            $wasQuoted = preg_match('/^["\'](.*)["\']$/', $originalContent);
+            $evaluated = $this->evaluate($arg);
+
+            return [
+                'value'  => $evaluated,
+                'quoted' => $wasQuoted,
+            ];
+        }
+
+        $wasQuoted = preg_match('/^["\'](.*)["\']$/', $originalContent, $matches);
+
+        if ($wasQuoted) {
+            return [
+                'value'  => $matches[1],
+                'quoted' => true,
+            ];
+        }
+
+        return [
+            'value'  => $originalContent,
+            'quoted' => false,
+        ];
+    }
+
     private function containsDivisionOperation($arg): bool
     {
         if (! $arg instanceof AstNode) {
             return false;
         }
 
-        // Check if this is an operation node with division
         if ($arg->type === 'operation' && isset($arg->properties['operator'])) {
             return $arg->properties['operator'] === '/';
         }
@@ -221,9 +267,7 @@ class ExpressionEvaluator
         $processedArgs = [];
 
         foreach ($args as $arg) {
-            // Check if this argument contains a division operation
             if ($this->containsDivisionOperation($arg)) {
-                // Split the division operation: left operand is hue, right operand is alpha
                 $hueArg   = $this->evaluate($arg->properties['left'] ?? $arg);
                 $alphaArg = $this->evaluate($arg->properties['right'] ?? null);
 
@@ -235,18 +279,6 @@ class ExpressionEvaluator
         }
 
         return $processedArgs;
-    }
-
-    private function evaluateUrlFunction(array $args): string
-    {
-        $argString = implode(', ', array_map(
-            fn(mixed $arg): mixed => is_string($arg) && ! preg_match('/^[\'\"].*[\'\"]$/', $arg)
-                ? '"' . $arg . '"'
-                : (is_array($arg) && isset($arg['value']) ? $arg['value'] . ($arg['unit'] ?? '') : $arg),
-            $args
-        ));
-
-        return 'url(' . $argString . ')';
     }
 
     private function evaluatePropertyAccessExpression(AstNode $expr): mixed
@@ -266,13 +298,17 @@ class ExpressionEvaluator
             return $this->moduleHandler->getProperty($namespace, $propertyName, $this->evaluate(...));
         }
 
+        if (is_string($namespace) && ! str_starts_with($namespace, '$')) {
+            return $namespace;
+        }
+
         throw new CompilationException("Invalid property access: $namespace.$propertyName");
     }
 
     private function evaluateCssPropertyExpression(AstNode $expr): string
     {
         $property = $expr->properties['property'];
-        $value = $this->evaluate($expr->properties['value']);
+        $value    = $this->evaluate($expr->properties['value']);
 
         return $property . ': ' . $this->valueFormatter->format($value);
     }
@@ -290,7 +326,6 @@ class ExpressionEvaluator
             };
         }
 
-        // Handle array with value and unit
         if (is_array($operand) && isset($operand['value']) && is_numeric($operand['value'])) {
             return match ($operator) {
                 '+'     => $operand,

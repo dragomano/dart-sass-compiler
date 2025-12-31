@@ -9,6 +9,7 @@ use function implode;
 
 enum TokenPattern: string
 {
+    case URL_FUNCTION              = '(?P<url_function>url\(\s*(?:"[^"]*"|\'[^\']*\'|[^)"\']+)\s*\))';
     case HEX_COLOR                 = '(?P<hex_color>#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b)';
     case WHITESPACE                = '(?P<whitespace>\s+)';
     case STRING                    = '(?P<string>"[^"\\\\]*(?:\\\\.[^"\\\\]*)*"|\'[^\'\\\\]*(?:\\\\.[^\'\\\\]*)*\')';
