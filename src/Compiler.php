@@ -273,6 +273,12 @@ class Compiler
                 continue;
             }
 
+            if ($node->type === 'at-rule' && ($node->properties['name'] ?? '') === '@import') {
+                $this->compileImportNode($node);
+
+                continue;
+            }
+
             switch ($node->type) {
                 case 'variable':
                     $this->compileVariableNode($node);
@@ -656,6 +662,19 @@ class Compiler
 
         foreach ($properties['variables'] as $varName => $varValue) {
             $this->variableHandler->define($varName, $varValue, true);
+        }
+    }
+
+    private function compileImportNode(\DartSass\Parsers\Nodes\AtRuleNode $node): void
+    {
+        $path = $node->properties['value'] ?? '';
+
+        if (! $this->moduleHandler->isModuleLoaded($path)) {
+            $result = $this->moduleHandler->forwardModule($path, $this->evaluateExpression(...));
+
+            foreach ($result['variables'] as $varName => $varValue) {
+                $this->variableHandler->define($varName, $varValue, true);
+            }
         }
     }
 
