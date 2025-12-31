@@ -11,6 +11,7 @@ use function strtolower;
 
 enum Syntax: string
 {
+    case CSS  = 'css';
     case SASS = 'sass';
     case SCSS = 'scss';
 
@@ -18,10 +19,18 @@ enum Syntax: string
     {
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
 
-        return match ($ext) {
-            'sass'     => self::SASS,
-            'scss', '' => self::SCSS,
-            default    => throw new InvalidArgumentException("Cannot detect syntax from path: $path"),
-        };
+        if ($ext === self::CSS->value) {
+            return self::CSS;
+        }
+
+        if ($ext === self::SASS->value) {
+            return self::SASS;
+        }
+
+        if ($ext === self::SCSS->value || $ext === '') {
+            return self::SCSS;
+        }
+
+        throw new InvalidArgumentException("Cannot detect syntax from path: $path");
     }
 }
