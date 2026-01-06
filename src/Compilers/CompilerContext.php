@@ -25,8 +25,6 @@ class CompilerContext
 {
     public array $mappings = [];
 
-    public array $indentCache = [];
-
     public LoaderInterface $loader;
 
     public ParserFactory $parserFactory;

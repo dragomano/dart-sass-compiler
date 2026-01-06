@@ -98,6 +98,7 @@ readonly class MixinCompiler
         }
 
         $tempName = 'temp_' . uniqid();
+
         $this->mixinHandler->define($tempName, $mixinData['args'], $mixinData['body']);
 
         $evaluatedArgs = array_map($evaluateExpression, $args);

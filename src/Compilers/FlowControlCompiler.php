@@ -77,6 +77,7 @@ readonly class FlowControlCompiler
         $variables = $node->variables ?? throw new CompilationException('Missing variables for @each');
 
         $css = '';
+
         $this->variableHandler->enterScope();
 
         $numVars = count($variables);
@@ -93,7 +94,7 @@ readonly class FlowControlCompiler
                 if ($numVars === 2) {
                     if (is_array($value) && count($value) === 1) {
                         // Map entry: key => value as array
-                        $entryKey = key($value);
+                        $entryKey   = key($value);
                         $entryValue = $value[$entryKey];
 
                         $this->variableHandler->define($variables[0], $entryKey);
@@ -174,7 +175,7 @@ readonly class FlowControlCompiler
         $css = '';
 
         $maxIterations = 1000;
-        $iteration = 0;
+        $iteration     = 0;
 
         $this->variableHandler->enterScope();
 

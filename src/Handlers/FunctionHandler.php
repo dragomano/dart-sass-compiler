@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace DartSass\Handlers;
 
+use DartSass\Evaluators\UserFunctionEvaluator;
+
 use function count;
 use function explode;
 use function is_array;
-use function is_int;
 use function str_contains;
 
 class FunctionHandler
@@ -16,6 +17,7 @@ class FunctionHandler
         private readonly ModuleHandler $moduleHandler,
         private readonly FunctionRouter $router,
         private readonly CustomFunctionHandler $customFunctionHandler,
+        private readonly UserFunctionEvaluator $userFunctionEvaluator,
         private $evaluateExpression,
         private array $userDefinedFunctions = []
     ) {}
@@ -83,75 +85,11 @@ class FunctionHandler
         if (isset($this->userDefinedFunctions[$originalName])) {
             $func = $this->userDefinedFunctions[$originalName];
 
-            return $this->evaluateUserFunction($func, $args);
+            return $this->userFunctionEvaluator->evaluate($func, $args, $this->evaluateExpression);
         }
 
         return $this->router->route($name, $args);
     }
 
-    private function evaluateUserFunction(array $func, array $args): mixed
-    {
-        $body = $func['body'];
 
-        $variableHandler = $func['handler'];
-        $variableHandler->enterScope();
-
-        $argIndex = 0;
-        foreach ($func['args'] as $argName => $defaultValue) {
-            if (is_int($argName)) {
-                $paramName = $defaultValue;
-                $default   = null;
-            } else {
-                $paramName = $argName;
-                $default   = $defaultValue;
-            }
-
-            $value = $args[$argIndex] ?? $default;
-            if ($value === null) {
-                $value = ($this->evaluateExpression)($default);
-            }
-
-            $variableHandler->define($paramName, $value);
-            $argIndex++;
-        }
-
-        foreach ($body as $statement) {
-            if ($statement->type === 'return') {
-                $returnValue = $statement->properties['value'];
-
-                if (
-                    $returnValue->type === 'operation'
-                    && $returnValue->properties['left']->type === 'variable'
-                    && $returnValue->properties['operator'] === '*'
-                    && $returnValue->properties['right']->type === 'number'
-                ) {
-                    $argValue   = $args[0] ?? 0;
-                    $multiplier = $returnValue->properties['right']->properties['value'];
-
-                    if (is_array($argValue) && isset($argValue['value'])) {
-                        $result = $argValue['value'] * $multiplier;
-                        $unit   = $argValue['unit'] ?? '';
-
-                        $variableHandler->exitScope();
-
-                        return ['value' => $result, 'unit' => $unit];
-                    }
-
-                    $variableHandler->exitScope();
-
-                    return $argValue * $multiplier;
-                }
-
-                $result = ($this->evaluateExpression)($returnValue);
-
-                $variableHandler->exitScope();
-
-                return $result;
-            }
-        }
-
-        $variableHandler->exitScope();
-
-        return null;
-    }
 }

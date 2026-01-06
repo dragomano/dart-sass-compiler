@@ -71,6 +71,7 @@ readonly class ModuleCompiler
         foreach ($globalVariables as $varName => $varValue) {
             if ($varValue instanceof VariableDeclarationNode) {
                 $evaluatedValue = $evaluateExpression($varValue->properties['value']);
+
                 $this->variableHandler->define($varName, $evaluatedValue, true);
             }
         }

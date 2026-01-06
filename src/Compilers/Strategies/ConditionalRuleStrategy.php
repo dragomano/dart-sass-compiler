@@ -1,0 +1,102 @@
+<?php
+
+declare(strict_types=1);
+
+namespace DartSass\Compilers\Strategies;
+
+use DartSass\Compilers\CompilerContext;
+use DartSass\Parsers\Nodes\AstNode;
+use InvalidArgumentException;
+
+use function array_map;
+use function explode;
+use function implode;
+use function ltrim;
+use function preg_match;
+use function rtrim;
+use function str_repeat;
+use function strlen;
+use function substr;
+
+abstract readonly class ConditionalRuleStrategy implements RuleCompilationStrategy
+{
+    abstract protected function getRuleName(): string;
+
+    abstract protected function getAtSymbol(): string;
+
+    public function canHandle(string $ruleType): bool
+    {
+        return $ruleType === $this->getRuleName();
+    }
+
+    public function compile(
+        AstNode $node,
+        CompilerContext $context,
+        int $currentNestingLevel,
+        string $parentSelector,
+        ...$params
+    ): string {
+        $evaluateInterpolations = $params[0] ?? null;
+        $compileDeclarations    = $params[1] ?? null;
+        $compileAst             = $params[2] ?? null;
+
+        if (! $evaluateInterpolations || ! $compileDeclarations || ! $compileAst) {
+            throw new InvalidArgumentException(
+                'Missing required parameters for ' . $this->getRuleName() . ' rule compilation'
+            );
+        }
+
+        $query = $node->properties['query'];
+        $query = $evaluateInterpolations($query);
+        $query = $context->valueFormatter->format($query);
+
+        $bodyNestingLevel = $currentNestingLevel + 1;
+        $bodyDeclarations = $node->properties['body']['declarations'] ?? [];
+        $bodyNested       = $node->properties['body']['nested'] ?? [];
+
+        $declarationsCss = '';
+        if (! empty($bodyDeclarations) && ! empty($parentSelector)) {
+            $declarationsCss = $compileDeclarations($bodyDeclarations, $bodyNestingLevel + 1, $parentSelector);
+            $indent          = str_repeat('  ', $bodyNestingLevel);
+            $declarationsCss = $indent . $parentSelector . " {\n" . $declarationsCss . $indent . "}\n";
+        } elseif (! empty($bodyDeclarations)) {
+            $declarationsCss = $compileDeclarations($bodyDeclarations, $bodyNestingLevel, $parentSelector);
+        }
+
+        if (! empty($bodyNested)) {
+            $nestedCss = $compileAst($bodyNested, $parentSelector, $bodyNestingLevel);
+            $nestedCss = $this->fixNestedSelectorsInMedia($nestedCss);
+        } else {
+            $nestedCss = '';
+        }
+
+        $body   = rtrim($declarationsCss . $nestedCss);
+        $indent = str_repeat('  ', $currentNestingLevel);
+        $atSymbol = $this->getAtSymbol();
+
+        return "$indent$atSymbol $query {\n$body\n$indent}\n";
+    }
+
+    private function fixNestedSelectorsInMedia(string $css): string
+    {
+        $lines      = explode("\n", $css);
+        $fixedLines = [];
+
+        foreach ($lines as $line) {
+            $trimmed = trim($line);
+
+            if (preg_match('/^([^,]+,\s*[^,{]+)\s*\{$/', $trimmed, $matches)) {
+                $selector      = $matches[1];
+                $selectors     = array_map(\trim(...), explode(',', $selector));
+                $fixedSelector = implode(",\n  ", $selectors);
+                $indent        = substr($line, 0, strlen($line) - strlen(ltrim($line)));
+
+                $fixedLines[] = $indent . $fixedSelector . ' {';
+            } else {
+                $fixedLines[] = $line;
+            }
+        }
+
+        return implode("\n", $fixedLines);
+    }
+}
