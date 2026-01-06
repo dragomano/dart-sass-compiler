@@ -39,7 +39,7 @@ class ExtendHandler
             return $css;
         }
 
-        $lines = explode("\n", $css);
+        $lines  = explode("\n", $css);
         $result = [];
 
         foreach ($lines as $line) {
@@ -149,7 +149,7 @@ class ExtendHandler
         if (preg_match('/\s' . preg_quote($target, '/') . '(\s|$)/', $selector)) {
             // Split by spaces to handle nested selectors
             $selectorParts = array_map(trim(...), explode(' ', $selector));
-            $targetParts = array_map(trim(...), explode(' ', $target));
+            $targetParts   = array_map(trim(...), explode(' ', $target));
 
             if (count($targetParts) === 1) {
                 $newParts = [];

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DartSass\Handlers;
 
 use DartSass\Compiler;
+use DartSass\Compilers\CompilerEngineInterface;
 use DartSass\Exceptions\CompilationException;
 use DartSass\Modules\SassList;
 use DartSass\Parsers\Nodes\AstNode;
@@ -44,7 +45,7 @@ class MixinHandler
     private static function generateCacheKey(string $name, array $args, ?array $content): string
     {
         try {
-            $serializedArgs = serialize($args);
+            $serializedArgs    = serialize($args);
             $serializedContent = serialize($content);
 
             return $name . '|' . md5($serializedArgs . $serializedContent);
@@ -55,12 +56,12 @@ class MixinHandler
     }
 
     public function include(
-        string    $name,
-        array     $args,
-        ?array    $content = null,
-        ?Compiler $parentCompiler = null,
-        string    $parentSelector = '',
-        int       $nestingLevel = 0
+        string $name,
+        array $args,
+        ?array $content = null,
+        ?CompilerEngineInterface $parentCompiler = null,
+        string $parentSelector = '',
+        int $nestingLevel = 0
     ): string {
         if (! isset($this->mixins[$name])) {
             throw new CompilationException("Undefined mixin: $name");
@@ -81,13 +82,13 @@ class MixinHandler
             $compiler = new Compiler(['style' => 'expanded']);
         }
 
-        $compiler->variableHandler->enterScope();
+        $compiler->getContext()->variableHandler->enterScope();
 
         $argIndex = 0;
 
         // Check if we have a SassList that needs to be unpacked
         if (count($args) === 1 && $args[0] instanceof SassList) {
-            $sassList = $args[0];
+            $sassList  = $args[0];
             $arguments = $sassList->value;
         } elseif (count($args) === 1 && is_array($args[0]) && ! isset($args[0]['value'])) {
             $arguments = $args[0];
@@ -110,7 +111,7 @@ class MixinHandler
                 }
             }
 
-            $compiler->variableHandler->define($argName, $value);
+            $compiler->getContext()->variableHandler->define($argName, $value);
             $argIndex++;
         }
 
@@ -168,7 +169,7 @@ class MixinHandler
         }
 
         $this->currentContent = null;
-        $compiler->variableHandler->exitScope();
+        $compiler->getContext()->variableHandler->exitScope();
 
         if ($cacheKey !== '') {
             self::$mixinCache[$cacheKey] = $css;

@@ -5,25 +5,10 @@ declare(strict_types=1);
 namespace DartSass\Handlers;
 
 use DartSass\Exceptions\CompilationException;
-use DartSass\Loaders\LoaderInterface;
 use DartSass\Parsers\Nodes\VariableDeclarationNode;
-use DartSass\Parsers\ParserFactory;
 
-use function basename;
-use function in_array;
-use function ltrim;
-use function pathinfo;
-use function rtrim;
 use function str_starts_with;
 use function substr;
-
-use const M_E;
-use const M_PI;
-use const PHP_FLOAT_EPSILON;
-use const PHP_FLOAT_MAX;
-use const PHP_FLOAT_MIN;
-use const PHP_INT_MAX;
-use const PHP_INT_MIN;
 
 class ModuleHandler
 {
@@ -34,8 +19,9 @@ class ModuleHandler
     private array $globalVariables = [];
 
     public function __construct(
-        private readonly LoaderInterface $loader,
-        private readonly ParserFactory $parserFactory
+        private readonly ModuleLoader $loader,
+        private readonly ModuleForwarder $forwarder,
+        private readonly BuiltInModuleProvider $builtInProvider
     ) {}
 
     public function loadModule(string $path, ?string $namespace = null): array
@@ -46,17 +32,16 @@ class ModuleHandler
 
         if (str_starts_with($path, 'sass:')) {
             $ns = $this->registerModule($path, $namespace);
-
             $this->registerBuiltInModuleProperties($path);
 
             return ['cssAst' => [], 'namespace' => $ns];
         }
 
-        $ast       = $this->loadAst($path);
+        $ast       = $this->loader->loadAst($path);
         $namespace = $this->registerModule($path, $namespace);
         $cssAst    = [];
 
-        $this->processAst(
+        $this->forwarder->processAst(
             $ast,
             onCssNode: function ($node) use (&$cssAst): void {
                 $cssAst[] = $node;
@@ -70,16 +55,20 @@ class ModuleHandler
                     $this->forwardedProperties[$namespace][$name] = $node;
                 }
             },
-            onMixin: fn($node): array => $this->forwardedProperties[$namespace][$node->properties['name']] = [
-                'type' => 'mixin',
-                'args' => $node->properties['args'],
-                'body' => $node->properties['body'],
-            ],
-            onFunction: fn($node): array => $this->forwardedProperties[$namespace][$node->properties['name']] = [
-                'type' => 'function',
-                'args' => $node->properties['args'],
-                'body' => $node->properties['body'],
-            ],
+            onMixin: function ($node) use ($namespace): void {
+                $this->forwardedProperties[$namespace][$node->properties['name']] = [
+                    'type' => 'mixin',
+                    'args' => $node->properties['args'],
+                    'body' => $node->properties['body'],
+                ];
+            },
+            onFunction: function ($node) use ($namespace): void {
+                $this->forwardedProperties[$namespace][$node->properties['name']] = [
+                    'type' => 'function',
+                    'args' => $node->properties['args'],
+                    'body' => $node->properties['body'],
+                ];
+            },
         );
 
         return ['cssAst' => $cssAst, 'namespace' => $namespace];
@@ -97,41 +86,30 @@ class ModuleHandler
             return [];
         }
 
-        $ast       = $this->loadAst($path);
-        $namespace = $this->registerModule($path, $namespace);
+        $namespace ??= $this->loader->getNamespaceFromPath($path);
 
-        $result = [
-            'variables' => [],
-            'mixins'    => [],
-            'functions' => [],
-        ];
+        $this->registerModule($path, $namespace);
 
-        $this->processAst(
-            $ast,
-            onCssNode: fn(): null => null,
-            onVariable: function ($node) use (
-                $namespace,
-                $evaluateExpression,
-                $config,
-                $hide,
-                $show,
-                &$result
-            ): void {
-                $name      = $node->properties['name'];
-                $configKey = ltrim((string) $name, '$');
+        $result = $this->forwarder->forwardModule($path, $evaluateExpression, $config, $hide, $show);
 
-                if (! $this->isAllowed($name, $hide, $show)) {
-                    return;
-                }
+        // Store forwarded properties
+        foreach ($result['variables'] as $name => $value) {
+            $this->forwardedProperties[$namespace][$name] = $value;
+        }
 
-                $value = $config[$configKey] ?? $evaluateExpression($node->properties['value']);
+        foreach ($result['mixins'] as $name => $mixin) {
+            $this->forwardedProperties[$namespace][$name] = [
+                'type' => 'mixin',
+                ...$mixin,
+            ];
+        }
 
-                $this->forwardedProperties[$namespace][$name] = $value;
-                $result['variables'][$name] = $value;
-            },
-            onMixin: fn($node) => $this->forwardCallable($node, $namespace, 'mixins', $result, $hide, $show),
-            onFunction: fn($node) => $this->forwardCallable($node, $namespace, 'functions', $result, $hide, $show),
-        );
+        foreach ($result['functions'] as $name => $function) {
+            $this->forwardedProperties[$namespace][$name] = [
+                'type' => 'function',
+                ...$function,
+            ];
+        }
 
         return $result;
     }
@@ -159,12 +137,13 @@ class ModuleHandler
         return isset($this->loadedModules[$path]);
     }
 
-    private function getNamespaceFromPath(string $path): string
+    private function registerModule(string $path, ?string $namespace): string
     {
-        $extension = pathinfo($path, PATHINFO_EXTENSION);
-        $basename  = basename($path, '.' . $extension);
+        $actualNamespace = $namespace ?? $this->loader->getNamespaceFromPath($path);
 
-        return ltrim($basename, '_');
+        $this->loadedModules[$path] = $actualNamespace;
+
+        return $actualNamespace;
     }
 
     public function getLoadedModules(): array
@@ -193,93 +172,13 @@ class ModuleHandler
         return $this->forwardedProperties[$namespace] ?? [];
     }
 
-    private function loadAst(string $path): array
-    {
-        $content = $this->loader->load($path);
-        $parser  = $this->parserFactory->createFromPath($content, $path);
-
-        return $parser->parse();
-    }
-
-    private function registerModule(string $path, ?string $namespace): string
-    {
-        $actualNamespace = $namespace ?? $this->getNamespaceFromPath($path);
-
-        $this->loadedModules[$path] = $actualNamespace;
-
-        return $actualNamespace;
-    }
-
-    private function processAst(
-        array $ast,
-        callable $onCssNode,
-        ?callable $onVariable = null,
-        ?callable $onMixin = null,
-        ?callable $onFunction = null,
-    ): void {
-        foreach ($ast as $node) {
-            match ($node->type) {
-                'variable' => $onVariable && $onVariable($node),
-                'mixin'    => $onMixin && $onMixin($node),
-                'function' => $onFunction && $onFunction($node),
-                default    => $onCssNode($node),
-            };
-        }
-    }
-
-    private function isAllowed(string $name, array $hide, array $show): bool
-    {
-        if ($hide && in_array($name, $hide, true)) {
-            return false;
-        }
-
-        if ($show && ! in_array($name, $show, true)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    private function forwardCallable(
-        $node,
-        string $namespace,
-        string $type,
-        array &$result,
-        array $hide,
-        array $show
-    ): void {
-        $name = $node->properties['name'];
-
-        if (! $this->isAllowed($name, $hide, $show)) {
-            return;
-        }
-
-        $payload = [
-            'args' => $node->properties['args'],
-            'body' => $node->properties['body'],
-        ];
-
-        $this->forwardedProperties[$namespace][$name] = [
-            'type' => rtrim($type, 's'),
-            ...$payload,
-        ];
-
-        $result[$type][$name] = $payload;
-    }
-
     private function registerBuiltInModuleProperties(string $path): void
     {
-        if ($path === 'sass:math') {
-            // Remove 'sass:' prefix
-            $actualNamespace = substr($path, 5);
+        $actualNamespace = substr($path, 5); // Remove 'sass:' prefix
+        $properties = $this->builtInProvider->provideProperties($path);
 
-            $this->forwardedProperties[$actualNamespace]['$e']                = M_E;
-            $this->forwardedProperties[$actualNamespace]['$epsilon']          = PHP_FLOAT_EPSILON;
-            $this->forwardedProperties[$actualNamespace]['$max-number']       = PHP_FLOAT_MAX;
-            $this->forwardedProperties[$actualNamespace]['$min-number']       = PHP_FLOAT_MIN;
-            $this->forwardedProperties[$actualNamespace]['$max-safe-integer'] = PHP_INT_MAX;
-            $this->forwardedProperties[$actualNamespace]['$min-safe-integer'] = PHP_INT_MIN;
-            $this->forwardedProperties[$actualNamespace]['$pi']               = M_PI;
+        foreach ($properties as $name => $value) {
+            $this->forwardedProperties[$actualNamespace][$name] = $value;
         }
     }
 }

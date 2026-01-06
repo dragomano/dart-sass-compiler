@@ -72,6 +72,7 @@ class VariableHandler
     public function setVariables(array $variables): void
     {
         $this->scopes = [];
+
         $this->globalVariables = $variables;
     }
 

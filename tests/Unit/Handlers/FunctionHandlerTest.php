@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use DartSass\Evaluators\UserFunctionEvaluator;
 use DartSass\Exceptions\CompilationException;
 use DartSass\Handlers\CustomFunctionHandler;
 use DartSass\Handlers\FunctionHandler;
@@ -19,11 +20,13 @@ beforeEach(function () {
     $this->resultFormatter       = mock(ResultFormatterInterface::class);
     $this->router                = new FunctionRouter($this->moduleRegistry, $this->resultFormatter);
     $this->customFunctionHandler = mock(CustomFunctionHandler::class);
+    $this->userFunctionEvaluator = new UserFunctionEvaluator();
     $this->evaluateExpression    = fn($expr) => $expr; // Simple mock for callable
     $this->functionHandler       = new FunctionHandler(
         $this->moduleHandler,
         $this->router,
         $this->customFunctionHandler,
+        $this->userFunctionEvaluator,
         $this->evaluateExpression
     );
     $this->accessor = new ReflectionAccessor($this->functionHandler);
@@ -183,6 +186,7 @@ describe('FunctionHandler', function () {
                 $variableHandler
             );
 
+            // UserFunctionEvaluator now handles scope management
             $variableHandler->shouldReceive('enterScope')->once();
             $variableHandler->shouldReceive('define')
                 ->with('$value', 5)

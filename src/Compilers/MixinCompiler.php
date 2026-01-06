@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace DartSass\Compilers;
 
 use Closure;
-use DartSass\Compiler;
 use DartSass\Exceptions\CompilationException;
 use DartSass\Handlers\MixinHandler;
 use DartSass\Handlers\ModuleHandler;
@@ -24,7 +23,7 @@ readonly class MixinCompiler
 
     public function compile(
         IncludeNode $node,
-        Compiler $compiler,
+        CompilerEngineInterface $compiler,
         string $parentSelector,
         int $nestingLevel,
         Closure $evaluateExpression
@@ -87,7 +86,7 @@ readonly class MixinCompiler
         string $mixinName,
         array $args,
         mixed $content,
-        Compiler $compiler,
+        CompilerEngineInterface $compiler,
         string $parentSelector,
         int $nestingLevel,
         Closure $evaluateExpression
@@ -99,6 +98,7 @@ readonly class MixinCompiler
         }
 
         $tempName = 'temp_' . uniqid();
+
         $this->mixinHandler->define($tempName, $mixinData['args'], $mixinData['body']);
 
         $evaluatedArgs = array_map($evaluateExpression, $args);

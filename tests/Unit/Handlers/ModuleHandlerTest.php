@@ -3,16 +3,22 @@
 declare(strict_types=1);
 
 use DartSass\Exceptions\CompilationException;
+use DartSass\Handlers\BuiltInModuleProvider;
+use DartSass\Handlers\ModuleForwarder;
 use DartSass\Handlers\ModuleHandler;
+use DartSass\Handlers\ModuleLoader;
 use DartSass\Loaders\LoaderInterface;
 use DartSass\Parsers\ParserFactory;
 use Tests\ReflectionAccessor;
 
 beforeEach(function () {
-    $this->loader        = mock(LoaderInterface::class);
-    $this->parserFactory = new ParserFactory();
-    $this->moduleHandler = new ModuleHandler($this->loader, $this->parserFactory);
-    $this->accessor      = new ReflectionAccessor($this->moduleHandler);
+    $this->loader          = mock(LoaderInterface::class);
+    $this->parserFactory   = new ParserFactory();
+    $this->moduleLoader    = new ModuleLoader($this->loader, $this->parserFactory);
+    $this->builtInProvider = new BuiltInModuleProvider();
+    $this->moduleForwarder = new ModuleForwarder($this->moduleLoader, $this->builtInProvider);
+    $this->moduleHandler   = new ModuleHandler($this->moduleLoader, $this->moduleForwarder, $this->builtInProvider);
+    $this->accessor        = new ReflectionAccessor($this->moduleHandler);
 });
 
 describe('ModuleHandler', function () {
