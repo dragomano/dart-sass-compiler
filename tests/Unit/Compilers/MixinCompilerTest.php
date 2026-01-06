@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use DartSass\Compiler;
+use DartSass\Compilers\CompilerEngineInterface;
 use DartSass\Compilers\MixinCompiler;
 use DartSass\Exceptions\CompilationException;
 use DartSass\Handlers\MixinHandler;
@@ -13,7 +13,7 @@ use DartSass\Parsers\Nodes\IncludeNode;
 beforeEach(function () {
     $this->mixinHandler  = mock(MixinHandler::class);
     $this->moduleHandler = mock(ModuleHandler::class);
-    $this->compiler      = mock(Compiler::class);
+    $this->compiler      = mock(CompilerEngineInterface::class);
     $this->mixinCompiler = new MixinCompiler($this->mixinHandler, $this->moduleHandler);
 });
 
