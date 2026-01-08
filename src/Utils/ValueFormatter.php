@@ -106,7 +106,10 @@ class ValueFormatter
             return false;
         }
 
-        return $value[0] === '"' && $value[strlen($value) - 1] === '"';
+        $first = $value[0];
+        $last  = $value[strlen($value) - 1];
+
+        return ($first === '"' && $last === '"') || ($first === "'" && $last === "'");
     }
 
     private function formatPlainArray(array $value): string

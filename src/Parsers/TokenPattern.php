@@ -21,7 +21,7 @@ enum TokenPattern: string
     case ASTERISK                  = '(?P<asterisk>\*)';
     case LOGICAL_OPERATOR          = '(?P<logical_operator>\band\b|\bor\b)';
     case CSS_CUSTOM_PROPERTY       = '(?P<css_custom_property>--[a-zA-Z0-9_-]+)';
-    case IDENTIFIER                = '(?P<identifier>-?[a-zA-Z_][a-zA-Z0-9_-]*)';
+    case IDENTIFIER                = '(?P<identifier>-?[a-zA-Z_][a-zA-Z0-9_\\\\-]*)';
     case DOUBLE_HASH_INTERPOLATION = '(?P<double_hash_interpolation>##\{)';
     case INTERPOLATION_OPEN        = '(?P<interpolation_open>#\{)';
     case IMPORTANT_MODIFIER        = '(?P<important_modifier>!important\b)';

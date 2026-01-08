@@ -7,7 +7,10 @@ namespace DartSass\Handlers;
 use DartSass\Modules\ListModule;
 use DartSass\Parsers\Nodes\ListNode;
 
+use function array_slice;
+use function count;
 use function in_array;
+use function intdiv;
 
 class ListModuleHandler extends BaseModuleHandler
 {

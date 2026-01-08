@@ -29,7 +29,13 @@ readonly class FunctionRouter
             ? substr(strrchr($functionName, '.'), 1)
             : $functionName;
 
-        $handler = $this->registry->getHandler($shortName);
+        // First try the full function name (for namespaced functions)
+        $handler = $this->registry->getHandler($functionName);
+
+        // If not found, and it's namespaced, try the short name
+        if ($handler === null && str_contains($functionName, '.')) {
+            $handler = $this->registry->getHandler($shortName);
+        }
 
         if ($handler === null) {
             return $this->handleUnknownFunction($functionName, $args);
@@ -63,7 +69,7 @@ readonly class FunctionRouter
 
     private function shouldPreserveForConditions(string $functionName): bool
     {
-        return in_array($functionName, ['index', 'is-bracketed'], true);
+        return in_array($functionName, ['index', 'str-index', 'is-bracketed', 'unquote'], true);
     }
 
     private function handleUnknownFunction(string $functionName, array $args): string
