@@ -80,7 +80,7 @@ describe('FunctionHandler', function () {
                 ->andReturn(false);
 
             $this->moduleRegistry->shouldReceive('getHandler')
-                ->with('red')
+                ->with('color.red')
                 ->andReturn($handler);
 
             $this->resultFormatter->shouldReceive('format')
@@ -108,7 +108,7 @@ describe('FunctionHandler', function () {
                 ->andReturn(false);
 
             $this->moduleRegistry->shouldReceive('getHandler')
-                ->with('red')
+                ->with('color.red')
                 ->andReturn($handler);
 
             $this->resultFormatter->shouldReceive('format')
@@ -128,6 +128,10 @@ describe('FunctionHandler', function () {
             $this->moduleHandler->shouldReceive('loadModule')
                 ->with('unknown', 'unknown')
                 ->once();
+
+            $this->moduleRegistry->shouldReceive('getHandler')
+                ->with('unknown.func')
+                ->andReturn(null);
 
             $this->moduleRegistry->shouldReceive('getHandler')
                 ->with('func')
