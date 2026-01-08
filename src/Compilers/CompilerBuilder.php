@@ -26,12 +26,14 @@ use DartSass\Handlers\ModuleHandler;
 use DartSass\Handlers\ModuleLoader;
 use DartSass\Handlers\ModuleRegistry;
 use DartSass\Handlers\NestingHandler;
+use DartSass\Handlers\StringModuleHandler;
 use DartSass\Handlers\UrlFunctionHandler;
 use DartSass\Handlers\VariableHandler;
 use DartSass\Loaders\LoaderInterface;
 use DartSass\Modules\ColorModule;
 use DartSass\Modules\ListModule;
 use DartSass\Modules\MathModule;
+use DartSass\Modules\StringModule;
 use DartSass\Parsers\ParserFactory;
 use DartSass\Utils\OutputOptimizer;
 use DartSass\Utils\PositionTracker;
@@ -127,6 +129,7 @@ readonly class CompilerBuilder
         $moduleRegistry->register(new UrlFunctionHandler());
         $moduleRegistry->register(new FormatFunctionHandler($context->valueFormatter));
         $moduleRegistry->register(new ColorModuleHandler(new ColorModule()));
+        $moduleRegistry->register(new StringModuleHandler(new StringModule()));
         $moduleRegistry->register(new ListModuleHandler(new ListModule()));
         $moduleRegistry->register(new MathModuleHandler(
             new MathModule($context->valueFormatter),
