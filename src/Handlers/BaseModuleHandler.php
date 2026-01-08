@@ -4,17 +4,27 @@ declare(strict_types=1);
 
 namespace DartSass\Handlers;
 
-use function count;
+use function array_map;
 use function is_array;
 
 abstract class BaseModuleHandler implements ModuleHandlerInterface
 {
     protected function normalizeArgs(array $args): array
     {
-        if (count($args) === 1 && is_array($args[0]) && ! isset($args[0]['value'])) {
-            return $args[0];
+        return array_map($this->normalizeArg(...), $args);
+    }
+
+    private function normalizeArg(mixed $arg): mixed
+    {
+        if (is_array($arg) && isset($arg['value'], $arg['unit'])) {
+            // Keep the full array if it has both value and unit
+            return $arg;
         }
 
-        return $args;
+        if (is_array($arg) && isset($arg['value'])) {
+            return $arg['value'];
+        }
+
+        return $arg;
     }
 }

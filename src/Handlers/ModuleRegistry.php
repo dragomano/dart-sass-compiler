@@ -10,7 +10,11 @@ class ModuleRegistry
 
     public function register(ModuleHandlerInterface $handler): void
     {
+        $namespace = $handler->getModuleNamespace();
+
         foreach ($handler->getSupportedFunctions() as $functionName) {
+            // Register both namespace.function and function
+            $this->functionMap[$namespace . '.' . $functionName] = $handler;
             $this->functionMap[$functionName] = $handler;
         }
     }
