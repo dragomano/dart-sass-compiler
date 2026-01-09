@@ -52,7 +52,7 @@ readonly class DeclarationCompiler
 
                 $this->positionTracker->updatePosition($declarationCss);
 
-                if ($options['sourceMap']) {
+                if (($options['sourceMap'] ?? false)) {
                     $propertyGeneratedPosition = [
                         'line'   => $generatedPosition['line'],
                         'column' => $generatedPosition['column'] + strlen($indent),

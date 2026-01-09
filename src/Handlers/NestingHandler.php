@@ -22,11 +22,6 @@ class NestingHandler
     {
         $selectorValue = $selector instanceof AstNode ? $selector->properties['value'] : $selector;
 
-        // Get parentSelector from SelectorNode if not provided
-        if (empty($parentSelector) && $selector instanceof AstNode) {
-            $parentSelector = $selector->properties['parent_selector'] ?? '';
-        }
-
         if (empty($parentSelector)) {
             return $selectorValue;
         }

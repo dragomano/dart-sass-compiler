@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Handlers;
+namespace DartSass\Handlers\ModuleHandlers;
 
 use DartSass\Exceptions\CompilationException;
+use DartSass\Handlers\SassModule;
 use DartSass\Modules\ColorFormat;
 use DartSass\Modules\ColorModule;
 use DartSass\Modules\ColorSerializer;
@@ -26,19 +27,62 @@ use function ucwords;
 
 class ColorModuleHandler extends BaseModuleHandler
 {
-    private const SUPPORTED_FUNCTIONS = [
-        // Basic color constructors
-        'hsl', 'hwb', 'lab', 'lch', 'oklch',
-        // Color manipulation
-        'adjust', 'change', 'channel', 'complement', 'grayscale',
-        'ie-hex-str', 'invert', 'is-legacy', 'is-missing',
-        'is-powerless', 'mix', 'same', 'scale', 'space', 'to-gamut', 'to-space',
-        // Legacy color functions
-        'adjust-color', 'adjust-hue', 'change-color', 'darken', 'desaturate', 'lighten',
-        'saturate', 'opacify', 'transparentize', 'fade-in', 'fade-out',
-        // Color property accessors
-        'alpha', 'blackness', 'blue', 'green', 'hue', 'lightness',
-        'red', 'saturation', 'whiteness', 'opacity',
+    protected const MODULE_FUNCTIONS = [
+        'adjust',
+        'change',
+        'channel',
+        'complement',
+        'grayscale',
+        'ie-hex-str',
+        'invert',
+        'is-legacy',
+        'is-missing',
+        'is-powerless',
+        'mix',
+        'same',
+        'scale',
+        'space',
+        'to-gamut',
+        'to-space',
+        'alpha',
+        'blackness',
+        'red',
+        'green',
+        'blue',
+        'hue',
+        'lightness',
+        'saturation',
+        'whiteness',
+        'hwb',
+    ];
+
+    protected const GLOBAL_FUNCTIONS = [
+        'adjust-color',
+        'change-color',
+        'complement',
+        'grayscale',
+        'ie-hex-str',
+        'invert',
+        'mix',
+        'scale-color',
+        'adjust-hue',
+        'alpha',
+        'opacity',
+        'blackness',
+        'red',
+        'green',
+        'blue',
+        'darken',
+        'desaturate',
+        'hue',
+        'lighten',
+        'lightness',
+        'opacify',
+        'fade-in',
+        'fade-out',
+        'saturate',
+        'saturation',
+        'transparentize',
     ];
 
     private const CSS_FILTER_FUNCTIONS = [
@@ -52,12 +96,10 @@ class ColorModuleHandler extends BaseModuleHandler
 
     private const INT_PARAM_FUNCTIONS = ['invert'];
 
-    public function __construct(private readonly ColorModule $colorModule) {}
-
-    public function canHandle(string $functionName): bool
-    {
-        return in_array($functionName, self::SUPPORTED_FUNCTIONS, true);
-    }
+    public function __construct(
+        private readonly ColorModule $colorModule,
+        private readonly CssColorFunctionHandler $cssColorHandler
+    ) {}
 
     public function handle(string $functionName, array $args): string
     {
@@ -68,12 +110,16 @@ class ColorModuleHandler extends BaseModuleHandler
 
         $processedArgs = $this->normalizeArgs($args);
 
-        return match ($functionName) {
-            'hsl'    => $this->handleColorConstructor('hsl', $processedArgs),
-            'hwb'    => $this->handleColorConstructor('hwb', $processedArgs),
-            'lab'    => $this->handleColorConstructor('lab', $processedArgs),
-            'lch'    => $this->handleColorConstructor('lch', $processedArgs),
-            'oklch'  => $this->handleColorConstructor('oklch', $processedArgs),
+        // Map legacy function names to their modern equivalents
+        $mappedFunctionName = match ($functionName) {
+            'adjust-color' => 'adjust',
+            'change-color' => 'change',
+            'scale-color'  => 'scale',
+            default        => $functionName,
+        };
+
+        return match ($mappedFunctionName) {
+            'hwb'    => $this->cssColorHandler->handle('hwb', $processedArgs),
             'adjust' => $this->handleAdjustmentFunction('adjust', $processedArgs),
             'change' => $this->handleAdjustmentFunction('change', $processedArgs),
             'mix'    => $this->handleMixFunction($processedArgs),
@@ -82,29 +128,14 @@ class ColorModuleHandler extends BaseModuleHandler
         };
     }
 
-    public function getSupportedFunctions(): array
+    public function getModuleNamespace(): SassModule
     {
-        return self::SUPPORTED_FUNCTIONS;
-    }
-
-    public function getModuleNamespace(): string
-    {
-        return 'color';
-    }
-
-    private function handleColorConstructor(string $type, array $args): string
-    {
-        return $this->colorModule->$type(
-            $this->extractValue($args[0]),
-            $this->extractValue($args[1]),
-            $this->extractValue($args[2]),
-            $this->extractAlpha($args[3] ?? null)
-        );
+        return SassModule::COLOR;
     }
 
     private function handleAdjustmentFunction(string $function, array $args): string
     {
-        $color = $this->extractColor($args[0]);
+        $color = $this->extract($args[0]);
         $adjustments = $this->extractAdjustments($args);
 
         return $this->colorModule->$function($color, $adjustments);
@@ -113,19 +144,19 @@ class ColorModuleHandler extends BaseModuleHandler
     private function handleMixFunction(array $args): string
     {
         return $this->colorModule->mix(
-            $this->extractColor($args[0]),
-            $this->extractColor($args[1]),
+            $this->extract($args[0]),
+            $this->extract($args[1]),
             $this->extractWeight($args[2] ?? 0.5)
         );
     }
 
     private function handleScaleFunction(array $args): string
     {
-        $color = $this->extractColor($args[0]);
+        $color = $this->extract($args[0]);
 
         // If first argument is not a valid color, return as CSS function call
         if (! $this->isValidColorFormat($color)) {
-            $formattedArgs = array_map($this->formatArgument(...), $args);
+            $formattedArgs = array_map($this->extract(...), $args);
 
             return 'scale(' . implode(', ', $formattedArgs) . ')';
         }
@@ -136,7 +167,7 @@ class ColorModuleHandler extends BaseModuleHandler
 
     private function handleSimpleColorFunction(string $functionName, array $args): string
     {
-        $color = $this->extractColor($args[0]);
+        $color = $this->extract($args[0]);
         $methodName = $this->convertToMethodName($functionName);
 
         if (! method_exists($this->colorModule, $methodName)) {
@@ -163,9 +194,9 @@ class ColorModuleHandler extends BaseModuleHandler
 
         foreach ($args as $arg) {
             $scalarArgs[] = match (true) {
-                in_array($functionName, self::STRING_PARAM_FUNCTIONS, true) => $this->extractString($arg),
-                in_array($functionName, self::INT_PARAM_FUNCTIONS, true) => $this->extractInt($arg),
-                default => $this->extractValue($arg),
+                in_array($functionName, self::STRING_PARAM_FUNCTIONS, true) => $this->extract($arg),
+                in_array($functionName, self::INT_PARAM_FUNCTIONS, true) => $this->extract($arg, 'int'),
+                default => $this->extract($arg, 'float'),
             };
         }
 
@@ -177,42 +208,20 @@ class ColorModuleHandler extends BaseModuleHandler
         return str_replace(' ', '', ucwords(str_replace('-', ' ', $functionName)));
     }
 
-    private function extractColor(mixed $arg): string
+    private function extract(mixed $arg, string $cast = 'string'): int|float|string
     {
-        return is_array($arg) && isset($arg['value'])
-            ? (string) $arg['value']
-            : (string) $arg;
-    }
+        $value = is_array($arg) && isset($arg['value']) ? $arg['value'] : $arg;
 
-    private function extractValue(mixed $arg): float
-    {
-        return is_array($arg) && isset($arg['value'])
-            ? (float) $arg['value']
-            : (float) $arg;
-    }
-
-    private function extractString(mixed $arg): string
-    {
-        return is_array($arg) && isset($arg['value'])
-            ? (string) $arg['value']
-            : (string) $arg;
-    }
-
-    private function extractInt(mixed $arg): int
-    {
-        return is_array($arg) && isset($arg['value'])
-            ? (int) $arg['value']
-            : (int) $arg;
-    }
-
-    private function extractAlpha(mixed $arg): ?float
-    {
-        return $arg === null ? null : $this->extractValue($arg);
+        return match ($cast) {
+            'int'   => (int) $value,
+            'float' => (float) $value,
+            default => (string) $value,
+        };
     }
 
     private function extractWeight(mixed $arg): float
     {
-        $weight = $this->extractValue($arg);
+        $weight = $this->extract($arg, 'float');
 
         return $weight > 1 ? $weight / 100 : $weight;
     }
@@ -223,7 +232,7 @@ class ColorModuleHandler extends BaseModuleHandler
 
         foreach (array_slice($args, 1) as $key => $value) {
             if (is_string($key) && str_starts_with($key, '$')) {
-                $adjustments[$key] = $this->extractValue($value);
+                $adjustments[$key] = $this->extract($value, 'float');
             }
         }
 
@@ -251,13 +260,6 @@ class ColorModuleHandler extends BaseModuleHandler
         }
 
         return false;
-    }
-
-    private function formatArgument(mixed $arg): string
-    {
-        return is_array($arg) && isset($arg['value'])
-            ? (string) $arg['value']
-            : (string) $arg;
     }
 
     private function isCssFilterFunction(string $functionName, array $args): bool

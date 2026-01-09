@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DartSass\Handlers;
 
 use DartSass\Evaluators\UserFunctionEvaluator;
+use DartSass\Handlers\ModuleHandlers\CustomFunctionHandler;
 
 use function count;
 use function explode;
@@ -59,7 +60,7 @@ class FunctionHandler
 
     public function call(string $name, array $args)
     {
-        $namespace = str_contains($name, '.') ? explode('.', $name, 2)[0] : null;
+        $namespace = str_contains($name, '.') ? explode('.', $name, 2)[0] : '';
 
         if (count($args) === 1 && is_array($args[0]) && ! isset($args[0]['value'])) {
             $args = $args[0];
@@ -67,16 +68,7 @@ class FunctionHandler
 
         $originalName = $name;
 
-        $modulePath = match ($namespace) {
-            'color'    => 'sass:color',
-            'list'     => 'sass:list',
-            'map'      => 'sass:map',
-            'math'     => 'sass:math',
-            'meta'     => 'sass:meta',
-            'selector' => 'sass:selector',
-            'string'   => 'sass:string',
-            default    => $namespace,
-        };
+        $modulePath = SassModule::getPath($namespace);
 
         if ($namespace && ! $this->moduleHandler->isModuleLoaded($modulePath)) {
             $this->moduleHandler->loadModule($modulePath, $namespace);
@@ -90,6 +82,4 @@ class FunctionHandler
 
         return $this->router->route($name, $args);
     }
-
-
 }

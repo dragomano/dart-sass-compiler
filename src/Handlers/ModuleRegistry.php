@@ -4,17 +4,22 @@ declare(strict_types=1);
 
 namespace DartSass\Handlers;
 
+use DartSass\Handlers\ModuleHandlers\ModuleHandlerInterface;
+
 class ModuleRegistry
 {
     private array $functionMap = [];
 
     public function register(ModuleHandlerInterface $handler): void
     {
-        $namespace = $handler->getModuleNamespace();
+        $namespace = $handler->getModuleNamespace()->value;
 
-        foreach ($handler->getSupportedFunctions() as $functionName) {
-            // Register both namespace.function and function
+        foreach ($handler->getModuleFunctions() as $functionName) {
             $this->functionMap[$namespace . '.' . $functionName] = $handler;
+        }
+
+        // Register global functions - they should be available without @use
+        foreach ($handler->getGlobalFunctions() as $functionName) {
             $this->functionMap[$functionName] = $handler;
         }
     }

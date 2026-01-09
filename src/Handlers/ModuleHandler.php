@@ -24,7 +24,7 @@ class ModuleHandler
         private readonly BuiltInModuleProvider $builtInProvider
     ) {}
 
-    public function loadModule(string $path, ?string $namespace = null): array
+    public function loadModule(string $path, string $namespace = ''): array
     {
         if ($this->isModuleLoaded($path)) {
             return ['cssAst' => [], 'namespace' => $this->loadedModules[$path]];

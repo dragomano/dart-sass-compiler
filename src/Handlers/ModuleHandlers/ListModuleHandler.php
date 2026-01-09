@@ -2,37 +2,53 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Handlers;
+namespace DartSass\Handlers\ModuleHandlers;
 
+use DartSass\Handlers\SassModule;
 use DartSass\Modules\ListModule;
 use DartSass\Parsers\Nodes\ListNode;
 
 use function array_slice;
 use function count;
-use function in_array;
 use function intdiv;
 
 class ListModuleHandler extends BaseModuleHandler
 {
-    private const SUPPORTED_FUNCTIONS = [
-        'append', 'index', 'is-bracketed', 'join', 'length',
-        'nth', 'separator', 'set-nth', 'slash', 'zip',
+    protected const MODULE_FUNCTIONS = [
+        'append',
+        'index',
+        'is-bracketed',
+        'join',
+        'length',
+        'separator',
+        'nth',
+        'set-nth',
+        'slash',
+        'zip',
+    ];
+
+    protected const GLOBAL_FUNCTIONS = [
+        'append',
+        'index',
+        'is-bracketed',
+        'join',
+        'length',
+        'list-separator',
+        'nth',
+        'set-nth',
+        'zip',
     ];
 
     public function __construct(private readonly ListModule $listModule) {}
-
-    public function canHandle(string $functionName): bool
-    {
-        return in_array($functionName, self::SUPPORTED_FUNCTIONS, true);
-    }
 
     public function handle(string $functionName, array $args): mixed
     {
         $processedArgs = $this->processSpecialArgs($functionName, $args);
 
         $functionMapping = [
-            'is-bracketed' => 'isBracketed',
-            'set-nth'      => 'setNth',
+            'is-bracketed'   => 'isBracketed',
+            'set-nth'        => 'setNth',
+            'list-separator' => 'separator',
         ];
 
         $methodName = $functionMapping[$functionName] ?? $functionName;
@@ -45,14 +61,9 @@ class ListModuleHandler extends BaseModuleHandler
         };
     }
 
-    public function getSupportedFunctions(): array
+    public function getModuleNamespace(): SassModule
     {
-        return self::SUPPORTED_FUNCTIONS;
-    }
-
-    public function getModuleNamespace(): string
-    {
-        return 'list';
+        return SassModule::LIST;
     }
 
     private function processSpecialArgs(string $functionName, array $args): array

@@ -2,26 +2,23 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Handlers;
+namespace DartSass\Handlers\ModuleHandlers;
+
+use DartSass\Handlers\SassModule;
 
 use function count;
+use function is_string;
+use function strtolower;
 
-class IfFunctionHandler implements LazyEvaluationHandlerInterface
+class IfFunctionHandler extends BaseModuleHandler implements LazyEvaluationHandlerInterface
 {
-    private const BUILTIN_FUNCTIONS = [
-        'if' => true,
-    ];
+    protected const GLOBAL_FUNCTIONS = ['if'];
 
     public function __construct(private $evaluateExpression) {}
 
-    public function canHandle(string $functionName): bool
-    {
-        return isset(self::BUILTIN_FUNCTIONS[$functionName]);
-    }
-
     public function requiresRawResult(string $functionName): bool
     {
-        return $functionName === 'if';
+        return true;
     }
 
     public function handle(string $functionName, array $args): mixed
@@ -45,6 +42,11 @@ class IfFunctionHandler implements LazyEvaluationHandlerInterface
         return $isTruthy ? $trueValue : $falseValue;
     }
 
+    public function getModuleNamespace(): SassModule
+    {
+        return SassModule::CSS;
+    }
+
     private function isTruthy(mixed $value): bool
     {
         if ($value === null || $value === false) {
@@ -56,15 +58,5 @@ class IfFunctionHandler implements LazyEvaluationHandlerInterface
         }
 
         return true;
-    }
-
-    public function getSupportedFunctions(): array
-    {
-        return array_keys(self::BUILTIN_FUNCTIONS);
-    }
-
-    public function getModuleNamespace(): string
-    {
-        return 'builtin';
     }
 }

@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Handlers;
+namespace DartSass\Handlers\ModuleHandlers;
+
+use DartSass\Handlers\SassModule;
 
 interface ModuleHandlerInterface
 {
@@ -12,5 +14,9 @@ interface ModuleHandlerInterface
 
     public function getSupportedFunctions(): array;
 
-    public function getModuleNamespace(): string;
+    public function getModuleNamespace(): SassModule;
+
+    public function getModuleFunctions(): array;
+
+    public function getGlobalFunctions(): array;
 }
