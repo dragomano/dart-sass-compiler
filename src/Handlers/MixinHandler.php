@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace DartSass\Handlers;
 
-use DartSass\Compiler;
+use DartSass\Compilers\CompilerBuilder;
 use DartSass\Compilers\CompilerEngineInterface;
 use DartSass\Exceptions\CompilationException;
+use DartSass\Loaders\FileLoader;
 use DartSass\Modules\SassList;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\IdentifierNode;
@@ -59,7 +60,7 @@ class MixinHandler
         string $name,
         array $args,
         ?array $content = null,
-        ?CompilerEngineInterface $parentCompiler = null,
+        ?CompilerEngineInterface $parentCompilerEngine = null,
         string $parentSelector = '',
         int $nestingLevel = 0
     ): string {
@@ -75,14 +76,15 @@ class MixinHandler
         $mixin = $this->mixins[$name];
 
         // Always use parent compiler if available to preserve context
-        if ($parentCompiler !== null) {
-            $compiler = $parentCompiler;
+        if ($parentCompilerEngine !== null) {
+            $compilerEngine = $parentCompilerEngine;
         } else {
             // Fallback for when no parent compiler is provided
-            $compiler = new Compiler(['style' => 'expanded']);
+            $builder = new CompilerBuilder(['style' => 'expanded'], new FileLoader([]));
+            $compilerEngine = $builder->build();
         }
 
-        $compiler->getContext()->variableHandler->enterScope();
+        $compilerEngine->getContext()->variableHandler->enterScope();
 
         $argIndex = 0;
 
@@ -111,7 +113,7 @@ class MixinHandler
                 }
             }
 
-            $compiler->getContext()->variableHandler->define($argName, $value);
+            $compilerEngine->getContext()->variableHandler->define($argName, $value);
             $argIndex++;
         }
 
@@ -123,25 +125,17 @@ class MixinHandler
                 $declarationCss = '';
                 foreach ($content as $item) {
                     if (is_array($item)) {
-                        $result = $compiler->compileDeclarations([$item], $nestingLevel + 2);
+                        $result = $compilerEngine->compileDeclarations([$item], $nestingLevel + 2);
                         $declarationCss .= $result;
                     }
                 }
 
-                $compiledContent = $compiler->formatRule($parentSelector, $declarationCss, $nestingLevel);
+                $compiledContent = $compilerEngine->formatRule($parentSelector, $declarationCss, $nestingLevel);
                 $compiledContent = preg_replace('/^}$/m', '  }', $compiledContent);
             } else {
                 foreach ($content as $item) {
                     if (is_array($item)) {
-                        $result = $compiler->compileDeclarations([$item], 1);
-                        $compiledContent .= $result;
-                    } elseif ($item instanceof AstNode) {
-                        if (! empty($parentSelector)) {
-                            $result = $compiler->compileAst([$item], $parentSelector);
-                        } else {
-                            $result = $compiler->compileAst([$item]);
-                        }
-
+                        $result = $compilerEngine->compileDeclarations([$item], 1);
                         $compiledContent .= $result;
                     }
                 }
@@ -153,10 +147,10 @@ class MixinHandler
         $css = '';
         foreach ($mixin['body'] as $item) {
             if (is_array($item)) {
-                $result = $compiler->compileDeclarations([$item], 1);
+                $result = $compilerEngine->compileDeclarations([$item], 1);
                 $css .= $result;
             } elseif ($item instanceof AstNode) {
-                $result = $compiler->compileAst([$item], $parentSelector);
+                $result = $compilerEngine->compileAst([$item], $parentSelector);
                 $css .= $result;
             }
         }
@@ -169,7 +163,7 @@ class MixinHandler
         }
 
         $this->currentContent = null;
-        $compiler->getContext()->variableHandler->exitScope();
+        $compilerEngine->getContext()->variableHandler->exitScope();
 
         if ($cacheKey !== '') {
             self::$mixinCache[$cacheKey] = $css;

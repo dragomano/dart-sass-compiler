@@ -569,31 +569,6 @@ class ColorModule
         return $this->transparentize($color, $amount);
     }
 
-    public function hsl(float $h, float $s, float $l, ?float $a = null): string
-    {
-        return (string) SassColor::hsl($h, $s, $l, $a);
-    }
-
-    public function hwb(float $h, float $w, float $bl, ?float $a = null): string
-    {
-        return (string) SassColor::hwb($h, $w, $bl, $a);
-    }
-
-    public function lab(float $l, float $a, float $b, ?float $alpha = null): string
-    {
-        return (string) SassColor::lab($l, $a, $b, $alpha);
-    }
-
-    public function lch(float $l, float $c, float $h, ?float $a = null): string
-    {
-        return (string) SassColor::lch($l, $c, $h, $a);
-    }
-
-    public function oklch(float $l, float $c, float $h, ?float $a = null): string
-    {
-        return (string) SassColor::oklch($l, $c, $h, $a);
-    }
-
     public function parseColor(string $color): array
     {
         $color = trim($color);
@@ -779,6 +754,7 @@ class ColorModule
         $alphaStr = $matches[4];
 
         $l = str_contains($lRaw, '%') ? $this->parsePercentageValue($lRaw) : (float) $lRaw * ColorSerializer::PERCENT_MAX;
+
         $alpha = $this->parseAlpha($alphaStr);
 
         return [

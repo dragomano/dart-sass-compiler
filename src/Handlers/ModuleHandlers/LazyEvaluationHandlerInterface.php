@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Handlers;
+namespace DartSass\Handlers\ModuleHandlers;
 
 interface LazyEvaluationHandlerInterface extends ModuleHandlerInterface
 {

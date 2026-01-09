@@ -10,24 +10,25 @@ use DartSass\Evaluators\InterpolationEvaluator;
 use DartSass\Evaluators\OperationEvaluator;
 use DartSass\Evaluators\UserFunctionEvaluator;
 use DartSass\Handlers\BuiltInModuleProvider;
-use DartSass\Handlers\ColorModuleHandler;
-use DartSass\Handlers\CssFunctionHandler;
-use DartSass\Handlers\CustomFunctionHandler;
 use DartSass\Handlers\ExtendHandler;
-use DartSass\Handlers\FormatFunctionHandler;
 use DartSass\Handlers\FunctionHandler;
 use DartSass\Handlers\FunctionRouter;
-use DartSass\Handlers\IfFunctionHandler;
-use DartSass\Handlers\ListModuleHandler;
-use DartSass\Handlers\MathModuleHandler;
 use DartSass\Handlers\MixinHandler;
 use DartSass\Handlers\ModuleForwarder;
 use DartSass\Handlers\ModuleHandler;
+use DartSass\Handlers\ModuleHandlers\ColorModuleHandler;
+use DartSass\Handlers\ModuleHandlers\CssColorFunctionHandler;
+use DartSass\Handlers\ModuleHandlers\CustomFunctionHandler;
+use DartSass\Handlers\ModuleHandlers\FormatFunctionHandler;
+use DartSass\Handlers\ModuleHandlers\IfFunctionHandler;
+use DartSass\Handlers\ModuleHandlers\LinearGradientFunctionHandler;
+use DartSass\Handlers\ModuleHandlers\ListModuleHandler;
+use DartSass\Handlers\ModuleHandlers\MathModuleHandler;
+use DartSass\Handlers\ModuleHandlers\StringModuleHandler;
+use DartSass\Handlers\ModuleHandlers\UrlFunctionHandler;
 use DartSass\Handlers\ModuleLoader;
 use DartSass\Handlers\ModuleRegistry;
 use DartSass\Handlers\NestingHandler;
-use DartSass\Handlers\StringModuleHandler;
-use DartSass\Handlers\UrlFunctionHandler;
 use DartSass\Handlers\VariableHandler;
 use DartSass\Loaders\LoaderInterface;
 use DartSass\Modules\ColorModule;
@@ -128,7 +129,8 @@ readonly class CompilerBuilder
         );
         $moduleRegistry->register(new UrlFunctionHandler());
         $moduleRegistry->register(new FormatFunctionHandler($context->valueFormatter));
-        $moduleRegistry->register(new ColorModuleHandler(new ColorModule()));
+        $moduleRegistry->register($cssColorFunctionHandler = new CssColorFunctionHandler());
+        $moduleRegistry->register(new ColorModuleHandler(new ColorModule(), $cssColorFunctionHandler));
         $moduleRegistry->register(new StringModuleHandler(new StringModule()));
         $moduleRegistry->register(new ListModuleHandler(new ListModule()));
         $moduleRegistry->register(new MathModuleHandler(
@@ -136,7 +138,7 @@ readonly class CompilerBuilder
             new UnitValidator(),
             $context->valueFormatter
         ));
-        $moduleRegistry->register(new CssFunctionHandler($resultFormatter));
+        $moduleRegistry->register(new LinearGradientFunctionHandler($resultFormatter));
         $moduleRegistry->register($customFunctionHandler);
 
         $customFunctionHandler->setRegistry($moduleRegistry);

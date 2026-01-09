@@ -126,16 +126,6 @@ class ExtendHandler
             return true;
         }
 
-        // Check if target is at the end of selector (e.g., ".article" matches ".container .article")
-        if (preg_match('/\s' . preg_quote($cleanTarget, '/') . '(\s|$)/', $cleanSelector)) {
-            return true;
-        }
-
-        // Check if target is the last part of selector
-        if (preg_match('/' . preg_quote($cleanTarget, '/') . '$/', $cleanSelector)) {
-            return true;
-        }
-
         return false;
     }
 

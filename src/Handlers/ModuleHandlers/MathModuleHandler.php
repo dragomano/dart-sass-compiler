@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Handlers;
+namespace DartSass\Handlers\ModuleHandlers;
 
+use DartSass\Handlers\SassModule;
 use DartSass\Modules\MathModule;
 use DartSass\Utils\UnitValidator;
 use DartSass\Utils\ValueFormatter;
@@ -14,10 +15,45 @@ use function in_array;
 
 class MathModuleHandler extends BaseModuleHandler
 {
-    private const SUPPORTED_FUNCTIONS = [
-        'abs', 'acos', 'asin', 'atan', 'atan2', 'calc', 'ceil', 'clamp',
-        'compatible', 'cos', 'div', 'floor', 'hypot', 'is-unitless', 'log',
-        'max', 'min', 'percentage', 'pow', 'random', 'round', 'sin', 'sqrt', 'tan', 'unit',
+    protected const MODULE_FUNCTIONS = [
+        'ceil',
+        'clamp',
+        'floor',
+        'max',
+        'min',
+        'round',
+        'abs',
+        'hypot',
+        'log',
+        'pow',
+        'sqrt',
+        'cos',
+        'sin',
+        'tan',
+        'acos',
+        'asin',
+        'atan',
+        'atan2',
+        'compatible',
+        'is-unitless',
+        'unit',
+        'div',
+        'percentage',
+        'random',
+    ];
+
+    protected const GLOBAL_FUNCTIONS = [
+        'ceil',
+        'floor',
+        'max',
+        'min',
+        'round',
+        'abs',
+        'compatible',
+        'unitless',
+        'unit',
+        'percentage',
+        'random',
     ];
 
     public function __construct(
@@ -26,17 +62,13 @@ class MathModuleHandler extends BaseModuleHandler
         private readonly ValueFormatter $valueFormatter
     ) {}
 
-    public function canHandle(string $functionName): bool
-    {
-        return in_array($functionName, self::SUPPORTED_FUNCTIONS, true);
-    }
-
     public function handle(string $functionName, array $args): string
     {
         $processedArgs = $this->normalizeArgs($args);
 
         $functionMapping = [
             'is-unitless' => 'isUnitless',
+            'unitless'    => 'isUnitless',
         ];
 
         $methodName = $functionMapping[$functionName] ?? $functionName;
@@ -57,14 +89,14 @@ class MathModuleHandler extends BaseModuleHandler
         return $this->formatMathFunctionCall($functionName, $processedArgs);
     }
 
-    public function getSupportedFunctions(): array
+    public function getModuleNamespace(): SassModule
     {
-        return self::SUPPORTED_FUNCTIONS;
+        return SassModule::MATH;
     }
 
-    public function getModuleNamespace(): string
+    public function getGlobalFunctions(): array
     {
-        return 'math';
+        return [...self::GLOBAL_FUNCTIONS, 'clamp'];
     }
 
     private function formatMathFunctionCall(string $name, array $args): string

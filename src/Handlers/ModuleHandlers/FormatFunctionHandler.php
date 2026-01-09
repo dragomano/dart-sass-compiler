@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Handlers;
+namespace DartSass\Handlers\ModuleHandlers;
 
+use DartSass\Handlers\SassModule;
 use DartSass\Utils\ValueFormatter;
 
 use function array_map;
@@ -12,14 +13,11 @@ use function str_ends_with;
 use function str_starts_with;
 use function substr;
 
-readonly class FormatFunctionHandler implements LazyEvaluationHandlerInterface
+class FormatFunctionHandler extends BaseModuleHandler implements LazyEvaluationHandlerInterface
 {
-    public function __construct(private ValueFormatter $valueFormatter) {}
+    protected const GLOBAL_FUNCTIONS = ['format'];
 
-    public function canHandle(string $functionName): bool
-    {
-        return $functionName === 'format';
-    }
+    public function __construct(private readonly ValueFormatter $valueFormatter) {}
 
     public function requiresRawResult(string $functionName): bool
     {
@@ -46,13 +44,8 @@ readonly class FormatFunctionHandler implements LazyEvaluationHandlerInterface
         return $functionName . '(' . implode(', ', $processedArgs) . ')';
     }
 
-    public function getSupportedFunctions(): array
+    public function getModuleNamespace(): SassModule
     {
-        return ['format'];
-    }
-
-    public function getModuleNamespace(): string
-    {
-        return 'builtin';
+        return SassModule::CSS;
     }
 }

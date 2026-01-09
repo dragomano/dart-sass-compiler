@@ -2,29 +2,40 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Handlers;
+namespace DartSass\Handlers\ModuleHandlers;
 
 use DartSass\Exceptions\CompilationException;
+use DartSass\Handlers\SassModule;
 use DartSass\Modules\StringModule;
-
-use function in_array;
 
 class StringModuleHandler extends BaseModuleHandler
 {
-    private const SUPPORTED_FUNCTIONS = [
-        // Module functions
-        'quote', 'index', 'insert', 'length', 'slice', 'split',
-        'to-upper-case', 'to-lower-case', 'unique-id', 'unquote',
-        // Global functions
-        'str-index', 'str-length', 'str-insert', 'str-slice',
+    protected const MODULE_FUNCTIONS = [
+        'quote',
+        'index',
+        'insert',
+        'length',
+        'slice',
+        'split',
+        'to-upper-case',
+        'to-lower-case',
+        'unique-id',
+        'unquote',
+    ];
+
+    protected const GLOBAL_FUNCTIONS = [
+        'quote',
+        'str-index',
+        'str-insert',
+        'str-length',
+        'str-slice',
+        'to-upper-case',
+        'to-lower-case',
+        'unique-id',
+        'unquote',
     ];
 
     public function __construct(private readonly StringModule $stringModule) {}
-
-    public function canHandle(string $functionName): bool
-    {
-        return in_array($functionName, self::SUPPORTED_FUNCTIONS, true);
-    }
 
     public function handle(string $functionName, array $args): string|int|array|null
     {
@@ -45,13 +56,8 @@ class StringModuleHandler extends BaseModuleHandler
         };
     }
 
-    public function getSupportedFunctions(): array
+    public function getModuleNamespace(): SassModule
     {
-        return self::SUPPORTED_FUNCTIONS;
-    }
-
-    public function getModuleNamespace(): string
-    {
-        return 'string';
+        return SassModule::STRING;
     }
 }

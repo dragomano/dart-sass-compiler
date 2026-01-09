@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Handlers;
+namespace DartSass\Handlers\ModuleHandlers;
+
+use DartSass\Handlers\ModuleRegistry;
+use DartSass\Handlers\SassModule;
 
 use function array_keys;
 use function array_map;
@@ -10,7 +13,7 @@ use function call_user_func_array;
 use function is_array;
 use function is_numeric;
 
-class CustomFunctionHandler implements ModuleHandlerInterface
+class CustomFunctionHandler extends BaseModuleHandler
 {
     private array $customFunctions = [];
 
@@ -56,9 +59,14 @@ class CustomFunctionHandler implements ModuleHandlerInterface
         return array_keys($this->customFunctions);
     }
 
-    public function getModuleNamespace(): string
+    public function getModuleNamespace(): SassModule
     {
-        return 'custom';
+        return SassModule::CUSTOM;
+    }
+
+    public function getGlobalFunctions(): array
+    {
+        return $this->getSupportedFunctions();
     }
 
     public function addCustomFunction(string $name, callable $callback): void

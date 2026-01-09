@@ -12,13 +12,13 @@ use const PHP_FLOAT_MIN;
 use const PHP_INT_MAX;
 use const PHP_INT_MIN;
 
-readonly class BuiltInModuleProvider
+class BuiltInModuleProvider
 {
     public function provideProperties(string $path): array
     {
         $properties = [];
 
-        if ($path === 'sass:math') {
+        if ($path === SassModule::MATH->path()) {
             $properties = [
                 '$e'                => M_E,
                 '$epsilon'          => PHP_FLOAT_EPSILON,

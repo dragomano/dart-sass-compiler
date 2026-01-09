@@ -1206,40 +1206,6 @@ describe('Color Mixing', function () {
     });
 })->covers(ColorModule::class);
 
-describe('Color Creation', function () {
-    it('creates HSL color', function () {
-        expect($this->colorModule->hsl(0, 100, 50))->toBe('hsl(0, 100%, 50%)')
-            ->and($this->colorModule->hsl(120, 100, 50))->toBe('hsl(120, 100%, 50%)')
-            ->and($this->colorModule->hsl(240, 100, 50))->toBe('hsl(240, 100%, 50%)')
-            ->and($this->colorModule->hsl(0, 100, 50, 0.5))->toBe('hsla(0, 100%, 50%, 0.5)');
-    });
-
-    it('creates HWB color', function () {
-        expect($this->colorModule->hwb(0, 0, 0))->toBe('hwb(0 0% 0%)')
-            ->and($this->colorModule->hwb(0, 100, 0))->toBe('hwb(0 100% 0%)')
-            ->and($this->colorModule->hwb(0, 0, 100))->toBe('hwb(0 0% 100%)')
-            ->and($this->colorModule->hwb(120, 20, 30))->toBe('hwb(120 20% 30%)');
-    });
-
-    it('creates LCH color', function () {
-        expect($this->colorModule->lch(60, 40, 30))->toBe('lch(60% 40 30)')
-            ->and($this->colorModule->lch(60, 40, 30, 0.5))->toBe('lch(60% 40 30 / 0.5)');
-    });
-
-    it('creates OKLCH color', function () {
-        expect($this->colorModule->oklch(0.6, 0.15, 30))->toBe('oklch(60% 0.15 30)')
-            ->and($this->colorModule->oklch(0.6, 0.15, 30, 0.5))->toBe('oklch(60% 0.15 30 / 0.5)');
-    });
-
-    it('creates Lab color', function () {
-        $result = $this->colorModule->lab(50, 20, -10);
-        expect($result)->toBe('lab(50% 20 -10)');
-
-        $result = $this->colorModule->lab(50, 20, -10, 0.5);
-        expect($result)->toBe('lab(50% 20 -10 / 0.5)');
-    });
-})->covers(ColorModule::class);
-
 describe('Color Channels', function () {
     describe('channel()', function () {
         it('returns RGB channels', function () {

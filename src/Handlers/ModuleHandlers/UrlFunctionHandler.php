@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Handlers;
+namespace DartSass\Handlers\ModuleHandlers;
 
+use DartSass\Handlers\SassModule;
 use InvalidArgumentException;
 
 use function addcslashes;
@@ -16,10 +17,7 @@ use function trim;
 
 class UrlFunctionHandler extends BaseModuleHandler
 {
-    public function canHandle(string $functionName): bool
-    {
-        return $functionName === 'url';
-    }
+    protected const GLOBAL_FUNCTIONS = ['url'];
 
     public function handle(string $functionName, array $args): string
     {
@@ -60,13 +58,8 @@ class UrlFunctionHandler extends BaseModuleHandler
         return 'url(' . $value . ')';
     }
 
-    public function getSupportedFunctions(): array
+    public function getModuleNamespace(): SassModule
     {
-        return ['url'];
-    }
-
-    public function getModuleNamespace(): string
-    {
-        return 'builtin';
+        return SassModule::CSS;
     }
 }

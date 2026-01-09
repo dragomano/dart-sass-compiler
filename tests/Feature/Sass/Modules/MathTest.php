@@ -683,20 +683,222 @@ describe('sass:math', function () {
             expect($this->compiler->compileString($scss))->toEqualCss($expected);
         });
     });
+});
 
-    describe('supports math.calc', function () {
-        it('creates calc expression', function () {
+describe('global math functions', function () {
+    describe('supports global ceil function', function () {
+        it('rounds up positive number globally', function () {
             $scss = <<<'SCSS'
-            @use "sass:math";
-
             .test {
-                calc-expression: math.calc(10px + 5px);
+                width: ceil(4.1) * 1px;
             }
             SCSS;
 
             $expected = /** @lang text */ <<<'CSS'
             .test {
-              calc-expression: 15px;
+              width: 5px;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+
+        it('rounds up negative number globally', function () {
+            $scss = <<<'SCSS'
+            .test {
+                width: ceil(-4.1) * 1px;
+            }
+            SCSS;
+
+            $expected = /** @lang text */ <<<'CSS'
+            .test {
+              width: -4px;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global floor function', function () {
+        it('rounds down positive number globally', function () {
+            $scss = <<<'SCSS'
+            .test {
+                width: floor(4.9) * 1px;
+            }
+            SCSS;
+
+            $expected = /** @lang text */ <<<'CSS'
+            .test {
+              width: 4px;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+
+        it('rounds down negative number globally', function () {
+            $scss = <<<'SCSS'
+            .test {
+                width: floor(-4.9) * 1px;
+            }
+            SCSS;
+
+            $expected = /** @lang text */ <<<'CSS'
+            .test {
+              width: -5px;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global round function', function () {
+        it('rounds number globally', function () {
+            $scss = <<<'SCSS'
+            .test {
+                width: round(4.6) * 1px;
+                height: round(4.4) * 1px;
+            }
+            SCSS;
+
+            $expected = /** @lang text */ <<<'CSS'
+            .test {
+              width: 5px;
+              height: 4px;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global abs function', function () {
+        it('handles positive values globally', function () {
+            $scss = <<<'SCSS'
+            .test {
+                width: abs(5) * 1px;
+            }
+            SCSS;
+
+            $expected = /** @lang text */ <<<'CSS'
+            .test {
+              width: 5px;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+
+        it('handles negative values globally', function () {
+            $scss = <<<'SCSS'
+            .test {
+                width: abs(-20) * 1px;
+            }
+            SCSS;
+
+            $expected = /** @lang text */ <<<'CSS'
+            .test {
+              width: 20px;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global percentage function', function () {
+        it('converts unitless number to percentage globally', function () {
+            $scss = <<<'SCSS'
+            .test {
+                percentage-value: percentage(0.5);
+            }
+            SCSS;
+
+            $expected = /** @lang text */ <<<'CSS'
+            .test {
+              percentage-value: 50%;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global random function', function () {
+        it('generates random number globally', function () {
+            $scss = <<<'SCSS'
+            .test {
+                has-random: if(random() > 0, true, false);
+            }
+            SCSS;
+
+            $expected = /** @lang text */ <<<'CSS'
+            .test {
+              has-random: true;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global compatible function', function () {
+        it('checks if units are compatible globally', function () {
+            $scss = <<<'SCSS'
+            .test {
+                compatible-px-em: compatible(1px, 1em);
+                compatible-px-px: compatible(1px, 2px);
+                compatible-unitless-px: compatible(1, 1px);
+            }
+            SCSS;
+
+            $expected = /** @lang text */ <<<'CSS'
+            .test {
+              compatible-px-em: false;
+              compatible-px-px: true;
+              compatible-unitless-px: true;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global unitless function', function () {
+        it('checks if value is unitless with legacy name globally', function () {
+            $scss = <<<'SCSS'
+            .test {
+                unitless-number: unitless(10);
+                unitless-with-unit: unitless(10px);
+            }
+            SCSS;
+
+            $expected = /** @lang text */ <<<'CSS'
+            .test {
+              unitless-number: true;
+              unitless-with-unit: false;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global unit function', function () {
+        it('returns unit of a value globally', function () {
+            $scss = <<<'SCSS'
+            .test {
+                unit-of-px: unit(10px);
+                unit-of-unitless: unit(10);
+            }
+            SCSS;
+
+            $expected = /** @lang text */ <<<'CSS'
+            .test {
+              unit-of-px: "px";
+              unit-of-unitless: "";
             }
             CSS;
 

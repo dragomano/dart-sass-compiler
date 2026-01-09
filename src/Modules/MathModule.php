@@ -537,27 +537,6 @@ readonly class MathModule
         return ['value' => mt_rand(0, $limit - 1), 'unit' => ''];
     }
 
-    public function calc(array $args): string
-    {
-        if (count($args) === 1) {
-            $arg = $args[0];
-
-            if (is_array($arg) && isset($arg['value'], $arg['unit'])) {
-                return $arg['value'] . $arg['unit'];
-            }
-
-            if (is_numeric($arg)) {
-                return (string) $arg;
-            }
-
-            return 'calc(' . $this->formatArg($arg) . ')';
-        }
-
-        $content = implode(', ', array_map($this->formatArg(...), $args));
-
-        return "calc($content)";
-    }
-
     private function normalize(mixed $item): ?array
     {
         // Handle numeric values

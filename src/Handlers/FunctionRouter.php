@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace DartSass\Handlers;
 
 use DartSass\Exceptions\CompilationException;
+use DartSass\Handlers\ModuleHandlers\LazyEvaluationHandlerInterface;
+use DartSass\Handlers\ModuleHandlers\ModuleHandlerInterface;
 use DartSass\Utils\ResultFormatterInterface;
 use Exception;
 
 use function array_map;
+use function explode;
 use function implode;
 use function in_array;
 use function is_bool;
@@ -25,17 +28,9 @@ readonly class FunctionRouter
 
     public function route(string $functionName, array $args): mixed
     {
-        $shortName = str_contains($functionName, '.')
-            ? substr(strrchr($functionName, '.'), 1)
-            : $functionName;
+        $shortName = $this->getShortName($functionName);
 
-        // First try the full function name (for namespaced functions)
-        $handler = $this->registry->getHandler($functionName);
-
-        // If not found, and it's namespaced, try the short name
-        if ($handler === null && str_contains($functionName, '.')) {
-            $handler = $this->registry->getHandler($shortName);
-        }
+        $handler = $this->getHandler($shortName, $functionName);
 
         if ($handler === null) {
             return $this->handleUnknownFunction($functionName, $args);
@@ -65,6 +60,36 @@ readonly class FunctionRouter
                 "Error processing function $functionName: " . $e->getMessage()
             );
         }
+    }
+
+    private function getShortName(string $functionName): string
+    {
+        return str_contains($functionName, '.')
+            ? substr(strrchr($functionName, '.'), 1)
+            : $functionName;
+    }
+
+    private function getHandler(string $shortName, string $functionName): ?ModuleHandlerInterface
+    {
+        // Try full function name first
+        $handler = $this->registry->getHandler($functionName);
+        if ($handler !== null) {
+            return $handler;
+        }
+
+        // Handle namespaced functions
+        if (str_contains($functionName, '.')) {
+            $namespace = explode('.', $functionName, 2)[0];
+
+            if (SassModule::isValid($namespace)) {
+                throw new CompilationException(
+                    "Function $shortName is not available in namespace $namespace"
+                );
+            }
+        }
+
+        // Fallback to short name
+        return $this->registry->getHandler($shortName);
     }
 
     private function shouldPreserveForConditions(string $functionName): bool

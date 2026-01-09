@@ -295,3 +295,221 @@ describe('sass:list', function () {
             ->toEqualCss($expected);
     });
 });
+
+describe('global list functions', function () {
+    describe('supports global append function', function () {
+        it('appends item to list globally', function () {
+            $scss = <<<'SCSS'
+            .demo {
+                padding: append(10px 20px, 30px);
+                border-color: append((blue, red), green);
+            }
+            SCSS;
+
+            $expected /** @lang text */ = <<<'CSS'
+            .demo {
+              padding: 10px 20px 30px;
+              border-color: blue, red, green;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))
+                ->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global index function', function () {
+        it('finds index of item in list globally', function () {
+            $scss = <<<'SCSS'
+            .demo {
+                $border: 1px solid red;
+                z-index: index($border, 1px);
+                order: index($border, solid);
+            }
+            SCSS;
+
+            $expected /** @lang text */ = <<<'CSS'
+            .demo {
+              z-index: 1;
+              order: 2;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))
+                ->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global is-bracketed function', function () {
+        it('checks if list is bracketed globally', function () {
+            $scss = <<<'SCSS'
+            .demo {
+                $list1: 1px 2px 3px;
+                @if is-bracketed($list1) == false {
+                    margin: 10px;
+                }
+
+                $list2: [1px, 2px, 3px];
+                @if is-bracketed($list2) == true {
+                    padding: 20px;
+                }
+            }
+            SCSS;
+
+            $expected /** @lang text */ = <<<'CSS'
+            .demo {
+              margin: 10px;
+              padding: 20px;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))
+                ->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global join function', function () {
+        it('joins two lists globally', function () {
+            $scss = <<<'SCSS'
+            .demo {
+                $joined1: join(10px 20px, 30px 40px);
+                padding: $joined1;
+
+                $joined2: join((blue, red), (#abc, #def));
+                border-color: $joined2;
+            }
+            SCSS;
+
+            $expected /** @lang text */ = <<<'CSS'
+            .demo {
+              padding: 10px 20px 30px 40px;
+              border-color: blue, red, #abc, #def;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))
+                ->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global length function', function () {
+        it('returns list length globally', function () {
+            $scss = <<<'SCSS'
+            .demo {
+                z-index: length(10px);
+                order: length(10px 20px 30px);
+                flex: length((width: 10px, height: 20px));
+            }
+            SCSS;
+
+            $expected /** @lang text */ = <<<'CSS'
+            .demo {
+              z-index: 1;
+              order: 3;
+              flex: 2;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))
+                ->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global list-separator function', function () {
+        it('returns list separator with legacy name globally', function () {
+            $scss = <<<'SCSS'
+            .demo {
+                $sep1: list-separator(1px 2px 3px);
+                @if $sep1 == space {
+                    margin: 10px;
+                }
+
+                $sep2: list-separator((1px, 2px, 3px));
+                @if $sep2 == comma {
+                    padding: 20px;
+                }
+            }
+            SCSS;
+
+            $expected /** @lang text */ = <<<'CSS'
+            .demo {
+              margin: 10px;
+              padding: 20px;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))
+                ->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global nth function', function () {
+        it('gets nth element from list globally', function () {
+            $scss = <<<'SCSS'
+            .demo {
+                font-size: nth(10px 12px 16px, 2);
+                grid-row: nth([line1, line2, line3], -1);
+            }
+            SCSS;
+
+            $expected /** @lang text */ = <<<'CSS'
+            .demo {
+              font-size: 12px;
+              grid-row: line3;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))
+                ->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global set-nth function', function () {
+        it('sets nth element in list globally', function () {
+            $scss = <<<'SCSS'
+            .demo {
+                padding: set-nth(10px 20px 30px, 1, 2em);
+                margin: set-nth(10px 20px 30px, -1, 8em);
+                font-family: set-nth((Helvetica, Arial, sans-serif), 3, Roboto);
+            }
+            SCSS;
+
+            $expected /** @lang text */ = <<<'CSS'
+            .demo {
+              padding: 2em 20px 30px;
+              margin: 10px 20px 8em;
+              font-family: Helvetica, Arial, Roboto;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))
+                ->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global zip function', function () {
+        it('zips multiple lists globally', function () {
+            $scss = <<<'SCSS'
+            .demo {
+                $zipped1: zip(10px 50px 100px, short mid long);
+                $first-pair: nth($zipped1, 1);
+                width: nth($first-pair, 1);
+
+                $zipped2: zip(10px 50px 100px, short mid);
+                $second-pair: nth($zipped2, 2);
+                height: nth($second-pair, 1);
+            }
+            SCSS;
+
+            $expected /** @lang text */ = <<<'CSS'
+            .demo {
+              width: 10px;
+              height: 50px;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))
+                ->toEqualCss($expected);
+        });
+    });
+});

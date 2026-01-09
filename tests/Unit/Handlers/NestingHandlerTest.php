@@ -87,5 +87,51 @@ describe('NestingHandler', function () {
 
             expect($result)->toBe('.parent > .child');
         });
+
+        it('handles combinator without following selector', function () {
+            $result = $this->nestingHandler->resolveSelector('>', '.parent');
+
+            expect($result)->toBe('.parent >');
+        });
+
+        it('handles string selector unchanged', function () {
+            $result = $this->nestingHandler->resolveSelector('.child', '');
+
+            expect($result)->toBe('.child');
+        });
+    });
+
+    describe('normalizeSelector method', function () {
+        it('normalizes selector with spaces around combinators', function () {
+            $accessor = new Tests\ReflectionAccessor($this->nestingHandler);
+
+            $result = $accessor->callMethod('normalizeSelector', ['.parent > .child']);
+
+            expect($result)->toBe('.parent > .child');
+        });
+
+        it('adds spaces around combinators without spaces', function () {
+            $accessor = new Tests\ReflectionAccessor($this->nestingHandler);
+
+            $result = $accessor->callMethod('normalizeSelector', ['.parent>.child']);
+
+            expect($result)->toBe('.parent > .child');
+        });
+
+        it('handles multiple combinators', function () {
+            $accessor = new Tests\ReflectionAccessor($this->nestingHandler);
+
+            $result = $accessor->callMethod('normalizeSelector', ['.parent>.child+.sibling']);
+
+            expect($result)->toBe('.parent > .child + .sibling');
+        });
+
+        it('trims trailing spaces', function () {
+            $accessor = new Tests\ReflectionAccessor($this->nestingHandler);
+
+            $result = $accessor->callMethod('normalizeSelector', ['  .parent  ']);
+
+            expect($result)->toBe('.parent');
+        });
     });
 })->covers(NestingHandler::class);

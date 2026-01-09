@@ -2,58 +2,37 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Handlers;
+namespace DartSass\Handlers\ModuleHandlers;
 
+use DartSass\Handlers\SassModule;
 use DartSass\Utils\ResultFormatterInterface;
 
-use function array_keys;
 use function array_map;
 use function count;
 use function implode;
 use function in_array;
 use function preg_match;
 
-class CssFunctionHandler extends BaseModuleHandler
+class LinearGradientFunctionHandler extends BaseModuleHandler
 {
-    private const SUPPORTED_FUNCTIONS = [
-        'linear-gradient' => true,
-    ];
+    protected const GLOBAL_FUNCTIONS = ['linear-gradient'];
 
     public function __construct(private readonly ResultFormatterInterface $resultFormatter) {}
 
-    public function canHandle(string $functionName): bool
-    {
-        return isset(self::SUPPORTED_FUNCTIONS[$functionName]);
-    }
-
     public function handle(string $functionName, array $args): string
     {
-        return match ($functionName) {
-            'linear-gradient' => $this->handleLinearGradient($args),
-            default => $this->formatCssFunction($functionName, $args),
-        };
-    }
+        $formattedArgs = array_map($this->resultFormatter->format(...), $args);
 
-    public function getSupportedFunctions(): array
-    {
-        return array_keys(self::SUPPORTED_FUNCTIONS);
-    }
-
-    public function getModuleNamespace(): string
-    {
-        return 'css';
-    }
-
-    private function handleLinearGradient(array $args): string
-    {
-        if (count($args) < 2) {
-            return $this->formatCssFunction('linear-gradient', $args);
+        if (count($args) >= 2) {
+            $formattedArgs = $this->reconstructArguments($formattedArgs);
         }
 
-        $formattedArgs = array_map($this->resultFormatter->format(...), $args);
-        $reconstructedArgs = $this->reconstructArguments($formattedArgs);
+        return 'linear-gradient(' . implode(', ', $formattedArgs) . ')';
+    }
 
-        return 'linear-gradient(' . implode(', ', $reconstructedArgs) . ')';
+    public function getModuleNamespace(): SassModule
+    {
+        return SassModule::CSS;
     }
 
     private function reconstructArguments(array $args): array
@@ -125,12 +104,5 @@ class CssFunctionHandler extends BaseModuleHandler
     private function isPositionLike(string $value): bool
     {
         return $value === '0' || preg_match('/^-?(\d*\.)?\d+([a-zA-Z%]+)$/', $value) === 1;
-    }
-
-    private function formatCssFunction(string $functionName, array $args): string
-    {
-        $formattedArgs = array_map($this->resultFormatter->format(...), $args);
-
-        return $functionName . '(' . implode(', ', $formattedArgs) . ')';
     }
 }

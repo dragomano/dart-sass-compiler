@@ -65,7 +65,7 @@ readonly class ModuleForwarder
                 'variable' => $onVariable && $onVariable($node),
                 'mixin'    => $onMixin && $onMixin($node),
                 'function' => $onFunction && $onFunction($node),
-                default    => $onCssNode($node),
+                default    => $onCssNode && $onCssNode($node),
             };
         }
     }
