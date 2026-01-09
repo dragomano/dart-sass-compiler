@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 use DartSass\Evaluators\UserFunctionEvaluator;
 use DartSass\Exceptions\CompilationException;
-use DartSass\Handlers\CustomFunctionHandler;
 use DartSass\Handlers\FunctionHandler;
 use DartSass\Handlers\FunctionRouter;
 use DartSass\Handlers\ModuleHandler;
-use DartSass\Handlers\ModuleHandlerInterface;
+use DartSass\Handlers\ModuleHandlers\CustomFunctionHandler;
+use DartSass\Handlers\ModuleHandlers\ModuleHandlerInterface;
 use DartSass\Handlers\ModuleRegistry;
 use DartSass\Handlers\VariableHandler;
 use DartSass\Utils\ResultFormatterInterface;

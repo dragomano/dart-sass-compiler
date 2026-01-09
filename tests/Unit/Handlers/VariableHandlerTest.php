@@ -175,7 +175,7 @@ describe('VariableHandler', function () {
 
             $variables = $this->variableHandler->getVariables();
 
-            expect($variables['var'])->toBe('scoped'); // Later scopes override
+            expect($variables['var'])->toBe('scoped');
         });
 
         it('returns empty array when no variables', function () {
@@ -244,6 +244,46 @@ describe('VariableHandler', function () {
                 ->and($this->variableHandler->get('int'))->toBeInt()
                 ->and($this->variableHandler->get('float'))->toBeFloat()
                 ->and($this->variableHandler->get('bool'))->toBeBool();
+        });
+
+        it('handles define with default flag true', function () {
+            $this->variableHandler->define('testVar', 'original');
+            $this->variableHandler->define('testVar', 'new', false, true);
+
+            expect($this->variableHandler->get('testVar'))->toBe('original');
+        });
+
+        it('handles define with overwrite flag true', function () {
+            $this->variableHandler->define('testVar', 'original');
+            $this->variableHandler->define('testVar', 'new');
+
+            expect($this->variableHandler->get('testVar'))->toBe('new');
+        });
+
+        it('handles global define with default flag', function () {
+            $this->variableHandler->define('globalVar', 'original', true);
+            $this->variableHandler->define('globalVar', 'new', true, true);
+
+            expect($this->variableHandler->get('globalVar'))->toBe('original');
+        });
+
+        it('handles setVariables with global variables', function () {
+            $this->variableHandler->define('local', 'localVal');
+            $this->variableHandler->define('global', 'globalVal', true);
+
+            $this->variableHandler->setVariables(['newGlobal' => 'newVal']);
+
+            expect($this->variableHandler->getVariables())->toBe(['newGlobal' => 'newVal'])
+                ->and(fn() => $this->variableHandler->get('local'))->toThrow(CompilationException::class)
+                ->and(fn() => $this->variableHandler->get('global'))->toThrow(CompilationException::class);
+        });
+
+        it('handles define with default flag when variable exists in current scope', function () {
+            $this->variableHandler->enterScope();
+            $this->variableHandler->define('scopedVar', 'original');
+            $this->variableHandler->define('scopedVar', 'new', false, true);
+
+            expect($this->variableHandler->get('scopedVar'))->toBe('original');
         });
     });
 })->covers(VariableHandler::class);

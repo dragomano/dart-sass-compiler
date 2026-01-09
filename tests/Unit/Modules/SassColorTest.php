@@ -65,6 +65,28 @@ describe('SassColor factory methods', function () {
             ->and($color->getFormat())->toBe(ColorFormat::HWB->value);
     });
 
+    it('creates from LAB values', function () {
+        $color = SassColor::lab(50, -10, 20);
+
+        expect($color->getLabL())->toBe(50.0)
+            ->and($color->getLabA())->toBe(-10.0)
+            ->and($color->getLabB())->toBe(20.0)
+            ->and($color->getAlpha())->toBe(1.0)
+            ->and($color->getFormat())->toBe(ColorFormat::LAB->value)
+            ->and((string) $color)->toBe('lab(50% -10 20)');
+    });
+
+    it('creates from LAB values with alpha', function () {
+        $color = SassColor::lab(60, 15, -5, 0.8);
+
+        expect($color->getLabL())->toBe(60.0)
+            ->and($color->getLabA())->toBe(15.0)
+            ->and($color->getLabB())->toBe(-5.0)
+            ->and($color->getAlpha())->toBe(0.8)
+            ->and($color->getFormat())->toBe(ColorFormat::LABA->value)
+            ->and((string) $color)->toBe('lab(60% 15 -5 / 0.8)');
+    });
+
     it('creates from LCH values', function () {
         $color = SassColor::lch(60, 40, 30);
 
@@ -145,6 +167,14 @@ describe('SassColor getters', function () {
             ->and($color->getLightness())->toBe(50.0);
     });
 
+    it('returns LAB channel values', function () {
+        $color = SassColor::lab(75, 25, -30);
+
+        expect($color->getLabL())->toBe(75.0)
+            ->and($color->getLabA())->toBe(25.0)
+            ->and($color->getLabB())->toBe(-30.0);
+    });
+
     it('returns alpha channel', function () {
         $color = SassColor::rgb(255, 0, 0, 0.5);
 
@@ -206,6 +236,18 @@ describe('SassColor format handling', function () {
 
         expect($color->getFormat())->toBe(ColorFormat::XYZA->value);
     });
+
+    it('preserves LAB format without alpha', function () {
+        $color = SassColor::lab(50, -10, 20, 1.0);
+
+        expect($color->getFormat())->toBe(ColorFormat::LAB->value);
+    });
+
+    it('uses LABA format with alpha', function () {
+        $color = SassColor::lab(50, -10, 20, 0.5);
+
+        expect($color->getFormat())->toBe(ColorFormat::LABA->value);
+    });
 });
 
 describe('SassColor string representation', function () {
@@ -233,6 +275,18 @@ describe('SassColor string representation', function () {
         expect((string) $color)->toContain('hwb(');
     });
 
+    it('formats LAB color', function () {
+        $color = SassColor::lab(50, -10, 20);
+
+        expect((string) $color)->toBe('lab(50% -10 20)');
+    });
+
+    it('formats LABA color with alpha', function () {
+        $color = SassColor::lab(60, 15, -5, 0.8);
+
+        expect((string) $color)->toBe('lab(60% 15 -5 / 0.8)');
+    });
+
     it('uses fallback format when unknown', function () {
         $color = new SassColor(['r' => 255, 'g' => 0, 'b' => 0, 'a' => 1.0]);
 
@@ -250,6 +304,8 @@ describe('SassColor supported conversions', function () {
                 ColorFormat::HSL->value,
                 ColorFormat::HSLA->value,
                 ColorFormat::HWB->value,
+                ColorFormat::LAB->value,
+                ColorFormat::LABA->value,
                 ColorFormat::LCH->value,
                 ColorFormat::OKLCH->value,
                 ColorFormat::XYZ->value,
@@ -275,5 +331,13 @@ describe('SassColor edge cases', function () {
         expect($color->getRed())->toBe(255.0)
             ->and($color->getGreen())->toBe(255.0)
             ->and($color->getBlue())->toBe(255.0);
+    });
+
+    it('handles zero LAB values', function () {
+        $color = SassColor::lab(0, 0, 0);
+
+        expect($color->getLabL())->toBe(0.0)
+            ->and($color->getLabA())->toBe(0.0)
+            ->and($color->getLabB())->toBe(0.0);
     });
 });

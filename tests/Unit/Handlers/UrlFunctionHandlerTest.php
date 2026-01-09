@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-use DartSass\Handlers\UrlFunctionHandler;
+use DartSass\Handlers\ModuleHandlers\UrlFunctionHandler;
+use DartSass\Handlers\SassModule;
 
 beforeEach(function () {
     $this->handler = new UrlFunctionHandler();
@@ -33,8 +34,14 @@ describe('UrlFunctionHandler', function () {
     });
 
     describe('getModuleNamespace method', function () {
-        it('returns builtin', function () {
-            expect($this->handler->getModuleNamespace())->toEqual('builtin');
+        it('returns css', function () {
+            expect($this->handler->getModuleNamespace())->toEqual(SassModule::CSS);
+        });
+    });
+
+    describe('getModuleFunctions method', function () {
+        it('returns empty array for UrlFunctionHandler', function () {
+            expect($this->handler->getModuleFunctions())->toEqual([]);
         });
     });
 

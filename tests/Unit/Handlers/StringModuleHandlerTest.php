@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use DartSass\Exceptions\CompilationException;
-use DartSass\Handlers\StringModuleHandler;
+use DartSass\Handlers\ModuleHandlers\StringModuleHandler;
 use DartSass\Modules\StringModule;
 
 beforeEach(function () {

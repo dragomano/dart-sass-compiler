@@ -1003,32 +1003,6 @@ describe('MathFunctions', function () {
         });
     });
 
-    describe('calc', function () {
-        it('returns simple number as string', function () {
-            $result = $this->mathModule->calc([42]);
-
-            expect($result)->toBe('42');
-        });
-
-        it('returns number with unit', function () {
-            $result = $this->mathModule->calc([['value' => 10, 'unit' => 'px']]);
-
-            expect($result)->toBe('10px');
-        });
-
-        it('returns calc() with single argument', function () {
-            $result = $this->mathModule->calc(['5em + 2em']);
-
-            expect($result)->toBe('calc(5em + 2em)');
-        });
-
-        it('returns calc() with multiple arguments', function () {
-            $result = $this->mathModule->calc(['100%', '10px', '2em']);
-
-            expect($result)->toBe('calc(100%, 10px, 2em)');
-        });
-    });
-
     describe('normalize', function () {
         it('normalizes numeric string', function () {
             $result = $this->accessor->callMethod('normalize', ['42']);

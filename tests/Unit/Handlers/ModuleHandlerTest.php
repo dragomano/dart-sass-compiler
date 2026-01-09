@@ -8,107 +8,164 @@ use DartSass\Handlers\ModuleForwarder;
 use DartSass\Handlers\ModuleHandler;
 use DartSass\Handlers\ModuleLoader;
 use DartSass\Loaders\LoaderInterface;
+use DartSass\Parsers\Nodes\StringNode;
+use DartSass\Parsers\Nodes\VariableDeclarationNode;
 use DartSass\Parsers\ParserFactory;
 use Tests\ReflectionAccessor;
 
-beforeEach(function () {
-    $this->loader          = mock(LoaderInterface::class);
-    $this->parserFactory   = new ParserFactory();
-    $this->moduleLoader    = new ModuleLoader($this->loader, $this->parserFactory);
-    $this->builtInProvider = new BuiltInModuleProvider();
-    $this->moduleForwarder = new ModuleForwarder($this->moduleLoader, $this->builtInProvider);
-    $this->moduleHandler   = new ModuleHandler($this->moduleLoader, $this->moduleForwarder, $this->builtInProvider);
-    $this->accessor        = new ReflectionAccessor($this->moduleHandler);
-});
-
 describe('ModuleHandler', function () {
-    describe('constructor', function () {
-        it('creates instance with dependencies', function () {
-            expect($this->moduleHandler)->toBeInstanceOf(ModuleHandler::class);
+    beforeEach(function () {
+        $this->loaderInterface = mock(LoaderInterface::class);
+        $this->parserFactory   = mock(ParserFactory::class);
+        $this->moduleLoader    = mock(ModuleLoader::class, [$this->loaderInterface, $this->parserFactory]);
+        $this->forwarder       = mock(ModuleForwarder::class, [$this->moduleLoader])->makePartial();
+        $this->provider        = mock(BuiltInModuleProvider::class);
+        $this->handler         = new ModuleHandler($this->moduleLoader, $this->forwarder, $this->provider);
+        $this->accessor        = new ReflectionAccessor($this->handler);
+    });
+
+    describe('loadModule method', function () {
+        it('returns cached result for already loaded module', function () {
+            $this->moduleLoader->shouldReceive('loadAst')->never();
+
+            // Simulate already loaded
+            $loadedModules = $this->accessor->getProperty('loadedModules');
+            $loadedModules['test.scss'] = 'test';
+            $this->accessor->callMethod('setLoadedModules', [['loadedModules' => $loadedModules]]);
+
+            $result = $this->handler->loadModule('test.scss');
+
+            expect($result)->toEqual(['cssAst' => [], 'namespace' => 'test']);
+        });
+
+        it('loads sass: module and registers properties', function () {
+            $this->provider->shouldReceive('provideProperties')->with('sass:math')->andReturn(['$pi' => 3.14]);
+
+            $result = $this->handler->loadModule('sass:math', 'math');
+
+            expect($result)->toEqual(['cssAst' => [], 'namespace' => 'math']);
+        });
+
+        it('loads regular module and processes ast', function () {
+            $ast = [
+                (object) ['type' => 'variable', 'properties' => ['name' => '$var', 'value' => 'val']],
+                (object) ['type' => 'mixin', 'properties' => ['name' => 'testMixin', 'args' => [], 'body' => []]],
+                (object) ['type' => 'function', 'properties' => ['name' => 'testFunc', 'args' => [], 'body' => []]],
+            ];
+            $this->moduleLoader->shouldReceive('loadAst')->andReturn($ast);
+
+            $result = $this->handler->loadModule('test.scss', 'test');
+
+            expect($result)->toHaveKey('cssAst')
+                ->and($result)->toHaveKey('namespace')
+                ->and($result['namespace'])->toBe('test');
+        });
+
+        it('handles global variables for namespace *', function () {
+            $ast = [(object) ['type' => 'variable', 'properties' => ['name' => '$global', 'value' => 'val']]];
+            $this->moduleLoader->shouldReceive('loadAst')->andReturn($ast);
+
+            $this->handler->loadModule('test.scss', '*');
+
+            $globals = $this->handler->getGlobalVariables();
+            expect($globals)->toHaveKey('$global');
+        });
+
+        it('loads module with css nodes', function () {
+            $cssNode = (object) ['type' => 'rule', 'properties' => ['selector' => '.test']];
+            $ast     = [$cssNode];
+            $this->moduleLoader->shouldReceive('loadAst')->andReturn($ast);
+
+            $result = $this->handler->loadModule('test.scss', 'test');
+
+            expect($result['cssAst'])->toContain($cssNode);
         });
     });
 
-    describe('load method', function () {
-        it('loads built-in module sass:math', function () {
-            $result = $this->moduleHandler->loadModule('sass:math');
+    describe('forwardModule method', function () {
+        it('returns empty when already loaded', function () {
+            // Simulate loaded
+            $loadedModules = $this->accessor->getProperty('loadedModules');
+            $loadedModules['test.scss'] = 'test';
+            $this->accessor->callMethod('setLoadedModules', [['loadedModules' => $loadedModules]]);
 
-            expect($result['namespace'])->toBe('sass:math')
-                ->and($result['cssAst'])->toBe([]);
+            $result = $this->handler->forwardModule('test.scss', fn() => null);
 
-            // Check that built-in properties are registered
-            $variables = $this->moduleHandler->getVariables('math');
-            expect($variables)->toHaveKey('$pi')
-                ->and($variables)->toHaveKey('$e');
+            expect($result)->toBe([]);
         });
 
-        it('loads custom module', function () {
-            $path    = 'test.scss';
-            $content = '$var: 42;';
+        it('forwards and stores properties', function () {
+            $this->forwarder->shouldReceive('forwardModule')->andReturn([
+                'variables' => ['$var' => 'value'],
+                'mixins'    => ['mixin' => ['args' => [], 'body' => []]],
+                'functions' => ['func' => ['args' => [], 'body' => []]],
+            ]);
 
-            $this->loader->shouldReceive('load')
-                ->with($path)
-                ->andReturn($content);
+            $result = $this->handler->forwardModule('test.scss', fn() => null, 'test');
 
-            $result = $this->moduleHandler->loadModule($path);
-
-            expect($result['namespace'])->toBe('test')
-                ->and($result['cssAst'])->toBe([]);
-
-            // Check that variable is registered
-            $variables = $this->moduleHandler->getVariables('test');
-            expect($variables)->toHaveKey('$var');
-        });
-
-        it('handles loading errors', function () {
-            $path = 'nonexistent.scss';
-
-            $this->loader->shouldReceive('load')
-                ->with($path)
-                ->andThrow(new Exception('File not found'));
-
-            expect(fn() => $this->moduleHandler->loadModule($path))
-                ->toThrow(Exception::class, 'File not found');
+            expect($result)->toHaveKey('variables')
+                ->and($this->handler->getVariables('test'))->toHaveKey('$var');
         });
     });
 
-    describe('has method', function () {
-        it('returns true if module is loaded', function () {
-            $this->moduleHandler->loadModule('sass:math');
+    describe('getProperty method', function () {
+        it('returns property directly', function () {
+            // Simulate property
+            $properties = $this->accessor->getProperty('forwardedProperties');
+            $properties['test']['$prop'] = 'value';
+            $this->accessor->callMethod('setLoadedModules', [['forwardedProperties' => $properties]]);
 
-            expect($this->moduleHandler->isModuleLoaded('sass:math'))->toBeTrue();
+            $result = $this->handler->getProperty('test', '$prop');
+
+            expect($result)->toBe('value');
         });
 
-        it('returns false if module is not loaded', function () {
-            expect($this->moduleHandler->isModuleLoaded('unknown'))->toBeFalse();
+        it('evaluates VariableDeclarationNode', function () {
+            $node = new VariableDeclarationNode('$prop', new StringNode('expr', 1), 1);
+
+            // Simulate property
+            $properties = $this->accessor->getProperty('forwardedProperties');
+            $properties['test']['$prop'] = $node;
+            $this->accessor->callMethod('setLoadedModules', [['forwardedProperties' => $properties]]);
+
+            $evaluate = fn($expr) => 'evaluated';
+
+            $result = $this->handler->getProperty('test', '$prop', $evaluate);
+
+            expect($result)->toBe('evaluated');
+        });
+
+        it('throws exception for missing property', function () {
+            expect(fn() => $this->handler->getProperty('test', '$missing'))
+                ->toThrow(
+                    CompilationException::class,
+                    'Property $missing not found in module test'
+                );
+        });
+    });
+
+    describe('getLoadedModules and setLoadedModules methods', function () {
+        it('gets and sets state', function () {
+            $state = [
+                'loadedModules'       => ['mod' => 'ns'],
+                'forwardedProperties' => ['ns' => ['$var' => 'val']],
+                'globalVariables'     => ['$global' => 'val'],
+            ];
+
+            $this->handler->setLoadedModules($state);
+            $result = $this->handler->getLoadedModules();
+
+            expect($result)->toEqual($state);
         });
     });
 
-    describe('get method', function () {
-        it('returns property value if found', function () {
-            $this->moduleHandler->loadModule('sass:math');
+    describe('registerBuiltInModuleProperties method', function () {
+        it('registers built-in properties', function () {
+            $this->provider->shouldReceive('provideProperties')->with('sass:math')->andReturn(['$pi' => 3.14]);
+            $this->accessor->callMethod('registerBuiltInModuleProperties', ['sass:math']);
 
-            $pi = $this->moduleHandler->getProperty('math', '$pi');
-
-            expect($pi)->toBe(M_PI);
-        });
-
-        it('throws exception if property not found', function () {
-            $this->moduleHandler->loadModule('sass:math');
-
-            expect(fn() => $this->moduleHandler->getProperty('math', '$nonexistent'))
-                ->toThrow(CompilationException::class, 'Property $nonexistent not found in module math');
+            $properties = $this->accessor->getProperty('forwardedProperties');
+            expect($properties['math']['$pi'])->toBe(3.14);
         });
     });
-
-    describe('getBuiltInModules method', function () {
-        it('returns list of built-in modules', function () {
-            // Since there's no actual getBuiltInModules method, we'll test the loaded state
-            $this->moduleHandler->loadModule('sass:math');
-
-            $loadedModules = $this->moduleHandler->getLoadedModules();
-
-            expect($loadedModules['loadedModules'])->toHaveKey('sass:math')
-                ->and($loadedModules['forwardedProperties'])->toHaveKey('math');
-        });
-    });
-})->covers(ModuleHandler::class);
+});

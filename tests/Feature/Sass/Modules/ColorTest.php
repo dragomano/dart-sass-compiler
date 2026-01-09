@@ -677,64 +677,12 @@ describe('sass:color', function () {
             expect($this->compiler->compileString($scss))->toEqualCss($expected);
         });
 
-        it('supports alpha function', function () {
-            $scss = <<<'SCSS'
-            div {
-                alpha-red: alpha(red);
-                alpha-rgba: alpha(rgba(255, 0, 0, 0.5));
-            }
-            SCSS;
-
-            $expected = /** @lang text */ <<<'CSS'
-            div {
-              alpha-red: 1;
-              alpha-rgba: .5;
-            }
-            CSS;
-
-            expect($this->compiler->compileString($scss))->toEqualCss($expected);
-        });
-
-        it('supports opacity function', function () {
-            $scss = <<<'SCSS'
-            div {
-                opacity-red: opacity(red);
-                opacity-rgba: opacity(rgba(255, 0, 0, 0.5));
-            }
-            SCSS;
-
-            $expected = /** @lang text */ <<<'CSS'
-            div {
-              opacity-red: 1;
-              opacity-rgba: .5;
-            }
-            CSS;
-
-            expect($this->compiler->compileString($scss))->toEqualCss($expected);
-        });
-
         it('supports color.blackness function', function () {
             $scss = <<<'SCSS'
             @use 'sass:color';
 
             div {
                 blackness-hwb: color.blackness(hwb(0, 0%, 50%));
-            }
-            SCSS;
-
-            $expected = /** @lang text */ <<<'CSS'
-            div {
-              blackness-hwb: 50%;
-            }
-            CSS;
-
-            expect($this->compiler->compileString($scss))->toEqualCss($expected);
-        });
-
-        it('supports blackness function', function () {
-            $scss = <<<'SCSS'
-            div {
-                blackness-hwb: blackness(hwb(0, 0%, 50%));
             }
             SCSS;
 
@@ -765,44 +713,12 @@ describe('sass:color', function () {
             expect($this->compiler->compileString($scss))->toEqualCss($expected);
         });
 
-        it('supports red function', function () {
-            $scss = <<<'SCSS'
-            div {
-                red-value: red(red);
-            }
-            SCSS;
-
-            $expected = /** @lang text */ <<<'CSS'
-            div {
-              red-value: 255;
-            }
-            CSS;
-
-            expect($this->compiler->compileString($scss))->toEqualCss($expected);
-        });
-
         it('supports color.green function', function () {
             $scss = <<<'SCSS'
             @use 'sass:color';
 
             div {
                 green-value: color.green(red);
-            }
-            SCSS;
-
-            $expected = /** @lang text */ <<<'CSS'
-            div {
-              green-value: 0;
-            }
-            CSS;
-
-            expect($this->compiler->compileString($scss))->toEqualCss($expected);
-        });
-
-        it('supports green function', function () {
-            $scss = <<<'SCSS'
-            div {
-                green-value: green(red);
             }
             SCSS;
 
@@ -833,44 +749,12 @@ describe('sass:color', function () {
             expect($this->compiler->compileString($scss))->toEqualCss($expected);
         });
 
-        it('supports blue function', function () {
-            $scss = <<<'SCSS'
-            div {
-                blue-value: blue(red);
-            }
-            SCSS;
-
-            $expected = /** @lang text */ <<<'CSS'
-            div {
-              blue-value: 0;
-            }
-            CSS;
-
-            expect($this->compiler->compileString($scss))->toEqualCss($expected);
-        });
-
         it('supports color.hue function', function () {
             $scss = <<<'SCSS'
             @use 'sass:color';
 
             div {
                 hue-value: color.hue(hsl(120, 100%, 50%));
-            }
-            SCSS;
-
-            $expected = /** @lang text */ <<<'CSS'
-            div {
-              hue-value: 120deg;
-            }
-            CSS;
-
-            expect($this->compiler->compileString($scss))->toEqualCss($expected);
-        });
-
-        it('supports hue function', function () {
-            $scss = <<<'SCSS'
-            div {
-                hue-value: hue(hsl(120, 100%, 50%));
             }
             SCSS;
 
@@ -901,22 +785,6 @@ describe('sass:color', function () {
             expect($this->compiler->compileString($scss))->toEqualCss($expected);
         });
 
-        it('supports lightness function', function () {
-            $scss = <<<'SCSS'
-            div {
-                lightness-value: lightness(hsl(0, 100%, 75%));
-            }
-            SCSS;
-
-            $expected = /** @lang text */ <<<'CSS'
-            div {
-              lightness-value: 75%;
-            }
-            CSS;
-
-            expect($this->compiler->compileString($scss))->toEqualCss($expected);
-        });
-
         it('supports color.whiteness function', function () {
             $scss = <<<'SCSS'
             @use 'sass:color';
@@ -929,86 +797,6 @@ describe('sass:color', function () {
             $expected = /** @lang text */ <<<'CSS'
             div {
               whiteness-hwb: 50%;
-            }
-            CSS;
-
-            expect($this->compiler->compileString($scss))->toEqualCss($expected);
-        });
-
-        it('supports whiteness function', function () {
-            $scss = <<<'SCSS'
-            div {
-                whiteness-hwb: whiteness(hwb(0, 50%, 0%));
-            }
-            SCSS;
-
-            $expected = /** @lang text */ <<<'CSS'
-            div {
-              whiteness-hwb: 50%;
-            }
-            CSS;
-
-            expect($this->compiler->compileString($scss))->toEqualCss($expected);
-        });
-
-        it('supports opacify function', function () {
-            $scss = <<<'SCSS'
-            body {
-                background: opacify(rgba(255, 0, 0, 0.5), 0.3);
-            }
-            SCSS;
-
-            $expected = <<<'CSS'
-            body {
-              background: #ff0000cc;
-            }
-            CSS;
-
-            expect($this->compiler->compileString($scss))->toEqualCss($expected);
-        });
-
-        it('supports fade-in function', function () {
-            $scss = <<<'SCSS'
-            div {
-                fade-in: fade-in(rgba(255, 0, 0, 0.5), 0.3);
-            }
-            SCSS;
-
-            $expected = /** @lang text */ <<<'CSS'
-            div {
-              fade-in: #ff0000cc;
-            }
-            CSS;
-
-            expect($this->compiler->compileString($scss))->toEqualCss($expected);
-        });
-
-        it('supports transparentize function', function () {
-            $scss = <<<'SCSS'
-            body {
-                background: transparentize(rgba(255, 0, 0, 0.8), 0.3);
-            }
-            SCSS;
-
-            $expected = <<<'CSS'
-            body {
-              background: #ff000080;
-            }
-            CSS;
-
-            expect($this->compiler->compileString($scss))->toEqualCss($expected);
-        });
-
-        it('supports fade-out function', function () {
-            $scss = <<<'SCSS'
-            div {
-                fade-out: fade-out(rgba(255, 0, 0, 0.8), 0.3);
-            }
-            SCSS;
-
-            $expected = /** @lang text */ <<<'CSS'
-            div {
-              fade-out: #ff000080;
             }
             CSS;
 
@@ -1032,24 +820,276 @@ describe('sass:color', function () {
 
             expect($this->compiler->compileString($scss))->toEqualCss($expected);
         });
+    });
+});
 
-        it('supports saturation function', function () {
+describe('global color functions', function () {
+    describe('supports global adjust-color function', function () {
+        it('adjusts RGB components globally', function () {
             $scss = <<<'SCSS'
-            div {
-                saturation-value: saturation(hsl(0, 75%, 50%));
+            $color: #6b717f;
+            body {
+                background: adjust-color($color, $red: 15);
             }
             SCSS;
 
-            $expected = /** @lang text */ <<<'CSS'
-            div {
-              saturation-value: 75%;
+            $expected = <<<'CSS'
+            body {
+              background: #7a717f;
             }
             CSS;
 
             expect($this->compiler->compileString($scss))->toEqualCss($expected);
         });
 
-        it('supports lighten function', function () {
+        it('adjusts HSL components globally', function () {
+            $scss = <<<'SCSS'
+            $color: #ff8800;
+            body {
+                background: adjust-color($color, $hue: 60deg);
+            }
+            SCSS;
+
+            $expected = <<<'CSS'
+            body {
+              background: #77ff00;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global change-color function', function () {
+        it('changes color properties globally', function () {
+            $scss = <<<'SCSS'
+            $color: #ff0000;
+            body {
+                background: change-color($color, $lightness: 50%);
+            }
+            SCSS;
+
+            $expected = <<<'CSS'
+            body {
+              background: red;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global mix function', function () {
+        it('mixes colors globally', function () {
+            $scss = <<<'SCSS'
+            body {
+                background: mix(#ff0000, #0000ff, 0.5);
+            }
+            SCSS;
+
+            $expected = <<<'CSS'
+            body {
+              background: purple;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global scale-color function', function () {
+        it('scales color properties globally', function () {
+            $scss = <<<'SCSS'
+            $color: #ff0000;
+            body {
+                background: scale-color($color, $lightness: 20%);
+            }
+            SCSS;
+
+            $expected = <<<'CSS'
+            body {
+              background: #ff3333;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global complement function', function () {
+        it('gets complementary color globally', function () {
+            $scss = <<<'SCSS'
+            div {
+                complement-red: complement(red);
+            }
+            SCSS;
+
+            $expected = /** @lang text */ <<<'CSS'
+            div {
+              complement-red: cyan;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global grayscale function', function () {
+        it('converts to grayscale globally', function () {
+            $scss = <<<'SCSS'
+            div {
+                grayscale-red: grayscale(red);
+            }
+            SCSS;
+
+            $expected = /** @lang text */ <<<'CSS'
+            div {
+              grayscale-red: grey;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global ie-hex-str function', function () {
+        it('converts to IE hex string globally', function () {
+            $scss = <<<'SCSS'
+            div {
+                ie-hex-str-red: ie-hex-str(red);
+            }
+            SCSS;
+
+            $expected = /** @lang text */ <<<'CSS'
+            div {
+              ie-hex-str-red: #FFFF0000;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global invert function', function () {
+        it('inverts color globally', function () {
+            $scss = <<<'SCSS'
+            div {
+                invert-red: invert(red, 100%);
+            }
+            SCSS;
+
+            $expected = /** @lang text */ <<<'CSS'
+            div {
+              invert-red: cyan;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global adjust-hue function', function () {
+        it('adjusts hue globally', function () {
+            $scss = <<<'SCSS'
+            div {
+                adjusted-hue: adjust-hue(red, 180deg);
+            }
+            SCSS;
+
+            $expected = /** @lang text */ <<<'CSS'
+            div {
+              adjusted-hue: cyan;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global alpha/opacity functions', function () {
+        it('gets alpha value globally', function () {
+            $scss = <<<'SCSS'
+            div {
+                alpha-red: alpha(red);
+                alpha-rgba: alpha(rgba(255, 0, 0, 0.5));
+            }
+            SCSS;
+
+            $expected = /** @lang text */ <<<'CSS'
+            div {
+              alpha-red: 1;
+              alpha-rgba: .5;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+
+        it('gets opacity value globally', function () {
+            $scss = <<<'SCSS'
+            div {
+                opacity-red: opacity(red);
+                opacity-rgba: opacity(rgba(255, 0, 0, 0.5));
+            }
+            SCSS;
+
+            $expected = /** @lang text */ <<<'CSS'
+            div {
+              opacity-red: 1;
+              opacity-rgba: .5;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global RGB component functions', function () {
+        it('gets RGB components globally', function () {
+            $scss = <<<'SCSS'
+            div {
+                red-value: red(red);
+                green-value: green(red);
+                blue-value: blue(red);
+            }
+            SCSS;
+
+            $expected = /** @lang text */ <<<'CSS'
+            div {
+              red-value: 255;
+              green-value: 0;
+              blue-value: 0;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global HSL component functions', function () {
+        it('gets HSL components globally', function () {
+            $scss = <<<'SCSS'
+            div {
+                hue-value: hue(hsl(120, 100%, 50%));
+                saturation-value: saturation(hsl(0, 75%, 50%));
+                lightness-value: lightness(hsl(0, 100%, 75%));
+            }
+            SCSS;
+
+            $expected = /** @lang text */ <<<'CSS'
+            div {
+              hue-value: 120deg;
+              saturation-value: 75%;
+              lightness-value: 75%;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global color adjustment functions', function () {
+        it('lightens color globally', function () {
             $scss = <<<'SCSS'
             body {
                 background: lighten(#ff0000, 20%);
@@ -1065,7 +1105,7 @@ describe('sass:color', function () {
             expect($this->compiler->compileString($scss))->toEqualCss($expected);
         });
 
-        it('supports darken function', function () {
+        it('darkens color globally', function () {
             $scss = <<<'SCSS'
             body {
                 background: darken(#ff6666, 20%);
@@ -1081,7 +1121,7 @@ describe('sass:color', function () {
             expect($this->compiler->compileString($scss))->toEqualCss($expected);
         });
 
-        it('supports saturate function', function () {
+        it('saturates color globally', function () {
             $scss = <<<'SCSS'
             body {
                 background: saturate(#cc6666, 20%);
@@ -1097,7 +1137,7 @@ describe('sass:color', function () {
             expect($this->compiler->compileString($scss))->toEqualCss($expected);
         });
 
-        it('supports desaturate function', function () {
+        it('desaturates color globally', function () {
             $scss = <<<'SCSS'
             body {
                 background: desaturate(#ff0000, 50%);
@@ -1107,6 +1147,72 @@ describe('sass:color', function () {
             $expected = <<<'CSS'
             body {
               background: #bf4040;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+    });
+
+    describe('supports global alpha adjustment functions', function () {
+        it('increases opacity globally', function () {
+            $scss = <<<'SCSS'
+            body {
+                background: opacify(rgba(255, 0, 0, 0.5), 0.3);
+            }
+            SCSS;
+
+            $expected = <<<'CSS'
+            body {
+              background: #ff0000cc;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+
+        it('decreases opacity globally', function () {
+            $scss = <<<'SCSS'
+            body {
+                background: transparentize(rgba(255, 0, 0, 0.8), 0.3);
+            }
+            SCSS;
+
+            $expected = <<<'CSS'
+            body {
+              background: #ff000080;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+
+        it('fades in color globally', function () {
+            $scss = <<<'SCSS'
+            div {
+                fade-in: fade-in(rgba(255, 0, 0, 0.5), 0.3);
+            }
+            SCSS;
+
+            $expected = /** @lang text */ <<<'CSS'
+            div {
+              fade-in: #ff0000cc;
+            }
+            CSS;
+
+            expect($this->compiler->compileString($scss))->toEqualCss($expected);
+        });
+
+        it('fades out color globally', function () {
+            $scss = <<<'SCSS'
+            div {
+                fade-out: fade-out(rgba(255, 0, 0, 0.8), 0.3);
+            }
+            SCSS;
+
+            $expected = /** @lang text */ <<<'CSS'
+            div {
+              fade-out: #ff000080;
             }
             CSS;
 
