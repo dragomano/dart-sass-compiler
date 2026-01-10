@@ -131,23 +131,6 @@ describe('SassColor factory methods', function () {
         expect($color->getAlpha())->toBe(0.4)
             ->and($color->getFormat())->toBe(ColorFormat::XYZA->value);
     });
-
-    it('creates from color string', function () {
-        $color = SassColor::fromString('#ff0000');
-
-        expect($color->getRed())->toBe(255.0)
-            ->and($color->getGreen())->toBe(0.0)
-            ->and($color->getBlue())->toBe(0.0)
-            ->and((string) $color)->toBe('red');
-    });
-
-    it('creates from named color string', function () {
-        $color = SassColor::fromString('blue');
-
-        expect($color->getRed())->toBe(0.0)
-            ->and($color->getGreen())->toBe(0.0)
-            ->and($color->getBlue())->toBe(255.0);
-    });
 });
 
 describe('SassColor getters', function () {

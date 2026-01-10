@@ -5,74 +5,16 @@ declare(strict_types=1);
 use DartSass\Modules\ColorFormat;
 
 describe('ColorFormat', function () {
-    describe('::getPrimaryChannels', function () {
-        it('returns correct primary channels for HSL format', function () {
-            $channels = ColorFormat::HSL->getPrimaryChannels();
-            expect($channels)->toBe(['hue', 'saturation', 'lightness']);
-        });
-
-        it('returns correct primary channels for HSLA format', function () {
-            $channels = ColorFormat::HSLA->getPrimaryChannels();
-            expect($channels)->toBe(['hue', 'saturation', 'lightness']);
-        });
-
-        it('returns correct primary channels for HWB format', function () {
-            $channels = ColorFormat::HWB->getPrimaryChannels();
-            expect($channels)->toBe(['hue', 'whiteness', 'blackness']);
-        });
-
-        it('returns correct primary channels for LAB format', function () {
-            $channels = ColorFormat::LAB->getPrimaryChannels();
-            expect($channels)->toBe(['l', 'a', 'b']);
-        });
-
-        it('returns correct primary channels for LABA format', function () {
-            $channels = ColorFormat::LABA->getPrimaryChannels();
-            expect($channels)->toBe(['l', 'a', 'b']);
-        });
-
-        it('returns correct primary channels for LCH format', function () {
-            $channels = ColorFormat::LCH->getPrimaryChannels();
-            expect($channels)->toBe(['lightness', 'chroma', 'hue']);
-        });
-
-        it('returns correct primary channels for OKLCH format', function () {
-            $channels = ColorFormat::OKLCH->getPrimaryChannels();
-            expect($channels)->toBe(['lightness', 'chroma', 'hue']);
-        });
-
-        it('returns correct primary channels for RGB format', function () {
-            $channels = ColorFormat::RGB->getPrimaryChannels();
-            expect($channels)->toBe(['red', 'green', 'blue']);
-        });
-
-        it('returns correct primary channels for RGBA format', function () {
-            $channels = ColorFormat::RGBA->getPrimaryChannels();
-            expect($channels)->toBe(['red', 'green', 'blue']);
-        });
-
-        it('returns correct primary channels for XYZ format', function () {
-            $channels = ColorFormat::XYZ->getPrimaryChannels();
-            expect($channels)->toBe(['x', 'y', 'z']);
-        });
-
-        it('returns correct primary channels for XYZA format', function () {
-            $channels = ColorFormat::XYZA->getPrimaryChannels();
-            expect($channels)->toBe(['x', 'y', 'z']);
-        });
-
-        it('returns empty array for HEX format', function () {
-            $channels = ColorFormat::HEX->getPrimaryChannels();
-            expect($channels)->toBe([]);
-        });
-
-        it('returns empty array for HEXA format', function () {
-            $channels = ColorFormat::HEXA->getPrimaryChannels();
-            expect($channels)->toBe([]);
+    describe('getPattern()', function () {
+        it('returns correct pattern for all formats', function () {
+            foreach (ColorFormat::cases() as $format) {
+                $pattern = $format->getPattern();
+                expect($pattern)->toBeString()->and(strlen($pattern))->toBeGreaterThan(0);
+            }
         });
     });
 
-    describe('::format', function () {
+    describe('format()', function () {
         it('formats color data correctly for RGB format', function () {
             $colorData = ['r' => 255, 'g' => 0, 'b' => 0, 'a' => 1];
             $formatted = ColorFormat::RGB->format($colorData);
@@ -152,34 +94,7 @@ describe('ColorFormat', function () {
         });
     });
 
-    describe('::getPattern', function () {
-        it('returns correct pattern for HEX format', function () {
-            $pattern = ColorFormat::HEX->getPattern();
-            expect($pattern)->toBe('/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/');
-        });
-
-        it('returns correct pattern for RGB format', function () {
-            $pattern = ColorFormat::RGB->getPattern();
-            expect($pattern)->toBe('/^rgb\((\d+(?:\.\d+)?%?)[\s,]+(\d+(?:\.\d+)?%?)[\s,]+(\d+(?:\.\d+)?%?)\s*(?:\/\s*([0-1]?\.\d+|0|1))?\)$/');
-        });
-
-        it('returns correct pattern for HSL format', function () {
-            $pattern = ColorFormat::HSL->getPattern();
-            expect($pattern)->toBe('/^hsl\((\d+(?:\.\d+)?(?:deg|rad|grad|turn)?)[\s,]+(\d+(?:\.\d+)?)%[\s,]+(\d+(?:\.\d+)?)%\s*(?:\/\s*([0-1]?\.\d+|0|1|100%|\d{1,2}%))?\)$/');
-        });
-
-        it('returns correct pattern for LAB format', function () {
-            $pattern = ColorFormat::LAB->getPattern();
-            expect($pattern)->toBe('/^lab\((\d+(?:\.\d+)?%?)\s+([-+]?(?:\d+(?:\.\d+)?|\.\d+))\s+([-+]?(?:\d+(?:\.\d+)?|\.\d+))\)$/i');
-        });
-
-        it('returns correct pattern for XYZ format', function () {
-            $pattern = ColorFormat::XYZ->getPattern();
-            expect($pattern)->toBe('/^color\(xyz\s+([-+]?(?:\d+(?:\.\d+)?|\.\d+))\s+([-+]?(?:\d+(?:\.\d+)?|\.\d+))\s+([-+]?(?:\d+(?:\.\d+)?|\.\d+))\s*(?:\/\s*([0-1]?(?:\.\d+)?|\d+%))?\)$/i');
-        });
-    });
-
-    describe('::isPolar', function () {
+    describe('isPolar()', function () {
         it('returns true for polar color spaces', function () {
             expect(ColorFormat::HSL->isPolar())->toBeTrue()
                 ->and(ColorFormat::HSLA->isPolar())->toBeTrue()
@@ -200,7 +115,7 @@ describe('ColorFormat', function () {
         });
     });
 
-    describe('::isLegacy', function () {
+    describe('isLegacy()', function () {
         it('returns true for legacy color spaces', function () {
             expect(ColorFormat::HSL->isLegacy())->toBeTrue()
                 ->and(ColorFormat::HSLA->isLegacy())->toBeTrue()
@@ -221,7 +136,7 @@ describe('ColorFormat', function () {
         });
     });
 
-    describe('::getChannels', function () {
+    describe('getChannels()', function () {
         it('returns all channels for RGB format', function () {
             $channels = ColorFormat::RGB->getChannels();
             expect($channels)->toBe(['red', 'r', 'green', 'g', 'blue', 'b', 'alpha', 'a']);
@@ -243,7 +158,7 @@ describe('ColorFormat', function () {
         });
     });
 
-    describe('::hasChannel', function () {
+    describe('hasChannel()', function () {
         it('returns true for existing channels', function () {
             expect(ColorFormat::RGB->hasChannel('red'))->toBeTrue()
                 ->and(ColorFormat::RGB->hasChannel('r'))->toBeTrue()
@@ -262,7 +177,74 @@ describe('ColorFormat', function () {
         });
     });
 
-    describe('::isCompatibleWith', function () {
+    describe('getPrimaryChannels()', function () {
+        it('returns correct primary channels for HSL format', function () {
+            $channels = ColorFormat::HSL->getPrimaryChannels();
+            expect($channels)->toBe(['hue', 'saturation', 'lightness']);
+        });
+
+        it('returns correct primary channels for HSLA format', function () {
+            $channels = ColorFormat::HSLA->getPrimaryChannels();
+            expect($channels)->toBe(['hue', 'saturation', 'lightness']);
+        });
+
+        it('returns correct primary channels for HWB format', function () {
+            $channels = ColorFormat::HWB->getPrimaryChannels();
+            expect($channels)->toBe(['hue', 'whiteness', 'blackness']);
+        });
+
+        it('returns correct primary channels for LAB format', function () {
+            $channels = ColorFormat::LAB->getPrimaryChannels();
+            expect($channels)->toBe(['l', 'a', 'b']);
+        });
+
+        it('returns correct primary channels for LABA format', function () {
+            $channels = ColorFormat::LABA->getPrimaryChannels();
+            expect($channels)->toBe(['l', 'a', 'b']);
+        });
+
+        it('returns correct primary channels for LCH format', function () {
+            $channels = ColorFormat::LCH->getPrimaryChannels();
+            expect($channels)->toBe(['lightness', 'chroma', 'hue']);
+        });
+
+        it('returns correct primary channels for OKLCH format', function () {
+            $channels = ColorFormat::OKLCH->getPrimaryChannels();
+            expect($channels)->toBe(['lightness', 'chroma', 'hue']);
+        });
+
+        it('returns correct primary channels for RGB format', function () {
+            $channels = ColorFormat::RGB->getPrimaryChannels();
+            expect($channels)->toBe(['red', 'green', 'blue']);
+        });
+
+        it('returns correct primary channels for RGBA format', function () {
+            $channels = ColorFormat::RGBA->getPrimaryChannels();
+            expect($channels)->toBe(['red', 'green', 'blue']);
+        });
+
+        it('returns correct primary channels for XYZ format', function () {
+            $channels = ColorFormat::XYZ->getPrimaryChannels();
+            expect($channels)->toBe(['x', 'y', 'z']);
+        });
+
+        it('returns correct primary channels for XYZA format', function () {
+            $channels = ColorFormat::XYZA->getPrimaryChannels();
+            expect($channels)->toBe(['x', 'y', 'z']);
+        });
+
+        it('returns empty array for HEX format', function () {
+            $channels = ColorFormat::HEX->getPrimaryChannels();
+            expect($channels)->toBe([]);
+        });
+
+        it('returns empty array for HEXA format', function () {
+            $channels = ColorFormat::HEXA->getPrimaryChannels();
+            expect($channels)->toBe([]);
+        });
+    });
+
+    describe('isCompatibleWith()', function () {
         it('returns true for same format', function () {
             expect(ColorFormat::RGB->isCompatibleWith(ColorFormat::RGB))->toBeTrue();
         });

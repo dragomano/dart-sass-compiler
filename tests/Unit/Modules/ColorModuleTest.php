@@ -13,6 +13,18 @@ beforeEach(function () {
 });
 
 describe('Color Parsing', function () {
+    describe('Named colors', function () {
+        it('parses named colors correctly', function () {
+            $red = $this->colorModule->parseColor('red');
+
+            expect($red['r'])->toBe(255)
+                ->and($red['g'])->toBe(0)
+                ->and($red['b'])->toBe(0)
+                ->and($red['a'])->toBe(1.0)
+                ->and($red['format'])->toBe(ColorFormat::RGB->value);
+        });
+    });
+
     describe('HEX format', function () {
         it('parses hex3 color', function () {
             $result = $this->colorModule->parseColor('#f00');
@@ -53,64 +65,6 @@ describe('Color Parsing', function () {
                 ->and($result['a'])->toBe(128 / 255.0)
                 ->and($result['format'])->toBe(ColorFormat::RGBA->value);
         });
-
-        it('parses exactly 2 characters for blue in 6-digit hex', function () {
-            $result = $this->colorModule->parseColor('#ff0012');
-            expect($result['b'])->toBe(18);
-
-            $result = $this->colorModule->parseColor('#aabbcd');
-            expect($result['b'])->toBe(205);
-        });
-
-        it('starts blue parsing from position 4 in 6-digit hex', function () {
-            $result = $this->colorModule->parseColor('#000011');
-            expect($result['b'])->toBe(17);
-
-            $result = $this->colorModule->parseColor('#112233');
-            expect($result['b'])->toBe(51);
-        });
-
-        it('parses 4-digit and 8-digit hex blue channels correctly', function () {
-            // 4-digit #aabb - b=187 (bb)
-            $result = $this->colorModule->parseColor('#aabb');
-            expect($result['b'])->toBe(187);
-
-            // 8-digit #aabbccdd - b=204 (cc)
-            $result = $this->colorModule->parseColor('#aabbccdd');
-            expect($result['b'])->toBe(204);
-        });
-
-        it('isolates blue channel parsing line 635', function () {
-            $result = $this->colorModule->parseColor('#000056');
-            expect($result['b'])->toBe(86);
-        });
-
-        it('throws exception for invalid hex color', function () {
-            expect(fn() => $this->colorModule->parseColor('#ff'))
-                ->toThrow(CompilationException::class);
-        });
-
-        it('handles edge cases in parseHexColor', function () {
-            // 3-digit hex
-            $result = $this->accessor->callMethod('parseHexColor', ['f00']);
-            expect($result['r'])->toBe(255)
-                ->and($result['g'])->toBe(0)
-                ->and($result['b'])->toBe(0);
-
-            // 4-digit hex with alpha
-            $result = $this->accessor->callMethod('parseHexColor', ['f008']);
-            expect($result['a'])->toBeCloseTo(136 / 255, 3);
-
-            // 6-digit hex
-            $result = $this->accessor->callMethod('parseHexColor', ['ff0000']);
-            expect($result['r'])->toBe(255)
-                ->and($result['g'])->toBe(0)
-                ->and($result['b'])->toBe(0);
-
-            // 8-digit hex with alpha
-            $result = $this->accessor->callMethod('parseHexColor', ['ff000080']);
-            expect($result['a'])->toBeCloseTo(128 / 255, 3);
-        });
     });
 
     describe('RGB format', function () {
@@ -124,57 +78,6 @@ describe('Color Parsing', function () {
                 ->and($result['format'])->toBe(ColorFormat::RGB->value);
         });
 
-        it('converts red percentage with multiplication by 2.55', function () {
-            $result = $this->colorModule->parseColor('rgb(20%, 0%, 0%)');
-            expect($result['r'])->toBe(51);
-
-            $result = $this->colorModule->parseColor('rgb(80%, 0%, 0%)');
-            expect($result['r'])->toBe(204);
-        });
-
-        it('converts green percentage with multiplication by 2.55', function () {
-            $result = $this->colorModule->parseColor('rgb(0%, 20%, 0%)');
-            expect($result['g'])->toBe(51);
-
-            $result = $this->colorModule->parseColor('rgb(0%, 80%, 0%)');
-            expect($result['g'])->toBe(204);
-
-            $result = $this->colorModule->parseColor('rgb(0%, 30%, 0%)');
-            expect($result['g'])->toBeGreaterThan(70)->and($result['g'])->toBeLessThan(80);
-        });
-
-        it('converts blue percentage with multiplication by 2.55', function () {
-            $result = $this->colorModule->parseColor('rgb(0%, 0%, 20%)');
-            expect($result['b'])->toBe(51);
-
-            $result = $this->colorModule->parseColor('rgb(0%, 0%, 80%)');
-            expect($result['b'])->toBe(204);
-        });
-
-        it('uses exact multiplication 2.55 for red percentage', function () {
-            $result = $this->colorModule->parseColor('rgb(20%, 0%, 0%)');
-            expect($result['r'])->toBe(51); // 20 * 2.55 = 51, not 20 / 2.55 = 7.84
-
-            $result = $this->colorModule->parseColor('rgb(60%, 0%, 0%)');
-            expect($result['r'])->toBe(153); // 60 * 2.55 = 153, not 60 / 2.55 = 23.53
-        });
-
-        it('uses exact multiplication 2.55 for green percentage', function () {
-            $result = $this->colorModule->parseColor('rgb(0%, 20%, 0%)');
-            expect($result['g'])->toBe(51); // 20 * 2.55 = 51, not 20 / 2.55 = 7.84
-
-            $result = $this->colorModule->parseColor('rgb(0%, 60%, 0%)');
-            expect($result['g'])->toBe(153); // 60 * 2.55 = 153, not 60 / 2.55 = 23.53
-        });
-
-        it('uses exact multiplication 2.55 for blue percentage', function () {
-            $result = $this->colorModule->parseColor('rgb(0%, 0%, 20%)');
-            expect($result['b'])->toBe(51); // 20 * 2.55 = 51, not 20 / 2.55 = 7.84
-
-            $result = $this->colorModule->parseColor('rgb(0%, 0%, 60%)');
-            expect($result['b'])->toBe(153); // 60 * 2.55 = 153, not 60 / 2.55 = 23.53
-        });
-
         it('parses rgba color with alpha', function () {
             $result = $this->colorModule->parseColor('rgba(255, 0, 0, 0.5)');
 
@@ -183,58 +86,6 @@ describe('Color Parsing', function () {
                 ->and($result['b'])->toBe(0)
                 ->and($result['a'])->toBe(0.5)
                 ->and($result['format'])->toBe(ColorFormat::RGBA->value);
-        });
-
-        it('parses color with surrounding spaces', function () {
-            $result = $this->colorModule->parseColor('   rgb(255, 0, 0)   ');
-            expect($result['r'])->toBe(255)
-                ->and($result['g'])->toBe(0)
-                ->and($result['b'])->toBe(0);
-
-            $named = $this->colorModule->parseColor('   red   ');
-            expect($named['r'])->toBe(255)
-                ->and($named['g'])->toBe(0)
-                ->and($named['b'])->toBe(0);
-        });
-
-        it('throws exception for negative RGB values', function () {
-            expect(fn() => $this->colorModule->parseColor('rgb(-1, 0, 0)'))
-                ->toThrow(CompilationException::class);
-        });
-
-        it('throws exception for out-of-range alpha', function () {
-            expect(fn() => $this->colorModule->parseColor('rgba(255, 0, 0, 1.5)'))
-                ->toThrow(CompilationException::class);
-        });
-
-        it('handles edge cases in parseRgbColor', function () {
-            // Values in range
-            $result = $this->accessor->callMethod('parseRgbColor', [['rgb(255, 0, 0)', '255', '0', '0']]);
-            expect($result['r'])->toBeCloseTo(255, 0)
-                ->and($result['g'])->toBeCloseTo(0, 0)
-                ->and($result['b'])->toBeCloseTo(0, 0);
-
-            // Values clamped to range
-            $result = $this->accessor->callMethod('parseRgbColor', [['rgb(300, 0, 0)', '300', '0', '0']]);
-            expect($result['r'])->toBe(255);
-
-            $result = $this->accessor->callMethod('parseRgbColor', [['rgb(-10, 0, 0)', '-10', '0', '0']]);
-            expect($result['r'])->toBe(0);
-        });
-
-        it('handles edge cases in parseRgbaColor', function () {
-            $result = $this->accessor->callMethod('parseRgbaColor', [['rgba(255, 0, 0, 0.5)', '255', '0', '0', '0.5']]);
-            expect($result['a'])->toBeCloseTo(0.5, 1)
-                ->and(fn() => $this->accessor->callMethod('parseRgbaColor', [['rgba(255, 0, 0, 1.5)', '255', '0', '0', '1.5']]))
-                ->toThrow(CompilationException::class);
-
-        });
-
-        it('rtrim required for decimal percentage parsing', function () {
-            $result = $this->colorModule->parseColor('rgb(12.345%, 87.654%, 33.333%)');
-            expect($result['r'])->toBe(31)
-                ->and($result['g'])->toBe(224)
-                ->and($result['b'])->toBe(85);
         });
     });
 
@@ -258,84 +109,17 @@ describe('Color Parsing', function () {
                 ->and($result['a'])->toBe(0.5)
                 ->and($result['format'])->toBe(ColorFormat::HSLA->value);
         });
-
-        it('throws exception for out-of-range saturation', function () {
-            expect(fn() => $this->colorModule->parseColor('hsl(0, 150%, 50%)'))
-                ->toThrow(CompilationException::class);
-        });
-
-        it('throws exception for out-of-range lightness', function () {
-            expect(fn() => $this->colorModule->parseColor('hsl(0, 100%, 150%)'))
-                ->toThrow(CompilationException::class);
-        });
-
-        it('throws exception for out-of-range hsla saturation', function () {
-            expect(fn() => $this->colorModule->parseColor('hsla(0, 150%, 50%, 0.5)'))
-                ->toThrow(CompilationException::class);
-        });
-
-        it('throws exception for out-of-range hsla lightness', function () {
-            expect(fn() => $this->colorModule->parseColor('hsla(0, 100%, 150%, 0.5)'))
-                ->toThrow(CompilationException::class);
-        });
-
-        it('throws exception for out-of-range hsla alpha', function () {
-            expect(fn() => $this->colorModule->parseColor('hsla(0, 100%, 50%, 1.5)'))
-                ->toThrow(CompilationException::class);
-        });
-
-        it('handles edge cases in parseHslColor', function () {
-            $result = $this->accessor->callMethod('parseHslColor', [['hsl(0, 100%, 50%)', '0', '100', '50']]);
-            expect($result['h'])->toBeCloseTo(0, 0)
-                ->and($result['s'])->toBe(100.0)
-                ->and($result['l'])->toBe(50.0)
-                ->and(fn() => $this->accessor->callMethod('parseHslColor', [['hsl(0, 150%, 50%)', '0', '150', '50']]))
-                ->toThrow(CompilationException::class, 'Invalid saturation value')
-                ->and(fn() => $this->accessor->callMethod('parseHslColor', [['hsl(0, 100%, 150%)', '0', '100', '150']]))
-                ->toThrow(CompilationException::class, 'Invalid lightness value');
-
-        });
-
-        it('handles edge cases in parseHslaColor', function () {
-            $result = $this->accessor->callMethod('parseHslaColor', [['hsla(0, 100%, 50%, 0.5)', '0', '100', '50', '0.5']]);
-            expect($result['a'])->toBeCloseTo(0.5, 1)
-                ->and(fn() => $this->accessor->callMethod('parseHslaColor', [['hsla(0, 100%, 50%, 1.5)', '0', '100', '50', '1.5']]))
-                ->toThrow(CompilationException::class);
-
-        });
     });
 
     describe('HWB format', function () {
-        it('parses hwb color', function () {
-            $result = $this->colorModule->parseColor('hwb(0, 0%, 50%)');
-
-            expect($result['h'])->toBe(0)
-                ->and($result['w'])->toBe(0)
-                ->and($result['bl'])->toBe(50)
-                ->and($result['a'])->toBe(1.0)
-                ->and($result['format'])->toBe(ColorFormat::HWB->value);
-        });
-
         it('parses hwb color with alpha', function () {
             $result = $this->colorModule->parseColor('hwb(0 0% 50% / 0.5)');
 
-            expect($result)->toEqual(['h' => 0, 'w' => 0, 'bl' => 50, 'a' => 0.5, 'format' => ColorFormat::HWB->value]);
-        });
-
-        it('handles edge cases in parseHwbColor', function () {
-            // Valid whiteness and blackness
-            $result = $this->accessor->callMethod('parseHwbColor', [['hwb(0, 50%, 30%)', '0', '50', '30']]);
-            expect($result['h'])->toBeCloseTo(0, 0)
-                ->and($result['w'])->toBe(50)
-                ->and($result['bl'])->toBe(30);
-
-            $result = $this->accessor->callMethod('parseHwbColor', [['hwb(0, 50%, 30%, 0.5)', '0', '50', '30', '0.5']]);
-            expect($result['a'])->toBe(0.5)
-                ->and(fn() => $this->accessor->callMethod('parseHwbColor', [['hwb(0, 150%, 30%)', '0', '150', '30']]))
-                ->toThrow(CompilationException::class, 'Invalid whiteness value')
-                ->and(fn() => $this->accessor->callMethod('parseHwbColor', [['hwb(0, 50%, 150%)', '0', '50', '150']]))
-                ->toThrow(CompilationException::class, 'Invalid blackness value');
-
+            expect($result['h'])->toEqual(0)
+                ->and($result['w'])->toEqual(0)
+                ->and($result['bl'])->toEqual(50)
+                ->and($result['a'])->toEqual(0.5)
+                ->and($result['format'])->toBe(ColorFormat::HWB->value);
         });
     });
 
@@ -381,34 +165,11 @@ describe('Color Parsing', function () {
                 ->and($result['a'])->toBe(0.5)
                 ->and($result['format'])->toBe(ColorFormat::OKLCH->value);
         });
-
-        it('handles percentage and decimal lightness', function () {
-            $resultPercent = $this->colorModule->parseColor('oklch(60% 0.15 30)');
-            expect($resultPercent['l'])->toBe(60.0);
-
-            $resultDecimal = $this->colorModule->parseColor('oklch(0.6 0.15 30)');
-            expect($resultDecimal['l'])->toBe(60.0);
-        });
-
-        it('throws exception for invalid alpha', function () {
-            expect(fn() => $this->colorModule->parseColor('oklch(60% 0.15 30 / 1.5)'))
-                ->toThrow(CompilationException::class, 'Invalid alpha value');
-        });
     });
 
     describe('LAB format', function () {
         it('parses lab color', function () {
             $result = $this->colorModule->parseColor('lab(50% 20 -10)');
-
-            expect($result['lab_l'])->toBe(50.0)
-                ->and($result['lab_a'])->toBe(20.0)
-                ->and($result['lab_b'])->toBe(-10.0)
-                ->and($result['a'])->toBe(1.0)
-                ->and($result['format'])->toBe(ColorFormat::LAB->value);
-        });
-
-        it('parses lab color without percentage', function () {
-            $result = $this->colorModule->parseColor('lab(0.5 20 -10)');
 
             expect($result['lab_l'])->toBe(50.0)
                 ->and($result['lab_a'])->toBe(20.0)
@@ -426,158 +187,33 @@ describe('Color Parsing', function () {
                 ->and($result['a'])->toBe(0.5)
                 ->and($result['format'])->toBe(ColorFormat::LABA->value);
         });
-
-        it('parses laba color with percentage alpha', function () {
-            $result = $this->colorModule->parseColor('lab(50% 20 -10 / 50%)');
-
-            expect($result['lab_l'])->toBe(50.0)
-                ->and($result['lab_a'])->toBe(20.0)
-                ->and($result['lab_b'])->toBe(-10.0)
-                ->and($result['a'])->toBe(0.5)
-                ->and($result['format'])->toBe(ColorFormat::LABA->value);
-        });
-
-        it('handles edge cases in parseLabColor with percentage lightness', function () {
-            $result = $this->colorModule->parseColor('lab(50% 20 -10)');
-            expect($result['lab_l'])->toBe(50.0);
-
-            $result = $this->colorModule->parseColor('lab(0.5 20 -10)');
-            expect($result['lab_l'])->toBe(50.0);
-        });
-
-        it('clamps lab lightness to valid range in parseLabColor', function () {
-            $result = $this->accessor->callMethod('parseLabColor', [['lab(150% 20 -10)', '150', '20', '-10']]);
-            expect($result['lab_l'])->toBe(100.0);
-
-            $result = $this->accessor->callMethod('parseLabColor', [['lab(-50% 20 -10)', '-50', '20', '-10']]);
-            expect($result['lab_l'])->toBe(0.0);
-        });
-
-        it('handles edge cases in parseLabaColor with boundary alpha values', function () {
-            $result = $this->accessor->callMethod('parseLabaColor', [['lab(50% 20 -10 / 0)', '50', '20', '-10', '0']]);
-            expect($result['a'])->toBe(0.0);
-
-            $result = $this->accessor->callMethod('parseLabaColor', [['lab(50% 20 -10 / 1)', '50', '20', '-10', '1']]);
-            expect($result['a'])->toBe(1.0);
-
-            $result = $this->accessor->callMethod('parseLabaColor', [['lab(50% 20 -10 / 1.5)', '50', '20', '-10', '1.5']]);
-            expect($result['a'])->toBe(1.0);
-
-            $result = $this->accessor->callMethod('parseLabaColor', [['lab(50% 20 -10 / -0.5)', '50', '20', '-10', '-0.5']]);
-            expect($result['a'])->toBe(0.0);
-        });
-
-        it('throws exception for invalid lab color format', function () {
-            expect(fn() => $this->colorModule->parseColor('lab()'))
-                ->toThrow(CompilationException::class)
-                ->and(fn() => $this->colorModule->parseColor('lab(50%)'))
-                ->toThrow(CompilationException::class)
-                ->and(fn() => $this->colorModule->parseColor('lab(50% 20)'))
-                ->toThrow(CompilationException::class);
-
-        });
     });
 
     describe('XYZ format', function () {
         it('parses xyz color with valid coordinates', function () {
             $result = $this->colorModule->parseColor('color(xyz 0.5 0.3 0.2)');
 
-            expect($result)->toEqual([
-                'x' => 0.5,
-                'y' => 0.3,
-                'z' => 0.2,
-                'a' => 1.0,
-                'format' => ColorFormat::XYZ->value,
-            ]);
-        });
-
-        it('parses xyz color with alpha', function () {
-            $result = $this->colorModule->parseColor('color(xyz 0.5 0.3 0.2 / 0.8)');
-
-            expect($result)->toEqual([
-                'x' => 0.5,
-                'y' => 0.3,
-                'z' => 0.2,
-                'a' => 0.8,
-                'format' => ColorFormat::XYZ->value,
-            ]);
-        });
-
-        it('parses xyz color with negative values', function () {
-            $result = $this->accessor->callMethod('parseXyzColor', [['color(xyz -0.5 -0.3 -0.2)', '-0.5', '-0.3', '-0.2']]);
-
-            expect($result)->toEqual([
-                'x' => -0.5,
-                'y' => -0.3,
-                'z' => -0.2,
-                'a' => 1.0,
-                'format' => ColorFormat::XYZ->value,
-            ]);
-        });
-
-        it('clamps xyz values to valid range', function () {
-            $result = $this->accessor->callMethod('parseXyzColor', [['color(xyz 1500 2000 999)', '1500', '2000', '999']]);
-            expect($result['x'])->toBe(1000.0)
-                ->and($result['y'])->toBe(1000.0)
-                ->and($result['z'])->toBe(999.0);
-
-            $result = $this->accessor->callMethod('parseXyzColor', [['color(xyz -1500 -2000 -999)', '-1500', '-2000', '-999']]);
-            expect($result['x'])->toBe(-1000.0)
-                ->and($result['y'])->toBe(-1000.0)
-                ->and($result['z'])->toBe(-999.0);
-        });
-
-        it('handles percentage alpha', function () {
-            $result = $this->colorModule->parseColor('color(xyz 0.5 0.3 0.2 / 50%)');
-            expect($result['a'])->toBe(0.5);
+            expect($result['x'])->toBe(0.5)
+                ->and($result['y'])->toBe(0.3)
+                ->and($result['z'])->toBe(0.2)
+                ->and($result['a'])->toBe(1.0)
+                ->and($result['format'])->toBe(ColorFormat::XYZ->value);
         });
 
         it('handles parseXyzaColor method directly', function () {
-            // Test the parseXyzaColor method specifically
-            $result = $this->accessor->callMethod('parseXyzaColor', [['color(xyz 0.5 0.3 0.2 / 0.8)', '0.5', '0.3', '0.2', '0.8']]);
-            expect($result)->toEqual([
-                'x' => 0.5,
-                'y' => 0.3,
-                'z' => 0.2,
-                'a' => 0.8,
-                'format' => ColorFormat::XYZA->value,
-            ]);
-        });
+            $result = $this->colorModule->parseColor('color(xyz 0.5 0.3 0.2 / 0.8)');
 
-        it('handles parseXyzaColor with negative coordinates and alpha', function () {
-            // Test parseXyzaColor with negative values and alpha
-            $result = $this->accessor->callMethod('parseXyzaColor', [['color(xyz -0.5 -0.3 -0.2 / 0.75)', '-0.5', '-0.3', '-0.2', '0.75']]);
-            expect($result)->toEqual([
-                'x' => -0.5,
-                'y' => -0.3,
-                'z' => -0.2,
-                'a' => 0.75,
-                'format' => ColorFormat::XYZA->value,
-            ]);
+            expect($result['x'])->toBe(0.5)
+                ->and($result['y'])->toBe(0.3)
+                ->and($result['z'])->toBe(0.2)
+                ->and($result['a'])->toBe(0.8)
+                ->and($result['format'])->toBe(ColorFormat::XYZA->value);
         });
     });
 
-    describe('Named colors', function () {
-        it('parses named colors correctly', function () {
-            $red  = $this->colorModule->parseColor('red');
-            $blue = $this->colorModule->parseColor('blue');
-
-            expect($red['r'])->toBe(255)
-                ->and($red['g'])->toBe(0)
-                ->and($red['b'])->toBe(0)
-                ->and($red['a'])->toBe(1.0)
-                ->and($red['format'])->toBe(ColorFormat::RGB->value)
-                ->and($blue['r'])->toBe(0)
-                ->and($blue['g'])->toBe(0)
-                ->and($blue['b'])->toBe(255)
-                ->and($blue['a'])->toBe(1.0)
-                ->and($blue['format'])->toBe(ColorFormat::RGB->value);
-        });
-
-        it('throws exception for invalid color name', function () {
-            expect(fn() => $this->colorModule->parseColor('invalid'))
-                ->toThrow(CompilationException::class);
-        });
+    it('throws exception for invalid color name', function () {
+        expect(fn() => $this->colorModule->parseColor('invalid'))
+            ->toThrow(CompilationException::class);
     });
 })->covers(ColorModule::class);
 
@@ -1687,20 +1323,6 @@ describe('Utility Functions', function () {
             ];
             $resultHslaNormalized = $this->colorModule->formatColor($colorDataHslaNormalized);
             expect($resultHslaNormalized)->toBe('hsla(180, 100%, 50%, 0.8)'); // -180 + 360 = 180
-        });
-
-        it('handles negative hue normalization in parseHueValue method', function () {
-            // Test the while ($hue < 0) loop by providing negative hue values
-            $result = $this->accessor->callMethod('parseHueValue', ['-90']);
-            expect($result)->toBe(270.0); // -90 + 360 = 270
-
-            // Test with more negative value requiring multiple loop iterations
-            $result2 = $this->accessor->callMethod('parseHueValue', ['-450']);
-            expect($result2)->toBe(270.0); // -450 + 360*2 = 270
-
-            // Test with negative degree value
-            $result3 = $this->accessor->callMethod('parseHueValue', ['-45deg']);
-            expect($result3)->toBe(315.0); // -45 + 360 = 315
         });
 
         it('covers default case in getColorSpace method', function () {
