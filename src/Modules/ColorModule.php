@@ -11,26 +11,20 @@ use function abs;
 use function array_merge;
 use function array_unique;
 use function fmod;
-use function hexdec;
 use function implode;
 use function in_array;
 use function max;
 use function min;
-use function preg_match;
 use function round;
-use function rtrim;
 use function sprintf;
-use function str_contains;
-use function str_repeat;
 use function strlen;
 use function strtolower;
-use function substr;
 use function trim;
-
-use const M_PI;
 
 class ColorModule
 {
+    use LegacyColorFunctions;
+
     private const COLOR_ADJUST_PARAMS = [
         '$red'        => true,
         '$green'      => true,
@@ -474,126 +468,18 @@ class ColorModule
         return $this->formatColor($converted);
     }
 
-    public function adjustHue(string $color, float $amount): string
-    {
-        return $this->adjust($color, ['$hue' => $amount]);
-    }
-
-    public function alpha(string $color): string
-    {
-        return $this->channel($color, 'alpha');
-    }
-
-    public function opacity(string $color): string
-    {
-        return $this->alpha($color);
-    }
-
-    public function red(string $color): string
-    {
-        return $this->channel($color, 'red');
-    }
-
-    public function green(string $color): string
-    {
-        return $this->channel($color, 'green');
-    }
-
-    public function blue(string $color): string
-    {
-        return $this->channel($color, 'blue');
-    }
-
-    public function hue(string $color): string
-    {
-        return $this->channel($color, 'hue');
-    }
-
-    public function blackness(string $color): string
-    {
-        return $this->channel($color, 'blackness');
-    }
-
-    public function lightness(string $color): string
-    {
-        return $this->channel($color, 'lightness');
-    }
-
-    public function whiteness(string $color): string
-    {
-        return $this->channel($color, 'whiteness');
-    }
-
-    public function saturation(string $color): string
-    {
-        return $this->channel($color, 'saturation');
-    }
-
-    public function lighten(string $color, float $amount): string
-    {
-        return $this->adjust($color, ['$lightness' => $amount]);
-    }
-
-    public function darken(string $color, float $amount): string
-    {
-        return $this->lighten($color, -$amount);
-    }
-
-    public function saturate(string $color, float $amount): string
-    {
-        return $this->adjust($color, ['$saturation' => $amount]);
-    }
-
-    public function desaturate(string $color, float $amount): string
-    {
-        return $this->saturate($color, -$amount);
-    }
-
-    public function opacify(string $color, float $amount): string
-    {
-        return $this->adjust($color, ['$alpha' => $amount]);
-    }
-
-    public function transparentize(string $color, float $amount): string
-    {
-        return $this->opacify($color, -$amount);
-    }
-
-    public function fadeIn(string $color, float $amount): string
-    {
-        return $this->opacify($color, $amount);
-    }
-
-    public function fadeOut(string $color, float $amount): string
-    {
-        return $this->transparentize($color, $amount);
-    }
-
     public function parseColor(string $color): array
     {
         $color = trim($color);
 
         if (isset(ColorSerializer::NAMED_COLORS[$color])) {
-            return $this->parseHexColor(substr(ColorSerializer::NAMED_COLORS[$color], 1));
+            return ColorParser::HEX->parse(ColorSerializer::NAMED_COLORS[$color]);
         }
 
-        foreach (ColorFormat::cases() as $format) {
-            if (preg_match($format->getPattern(), $color, $matches)) {
-                return match ($format) {
-                    ColorFormat::HEX   => $this->parseHexColor($matches[1]),
-                    ColorFormat::HEXA  => $this->parseHexaColor($matches[1]),
-                    ColorFormat::HSL   => $this->parseHslColor($matches),
-                    ColorFormat::HSLA  => $this->parseHslaColor($matches),
-                    ColorFormat::HWB   => $this->parseHwbColor($matches),
-                    ColorFormat::LAB   => $this->parseLabColor($matches),
-                    ColorFormat::LABA  => $this->parseLabaColor($matches),
-                    ColorFormat::LCH   => $this->parseLchColor($matches),
-                    ColorFormat::OKLCH => $this->parseOklchColor($matches),
-                    ColorFormat::RGB   => $this->parseRgbColor($matches),
-                    ColorFormat::RGBA  => $this->parseRgbaColor($matches),
-                    ColorFormat::XYZ   => $this->parseXyzColor($matches),
-                    ColorFormat::XYZA  => $this->parseXyzaColor($matches),
-                };
+        foreach (ColorParser::cases() as $parser) {
+            $parsed = $parser->parse($color);
+            if ($parsed !== null) {
+                return $parsed;
             }
         }
 
@@ -605,260 +491,6 @@ class ColorModule
         $sassColor = new SassColor($colorData);
 
         return (string) $sassColor;
-    }
-
-    private function parseHexColor(string $hex): array
-    {
-        if (strlen($hex) === 3) {
-            $r = hexdec(str_repeat($hex[0], 2));
-            $g = hexdec(str_repeat($hex[1], 2));
-            $b = hexdec(str_repeat($hex[2], 2));
-        } else {
-            $r = hexdec(substr($hex, 0, 2));
-            $g = hexdec(substr($hex, 2, 2));
-            $b = hexdec(substr($hex, 4, 2));
-        }
-
-        return [
-            'r'      => $r,
-            'g'      => $g,
-            'b'      => $b,
-            'a'      => ColorSerializer::ALPHA_MAX,
-            'format' => ColorFormat::RGB->value,
-        ];
-    }
-
-    private function parseHexaColor(string $hex): array
-    {
-        if (strlen($hex) === 4) {
-            $r = hexdec(str_repeat($hex[0], 2));
-            $g = hexdec(str_repeat($hex[1], 2));
-            $b = hexdec(str_repeat($hex[2], 2));
-            $a = hexdec(str_repeat($hex[3], 2)) / ColorSerializer::RGB_MAX;
-        } else {
-            $r = hexdec(substr($hex, 0, 2));
-            $g = hexdec(substr($hex, 2, 2));
-            $b = hexdec(substr($hex, 4, 2));
-            $a = hexdec(substr($hex, 6, 2)) / ColorSerializer::RGB_MAX;
-        }
-
-        return [
-            'r'      => $r,
-            'g'      => $g,
-            'b'      => $b,
-            'a'      => $a,
-            'format' => ColorFormat::RGBA->value,
-        ];
-    }
-
-    private function parseRgbComponents(array $matches): array
-    {
-        $r = str_contains($matches[1], '%') ? $this->parsePercentageValue($matches[1]) * 2.55 : (float) $matches[1];
-        $g = str_contains($matches[2], '%') ? $this->parsePercentageValue($matches[2]) * 2.55 : (float) $matches[2];
-        $b = str_contains($matches[3], '%') ? $this->parsePercentageValue($matches[3]) * 2.55 : (float) $matches[3];
-
-        // Clamp values to valid RGB range before rounding
-        $r = $this->clamp($r, 0, ColorSerializer::RGB_MAX);
-        $g = $this->clamp($g, 0, ColorSerializer::RGB_MAX);
-        $b = $this->clamp($b, 0, ColorSerializer::RGB_MAX);
-
-        return [
-            'r' => (int) round($r),
-            'g' => (int) round($g),
-            'b' => (int) round($b),
-        ];
-    }
-
-    private function parseHslColor(array $matches): array
-    {
-        $h = $this->parseHueValue($matches[1]);
-        $s = $this->parsePercentageValue($matches[2]);
-        $l = $this->parsePercentageValue($matches[3]);
-        $a = isset($matches[4]) ? $this->parseAlpha($matches[4]) : ColorSerializer::ALPHA_MAX;
-
-        $this->validateValueRange($s, 0, ColorSerializer::PERCENT_MAX, 'saturation');
-        $this->validateValueRange($l, 0, ColorSerializer::PERCENT_MAX, 'lightness');
-        $this->validateValueRange($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX, 'alpha');
-
-        return [
-            'h'      => $this->clamp($h, 0, ColorSerializer::HUE_MAX),
-            's'      => $this->clamp($s, 0, ColorSerializer::PERCENT_MAX),
-            'l'      => $this->clamp($l, 0, ColorSerializer::PERCENT_MAX),
-            'a'      => $this->clamp($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX),
-            'format' => $a < ColorSerializer::ALPHA_MAX ? ColorFormat::HSLA->value : ColorFormat::HSL->value,
-        ];
-    }
-
-    private function parseHslaColor(array $matches): array
-    {
-        $h = $this->parseHueValue($matches[1]);
-        $s = $this->parsePercentageValue($matches[2]);
-        $l = $this->parsePercentageValue($matches[3]);
-        $a = $this->parseAlpha($matches[4]);
-
-        $this->validateValueRange($s, 0, ColorSerializer::PERCENT_MAX, 'saturation');
-        $this->validateValueRange($l, 0, ColorSerializer::PERCENT_MAX, 'lightness');
-        $this->validateValueRange($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX, 'alpha');
-
-        return [
-            'h'      => $this->clamp($h, 0, ColorSerializer::HUE_MAX),
-            's'      => $this->clamp($s, 0, ColorSerializer::PERCENT_MAX),
-            'l'      => $this->clamp($l, 0, ColorSerializer::PERCENT_MAX),
-            'a'      => $this->clamp($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX),
-            'format' => ColorFormat::HSLA->value,
-        ];
-    }
-
-    private function parseHwbColor(array $matches): array
-    {
-        $h  = $this->parseHueValue($matches[1]);
-        $w  = $this->parsePercentageValue($matches[2]);
-        $bl = $this->parsePercentageValue($matches[3]);
-        $a  = isset($matches[4]) ? $this->parseAlpha($matches[4]) : ColorSerializer::ALPHA_MAX;
-
-        $this->validateValueRange($w, 0, ColorSerializer::PERCENT_MAX, 'whiteness');
-        $this->validateValueRange($bl, 0, ColorSerializer::PERCENT_MAX, 'blackness');
-        $this->validateValueRange($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX, 'alpha');
-
-        return [
-            'h'      => (int) round($this->clamp($h, 0, ColorSerializer::HUE_MAX)),
-            'w'      => (int) round($this->clamp($w, 0, ColorSerializer::PERCENT_MAX)),
-            'bl'     => (int) round($this->clamp($bl, 0, ColorSerializer::PERCENT_MAX)),
-            'a'      => $this->clamp($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX),
-            'format' => ColorFormat::HWB->value,
-        ];
-    }
-
-    private function parseLabColor(array $matches): array
-    {
-        $lRaw = $matches[1];
-        $a    = (float) $matches[2];
-        $b    = (float) $matches[3];
-
-        $l = str_contains($lRaw, '%') ? $this->parsePercentageValue($lRaw) : (float) $lRaw * ColorSerializer::PERCENT_MAX;
-
-        return [
-            'lab_l'  => $this->clamp($l, 0, ColorSerializer::PERCENT_MAX),
-            'lab_a'  => $a,
-            'lab_b'  => $b,
-            'a'      => ColorSerializer::ALPHA_MAX,
-            'format' => ColorFormat::LAB->value,
-        ];
-    }
-
-    private function parseLabaColor(array $matches): array
-    {
-        $lRaw     = $matches[1];
-        $a        = (float) $matches[2];
-        $b        = (float) $matches[3];
-        $alphaStr = $matches[4];
-
-        $l = str_contains($lRaw, '%') ? $this->parsePercentageValue($lRaw) : (float) $lRaw * ColorSerializer::PERCENT_MAX;
-
-        $alpha = $this->parseAlpha($alphaStr);
-
-        return [
-            'lab_l'  => $this->clamp($l, 0, ColorSerializer::PERCENT_MAX),
-            'lab_a'  => $a,
-            'lab_b'  => $b,
-            'a'      => $this->clamp($alpha, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX),
-            'format' => ColorFormat::LABA->value,
-        ];
-    }
-
-    private function parseLchLikeColor(string $format, array $matches, float $maxChroma): array
-    {
-        $lRaw = $matches[1];
-        $hStr = $matches[3];
-
-        $l = str_contains($lRaw, '%') ? $this->parsePercentageValue($lRaw) : (float) $lRaw * ColorSerializer::PERCENT_MAX;
-        $c = (float) $matches[2];
-        $h = $this->parseHueValue(trim($hStr));
-        $a = isset($matches[4]) ? $this->parseAlpha($matches[4]) : ColorSerializer::ALPHA_MAX;
-
-        $this->validateValueRange($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX, 'alpha');
-
-        return [
-            'l'      => $this->clamp($l, 0, ColorSerializer::PERCENT_MAX),
-            'c'      => $this->clamp($c, 0, $maxChroma),
-            'h'      => $this->clamp($h, 0, ColorSerializer::HUE_MAX),
-            'a'      => $this->clamp($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX),
-            'format' => $format,
-        ];
-    }
-
-    private function parseLchColor(array $matches): array
-    {
-        return $this->parseLchLikeColor(ColorFormat::LCH->value, $matches, 150);
-    }
-
-    private function parseOklchColor(array $matches): array
-    {
-        return $this->parseLchLikeColor(ColorFormat::OKLCH->value, $matches, 0.5);
-    }
-
-    private function parseRgbColor(array $matches): array
-    {
-        $rgb = $this->parseRgbComponents($matches);
-        $a   = isset($matches[4]) ? (float) $matches[4] : ColorSerializer::ALPHA_MAX;
-
-        return [
-            'r'      => $rgb['r'],
-            'g'      => $rgb['g'],
-            'b'      => $rgb['b'],
-            'a'      => $this->clamp($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX),
-            'format' => $a < ColorSerializer::ALPHA_MAX ? ColorFormat::RGBA->value : ColorFormat::RGB->value,
-        ];
-    }
-
-    private function parseRgbaColor(array $matches): array
-    {
-        $rgb = $this->parseRgbComponents($matches);
-        $a   = (float) $matches[4];
-
-        $this->validateValueRange($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX, 'alpha');
-
-        return [
-            'r'      => $rgb['r'],
-            'g'      => $rgb['g'],
-            'b'      => $rgb['b'],
-            'a'      => $this->clamp($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX),
-            'format' => ColorFormat::RGBA->value,
-        ];
-    }
-
-    private function parseXyzColor(array $matches): array
-    {
-        $x = (float) $matches[1];
-        $y = (float) $matches[2];
-        $z = (float) $matches[3];
-        $a = isset($matches[4]) ? $this->parseAlpha($matches[4]) : ColorSerializer::ALPHA_MAX;
-
-        $this->validateValueRange($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX, 'alpha');
-
-        return [
-            'x'      => $this->clamp($x, -1000, 1000),
-            'y'      => $this->clamp($y, -1000, 1000),
-            'z'      => $this->clamp($z, -1000, 1000),
-            'a'      => $this->clamp($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX),
-            'format' => ColorFormat::XYZ->value,
-        ];
-    }
-
-    private function parseXyzaColor(array $matches): array
-    {
-        $x = (float) $matches[1];
-        $y = (float) $matches[2];
-        $z = (float) $matches[3];
-        $a = $this->parseAlpha($matches[4]);
-
-        return [
-            'x'      => $this->clamp($x, -1000, 1000),
-            'y'      => $this->clamp($y, -1000, 1000),
-            'z'      => $this->clamp($z, -1000, 1000),
-            'a'      => $this->clamp($a, ColorSerializer::ALPHA_MIN, ColorSerializer::ALPHA_MAX),
-            'format' => ColorFormat::XYZA->value,
-        ];
     }
 
     private function applyAdjustments(array $colorData, array $adjustments): array
@@ -1113,49 +745,6 @@ class ColorModule
         return min(max($value, $min), $max);
     }
 
-    private function parseAlpha(string $alphaStr): float
-    {
-        if (str_contains($alphaStr, '%')) {
-            return (float) rtrim($alphaStr, '%') / ColorSerializer::PERCENT_MAX;
-        }
-
-        return (float) $alphaStr;
-    }
-
-    private function parseHueValue(string $hueStr): float
-    {
-        $hue = match (true) {
-            str_contains($hueStr, 'rad')  => (float) rtrim($hueStr, 'rad') * ColorSerializer::HUE_SHIFT / M_PI,
-            str_contains($hueStr, 'grad') => (float) rtrim($hueStr, 'grad') * ColorSerializer::HUE_MAX / 400,
-            str_contains($hueStr, 'turn') => (float) rtrim($hueStr, 'turn') * ColorSerializer::HUE_MAX,
-            str_contains($hueStr, 'deg')  => (float) rtrim($hueStr, 'deg'),
-            default                       => (float) $hueStr,
-        };
-
-        // Normalize hue to be within [0, 360) range
-        while ($hue < 0) {
-            $hue += ColorSerializer::HUE_MAX;
-        }
-
-        while ($hue >= ColorSerializer::HUE_MAX) {
-            $hue -= ColorSerializer::HUE_MAX;
-        }
-
-        return $hue;
-    }
-
-    private function parsePercentageValue(string $percentStr): float
-    {
-        return (float) rtrim($percentStr, '%');
-    }
-
-    private function validateValueRange(float $value, float $min, float $max, string $name): void
-    {
-        if ($value < $min || $value > $max) {
-            throw new CompilationException("Invalid $name value: $value");
-        }
-    }
-
     private function getAllValidChannels(): array
     {
         static $validChannels = null;
@@ -1197,9 +786,6 @@ class ColorModule
             'whiteness'  => 'w',
             'blackness'  => 'bl',
             'alpha'      => 'a',
-            'lab_l'      => 'lab_l',
-            'lab_a'      => 'lab_a',
-            'lab_b'      => 'lab_b',
             'chroma'     => 'c',
             default      => $channel,
         };
