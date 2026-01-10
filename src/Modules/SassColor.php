@@ -129,14 +129,6 @@ readonly class SassColor implements Stringable
         ];
     }
 
-    public static function fromString(string $color): self
-    {
-        $colorModule = new ColorModule();
-        $data = $colorModule->parseColor($color);
-
-        return new self($data);
-    }
-
     public static function hsl(float $h, float $s, float $l, ?float $a = null): self
     {
         $a ??= self::DEFAULT_ALPHA;
