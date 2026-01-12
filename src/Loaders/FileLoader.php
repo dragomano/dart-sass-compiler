@@ -12,7 +12,8 @@ use function file_exists;
 use function file_get_contents;
 use function is_readable;
 use function rtrim;
-use function str_contains;
+
+use const DIRECTORY_SEPARATOR;
 
 class FileLoader implements LoaderInterface
 {
@@ -26,41 +27,31 @@ class FileLoader implements LoaderInterface
 
     public function load(string $path): string
     {
-        if ($this->isFileReadable($path)) {
-            return file_get_contents($path);
-        }
+        $extensions = ['', '.scss', '.sass', '.css'];
 
-        if (! str_contains($path, '.')) {
-            $pathWithExtension = $path . '.scss';
-            if ($this->isFileReadable($pathWithExtension)) {
-                return file_get_contents($pathWithExtension);
+        foreach ($extensions as $ext) {
+            $filePath = $path . $ext;
+            if ($this->isFileReadable($filePath)) {
+                return file_get_contents($filePath);
             }
         }
 
         foreach ($this->loadPaths as $dir) {
             $fullPath = $dir . DIRECTORY_SEPARATOR . $path;
 
-            if ($this->isFileReadable($fullPath)) {
-                return file_get_contents($fullPath);
-            }
-
-            if (! str_contains($path, '.')) {
-                $fullPathWithExt = $fullPath . '.scss';
-                if ($this->isFileReadable($fullPathWithExt)) {
-                    return file_get_contents($fullPathWithExt);
+            foreach ($extensions as $ext) {
+                $filePath = $fullPath . $ext;
+                if ($this->isFileReadable($filePath)) {
+                    return file_get_contents($filePath);
                 }
             }
 
             $partial = $dir . DIRECTORY_SEPARATOR . '_' . basename($path);
 
-            if ($this->isFileReadable($partial)) {
-                return file_get_contents($partial);
-            }
-
-            if (! str_contains($path, '.')) {
-                $partialWithExt = $partial . '.scss';
-                if ($this->isFileReadable($partialWithExt)) {
-                    return file_get_contents($partialWithExt);
+            foreach ($extensions as $ext) {
+                $filePath = $partial . $ext;
+                if ($this->isFileReadable($filePath)) {
+                    return file_get_contents($filePath);
                 }
             }
         }

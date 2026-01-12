@@ -12,8 +12,8 @@ use DartSass\Compilers\Nodes\RuleNodeCompiler;
 use DartSass\Compilers\Nodes\UseNodeCompiler;
 use DartSass\Compilers\Nodes\VariableNodeCompiler;
 use DartSass\Exceptions\CompilationException;
-use DartSass\Parsers\Nodes\AtRuleNode;
 use DartSass\Parsers\Nodes\OperationNode;
+use DartSass\Parsers\Nodes\VariableDeclarationNode;
 use DartSass\Parsers\Syntax;
 
 use function basename;
@@ -100,17 +100,21 @@ class CompilerEngine implements CompilerEngineInterface
         );
     }
 
-    private function compileImportNode(AtRuleNode $node): void
+    private function compileImportAst(string $path, string $parentSelector, int $nestingLevel): string
     {
-        $path = $node->properties['value'] ?? '';
+        $result = $this->context->moduleHandler->loadModule($path);
 
-        if (! $this->context->moduleHandler->isModuleLoaded($path)) {
-            $result = $this->context->moduleHandler->forwardModule($path, $this->evaluateExpression(...));
+        $namespace = $result['namespace'];
 
-            foreach ($result['variables'] as $varName => $varValue) {
-                $this->context->variableHandler->define($varName, $varValue, true);
+        $moduleVars = $this->context->moduleHandler->getVariables($namespace);
+        foreach ($moduleVars as $name => $varNode) {
+            if ($varNode instanceof VariableDeclarationNode) {
+                $value = $this->evaluateExpression($varNode->properties['value']);
+                $this->context->variableHandler->define($name, $value);
             }
         }
+
+        return $this->compileAst($result['cssAst'], $parentSelector, $nestingLevel);
     }
 
     public function getContext(): CompilerContext
@@ -266,7 +270,8 @@ class CompilerEngine implements CompilerEngineInterface
                 if (str_starts_with($path, 'url(') || str_contains($path, ' ')) {
                     $css .= "@import $path;\n";
                 } else {
-                    $this->compileImportNode($node);
+                    $path = trim($path, '"\'');
+                    $css .= $this->compileImportAst($path, $parentSelector, $nestingLevel);
                 }
 
                 continue;

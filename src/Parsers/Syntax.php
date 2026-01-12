@@ -7,6 +7,7 @@ namespace DartSass\Parsers;
 use InvalidArgumentException;
 
 use function pathinfo;
+use function str_contains;
 use function strtolower;
 
 enum Syntax: string
@@ -15,7 +16,7 @@ enum Syntax: string
     case SASS = 'sass';
     case SCSS = 'scss';
 
-    public static function fromPath(string $path): self
+    public static function fromPath(string $path, string $content = ''): self
     {
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
 
@@ -27,8 +28,22 @@ enum Syntax: string
             return self::SASS;
         }
 
-        if ($ext === self::SCSS->value || $ext === '') {
+        if ($ext === self::SCSS->value) {
             return self::SCSS;
+        }
+
+        if ($ext === '') {
+            // If no content provided, default to SCSS for backward compatibility
+            if ($content === '') {
+                return self::SCSS;
+            }
+
+            // Detect from content: if contains '{', assume SCSS, else SASS
+            if (str_contains($content, '{')) {
+                return self::SCSS;
+            }
+
+            return self::SASS;
         }
 
         throw new InvalidArgumentException("Cannot detect syntax from path: $path");

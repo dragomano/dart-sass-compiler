@@ -12,7 +12,7 @@ use function substr;
 
 class ModuleHandler
 {
-    private array $loadedModules = [];
+    private array $loadedModules = []; // path => ['namespace' => , 'cssAst' => ]
 
     private array $forwardedProperties = [];
 
@@ -27,7 +27,9 @@ class ModuleHandler
     public function loadModule(string $path, string $namespace = ''): array
     {
         if ($this->isModuleLoaded($path)) {
-            return ['cssAst' => [], 'namespace' => $this->loadedModules[$path]];
+            $module = $this->loadedModules[$path];
+
+            return ['cssAst' => $module['cssAst'], 'namespace' => $module['namespace']];
         }
 
         if (str_starts_with($path, 'sass:')) {
@@ -38,7 +40,7 @@ class ModuleHandler
         }
 
         $ast       = $this->loader->loadAst($path);
-        $namespace = $this->registerModule($path, $namespace);
+        $namespace = $this->registerModule($path, $namespace, $ast);
         $cssAst    = [];
 
         $this->forwarder->processAst(
@@ -137,11 +139,11 @@ class ModuleHandler
         return isset($this->loadedModules[$path]);
     }
 
-    private function registerModule(string $path, ?string $namespace): string
+    private function registerModule(string $path, ?string $namespace, array $cssAst = []): string
     {
         $actualNamespace = $namespace ?? $this->loader->getNamespaceFromPath($path);
 
-        $this->loadedModules[$path] = $actualNamespace;
+        $this->loadedModules[$path] = ['namespace' => $actualNamespace, 'cssAst' => $cssAst];
 
         return $actualNamespace;
     }
