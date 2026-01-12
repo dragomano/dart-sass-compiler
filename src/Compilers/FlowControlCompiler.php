@@ -100,11 +100,18 @@ readonly class FlowControlCompiler
                         $this->variableHandler->define($variables[0], $entryKey);
                         $this->variableHandler->define($variables[1], $entryValue);
                     } elseif (is_array($value) && count($value) === 2) {
-                        // List of pairs
-                        [$val1, $val2] = $value;
-
-                        $this->variableHandler->define($variables[0], $val1);
-                        $this->variableHandler->define($variables[1], $val2);
+                        // Handle value/unit arrays from evaluator
+                        if (isset($value['value']) && isset($value['unit'])) {
+                            // This is a number with unit, format as string
+                            $formattedValue = $value['value'] . $value['unit'];
+                            $this->variableHandler->define($variables[0], $key);
+                            $this->variableHandler->define($variables[1], $formattedValue);
+                        } else {
+                            // List of pairs
+                            [$val1, $val2] = array_values($value);
+                            $this->variableHandler->define($variables[0], $val1);
+                            $this->variableHandler->define($variables[1], $val2);
+                        }
                     } else {
                         // Map: key => value, or string 'key: value'
                         if (is_string($value) && str_contains($value, ':')) {

@@ -63,6 +63,7 @@ class ExpressionEvaluator
                 'number'              => $this->evaluateNumberExpression($expr),
                 'string'              => $this->evaluateStringExpression($expr),
                 'list'                => $this->evaluateListExpression($props),
+                'map'                 => $this->evaluateMapExpression($props),
                 'identifier'          => $this->evaluateIdentifierExpression($expr),
                 'variable'            => $this->evaluateVariableNode($props['name']),
                 'condition'           => $this->evaluate($props['expression']),
@@ -144,6 +145,52 @@ class ExpressionEvaluator
             $props['separator'] ?? 'comma',
             $props['bracketed'] ?? false
         );
+    }
+
+    public function evaluateMapExpression(array $props): array
+    {
+        $pairs = $props['pairs'] ?? [];
+        $map   = [];
+
+        foreach ($pairs as [$key, $value]) {
+            $evaluatedKey   = $this->evaluate($key);
+            $evaluatedValue = $this->evaluate($value);
+
+            // Convert key to string representation
+            $keyString = $this->convertKeyToString($evaluatedKey);
+
+            if ($keyString !== null) {
+                $map[$keyString] = $evaluatedValue;
+            }
+        }
+
+        return $map;
+    }
+
+    private function convertKeyToString(mixed $key): ?string
+    {
+        if (is_string($key)) {
+            // Remove quotes from string keys
+            return trim($key, "'\"");
+        }
+
+        if ($key instanceof AstNode) {
+            switch ($key->type) {
+                case 'identifier':
+                    return $key->properties['value'];
+                case 'string':
+                    // Remove quotes from string node values
+                    return trim($key->properties['value'], "'\"");
+                case 'number':
+                    return (string) $key->properties['value'];
+            }
+        }
+
+        if (is_numeric($key)) {
+            return (string) $key;
+        }
+
+        return null;
     }
 
     public function evaluateIdentifierExpression(AstNode $expr): mixed
