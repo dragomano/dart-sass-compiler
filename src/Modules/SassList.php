@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace DartSass\Modules;
 
-class SassList
+readonly class SassList
 {
-    public string $separator;
-
-    public function __construct(public array $value, mixed $separator = 'space', public bool $bracketed = false)
-    {
-        $this->separator = is_string($separator) ? $separator : 'space';
-    }
+    public function __construct(
+        public array $value,
+        public string $separator = 'space',
+        public bool $bracketed = false
+    ) {}
 }

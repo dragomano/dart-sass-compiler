@@ -23,6 +23,7 @@ use DartSass\Handlers\ModuleHandlers\FormatFunctionHandler;
 use DartSass\Handlers\ModuleHandlers\IfFunctionHandler;
 use DartSass\Handlers\ModuleHandlers\LinearGradientFunctionHandler;
 use DartSass\Handlers\ModuleHandlers\ListModuleHandler;
+use DartSass\Handlers\ModuleHandlers\MapModuleHandler;
 use DartSass\Handlers\ModuleHandlers\MathModuleHandler;
 use DartSass\Handlers\ModuleHandlers\StringModuleHandler;
 use DartSass\Handlers\ModuleHandlers\UrlFunctionHandler;
@@ -33,6 +34,7 @@ use DartSass\Handlers\VariableHandler;
 use DartSass\Loaders\LoaderInterface;
 use DartSass\Modules\ColorModule;
 use DartSass\Modules\ListModule;
+use DartSass\Modules\MapModule;
 use DartSass\Modules\MathModule;
 use DartSass\Modules\StringModule;
 use DartSass\Parsers\ParserFactory;
@@ -133,6 +135,7 @@ readonly class CompilerBuilder
         $moduleRegistry->register(new ColorModuleHandler(new ColorModule(), $cssColorFunctionHandler));
         $moduleRegistry->register(new StringModuleHandler(new StringModule()));
         $moduleRegistry->register(new ListModuleHandler(new ListModule()));
+        $moduleRegistry->register(new MapModuleHandler(new MapModule()));
         $moduleRegistry->register(new MathModuleHandler(
             new MathModule($context->valueFormatter),
             new UnitValidator(),
