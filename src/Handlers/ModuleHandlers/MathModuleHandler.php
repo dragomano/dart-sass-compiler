@@ -49,7 +49,7 @@ class MathModuleHandler extends BaseModuleHandler
         'min',
         'round',
         'abs',
-        'compatible',
+        'comparable',
         'unitless',
         'unit',
         'percentage',
@@ -67,13 +67,14 @@ class MathModuleHandler extends BaseModuleHandler
         $processedArgs = $this->normalizeArgs($args);
 
         $functionMapping = [
+            'comparable'  => 'compatible',
             'is-unitless' => 'isUnitless',
             'unitless'    => 'isUnitless',
         ];
 
         $methodName = $functionMapping[$functionName] ?? $functionName;
 
-        $noUnitCheckFunctions = ['compatible', 'is-unitless', 'random'];
+        $noUnitCheckFunctions = ['comparable', 'compatible', 'is-unitless', 'random'];
         $shouldCompute = in_array($functionName, $noUnitCheckFunctions, true);
 
         if (! $shouldCompute) {

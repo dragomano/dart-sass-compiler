@@ -844,13 +844,13 @@ describe('global math functions', function () {
         });
     });
 
-    describe('supports global compatible function', function () {
+    describe('supports global comparable function', function () {
         it('checks if units are compatible globally', function () {
             $scss = <<<'SCSS'
             .test {
-                compatible-px-em: compatible(1px, 1em);
-                compatible-px-px: compatible(1px, 2px);
-                compatible-unitless-px: compatible(1, 1px);
+                compatible-px-em: comparable(1px, 1em);
+                compatible-px-px: comparable(1px, 2px);
+                compatible-unitless-px: comparable(1, 1px);
             }
             SCSS;
 
