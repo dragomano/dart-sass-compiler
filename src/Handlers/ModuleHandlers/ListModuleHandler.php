@@ -10,9 +10,10 @@ use DartSass\Parsers\Nodes\ListNode;
 
 use function array_slice;
 use function count;
+use function in_array;
 use function intdiv;
 
-class ListModuleHandler extends BaseModuleHandler
+class ListModuleHandler extends BaseModuleHandler implements ConditionalPreservationHandlerInterface
 {
     protected const MODULE_FUNCTIONS = [
         'append',
@@ -64,6 +65,11 @@ class ListModuleHandler extends BaseModuleHandler
     public function getModuleNamespace(): SassModule
     {
         return SassModule::LIST;
+    }
+
+    public function shouldPreserveForConditions(string $functionName): bool
+    {
+        return in_array($functionName, ['index', 'is-bracketed'], true);
     }
 
     private function processSpecialArgs(string $functionName, array $args): array

@@ -10,6 +10,8 @@ interface TokenAwareParserInterface extends ParserInterface
 
     public function consume(string $type): Token;
 
+    public function skipWhitespace(): void;
+
     public function currentToken(): ?Token;
 
     public function getTokenIndex(): int;

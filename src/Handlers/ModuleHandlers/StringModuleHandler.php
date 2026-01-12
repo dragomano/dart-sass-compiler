@@ -8,7 +8,9 @@ use DartSass\Exceptions\CompilationException;
 use DartSass\Handlers\SassModule;
 use DartSass\Modules\StringModule;
 
-class StringModuleHandler extends BaseModuleHandler
+use function in_array;
+
+class StringModuleHandler extends BaseModuleHandler implements ConditionalPreservationHandlerInterface
 {
     protected const MODULE_FUNCTIONS = [
         'quote',
@@ -59,5 +61,10 @@ class StringModuleHandler extends BaseModuleHandler
     public function getModuleNamespace(): SassModule
     {
         return SassModule::STRING;
+    }
+
+    public function shouldPreserveForConditions(string $functionName): bool
+    {
+        return in_array($functionName, ['index', 'str-index', 'unquote'], true);
     }
 }

@@ -6,6 +6,7 @@ namespace DartSass\Handlers\ModuleHandlers;
 
 use function array_map;
 use function array_merge;
+use function in_array;
 use function is_array;
 
 abstract class BaseModuleHandler implements ModuleHandlerInterface
