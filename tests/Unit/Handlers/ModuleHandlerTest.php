@@ -30,7 +30,7 @@ describe('ModuleHandler', function () {
 
             // Simulate already loaded
             $loadedModules = $this->accessor->getProperty('loadedModules');
-            $loadedModules['test.scss'] = 'test';
+            $loadedModules['test.scss'] = ['namespace' => 'test', 'cssAst' => []];
             $this->accessor->callMethod('setLoadedModules', [['loadedModules' => $loadedModules]]);
 
             $result = $this->handler->loadModule('test.scss');
@@ -86,7 +86,7 @@ describe('ModuleHandler', function () {
         it('returns empty when already loaded', function () {
             // Simulate loaded
             $loadedModules = $this->accessor->getProperty('loadedModules');
-            $loadedModules['test.scss'] = 'test';
+            $loadedModules['test.scss'] = ['namespace' => 'test', 'cssAst' => []];
             $this->accessor->callMethod('setLoadedModules', [['loadedModules' => $loadedModules]]);
 
             $result = $this->handler->forwardModule('test.scss', fn() => null);
@@ -147,7 +147,7 @@ describe('ModuleHandler', function () {
     describe('getLoadedModules and setLoadedModules methods', function () {
         it('gets and sets state', function () {
             $state = [
-                'loadedModules'       => ['mod' => 'ns'],
+                'loadedModules'       => ['mod' => ['namespace' => 'ns', 'cssAst' => []]],
                 'forwardedProperties' => ['ns' => ['$var' => 'val']],
                 'globalVariables'     => ['$global' => 'val'],
             ];
