@@ -31,7 +31,7 @@ final class ParserFactory
 
     public function createFromPath(string $content, string $path): ParserInterface
     {
-        return $this->create($content, Syntax::fromPath($path));
+        return $this->create($content, Syntax::fromPath($path, $content));
     }
 
     private function getNormalizers(): array

@@ -101,3 +101,22 @@ it('supports @import directive with media queries', function () {
     expect($this->compiler->compileString($scss))
         ->toEqualCss($expected);
 });
+
+it('supports @import directive with nesting', function () {
+    $scss = <<<'SCSS'
+    .theme-sample {
+        @import "theme";
+    }
+    SCSS;
+
+    $expected = /** @lang text */ <<<'CSS'
+    .theme-sample pre,
+    .theme-sample code {
+      font-family: "Source Code Pro", Helvetica, Arial, sans-serif;
+      border-radius: 4px;
+    }
+    CSS;
+
+    expect($this->compiler->compileString($scss))
+        ->toEqualCss($expected);
+});
