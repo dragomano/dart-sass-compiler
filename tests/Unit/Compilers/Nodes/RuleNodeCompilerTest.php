@@ -13,6 +13,7 @@ use DartSass\Handlers\VariableHandler;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\RuleNode;
 use DartSass\Parsers\Nodes\StringNode;
+use DartSass\Parsers\ParserFactory;
 use DartSass\Utils\PositionTracker;
 use DartSass\Utils\ValueFormatter;
 use Tests\ReflectionAccessor;
@@ -60,8 +61,10 @@ describe('RuleNodeCompiler', function () {
 
         $extendHandler = mock(ExtendHandler::class);
         $extendHandler->shouldReceive('addDefinedSelector')->once();
-        $valueFormatter = mock(ValueFormatter::class);
-        $interpolationEvaluator  = new InterpolationEvaluator($valueFormatter);
+
+        $valueFormatter         = mock(ValueFormatter::class);
+        $parserFactory          = mock(ParserFactory::class);
+        $interpolationEvaluator = new InterpolationEvaluator($valueFormatter, $parserFactory);
 
         $context = mock(CompilerContext::class);
         $context->nestingHandler         = $nestingHandler;

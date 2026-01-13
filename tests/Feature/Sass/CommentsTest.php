@@ -112,6 +112,22 @@ dataset('comment styles', [
         /*! Another important comment */
         CSS,
     ],
+
+    'comment with interpolation' => [
+        <<<'SCSS'
+        $version: "1.0";
+        /* Version: #{$version} */
+        body {
+            color: blue;
+        }
+        SCSS,
+        <<<'CSS'
+        /* Version: 1.0 */
+        body {
+          color: blue;
+        }
+        CSS,
+    ],
 ]);
 
 dataset('compressed comment styles', [

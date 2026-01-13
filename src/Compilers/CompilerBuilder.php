@@ -163,7 +163,7 @@ readonly class CompilerBuilder
 
     private function initializeSimpleEvaluators(CompilerContext $context): void
     {
-        $context->interpolationEvaluator = new InterpolationEvaluator($context->valueFormatter);
+        $context->interpolationEvaluator = new InterpolationEvaluator($context->valueFormatter, $context->parserFactory);
         $context->operationEvaluator     = new OperationEvaluator($context->valueFormatter);
     }
 

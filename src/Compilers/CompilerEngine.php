@@ -280,7 +280,16 @@ class CompilerEngine implements CompilerEngineInterface
             if ($node->type === 'comment') {
                 if (str_starts_with($node->properties['value'], '/*')) {
                     $indent = $this->getIndent($nestingLevel);
-                    $css .= $indent . $node->properties['value'] . "\n";
+                    $commentValue = $node->properties['value'];
+
+                    // Extract content between /* and */
+                    $content = substr($commentValue, 2, -2);
+
+                    // Apply interpolation evaluation
+                    $evaluatedContent = $this->evaluateInterpolationsInString($content);
+
+                    // Rewrap with comment delimiters
+                    $css .= $indent . '/*' . $evaluatedContent . '*/' . "\n";
                 }
 
                 continue;
