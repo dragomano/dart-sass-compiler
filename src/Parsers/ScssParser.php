@@ -7,6 +7,7 @@ namespace DartSass\Parsers;
 use DartSass\Exceptions\SyntaxException;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\AtRuleNode;
+use DartSass\Parsers\Nodes\CommentNode;
 use DartSass\Parsers\Nodes\CssCustomPropertyNode;
 use DartSass\Parsers\Nodes\CssPropertyNode;
 use DartSass\Parsers\Nodes\FunctionNode;
@@ -145,6 +146,12 @@ class ScssParser implements TokenAwareParserInterface
                 }
             } elseif ($token->type === 'variable') {
                 $rules[] = $this->parseVariable();
+            } elseif ($token->type === 'comment') {
+                $rules[] = new CommentNode($token->value, $token->line, $token->column);
+
+                $this->advanceToken();
+
+                continue;
             } else {
                 $rules[] = $this->parseRule();
             }
@@ -460,6 +467,14 @@ class ScssParser implements TokenAwareParserInterface
                 case 'attribute_selector':
                     $item = $this->parseRule();
                     $nested[] = $item;
+
+                    break;
+
+                case 'comment':
+                    $item = new CommentNode($token->value, $token->line, $token->column);
+                    $declarations[] = $item;
+
+                    $this->advanceToken();
 
                     break;
 
@@ -1065,6 +1080,12 @@ class ScssParser implements TokenAwareParserInterface
             ($token = $this->stream->current())
             && ! $this->stream->matchesAny('brace_open', 'semicolon')
         ) {
+            if ($token->type === 'comment') {
+                $this->advanceToken();
+
+                continue;
+            }
+
             if (isset(self::SELECTOR_TOKENS[$token->type])) {
                 $value .= $token->value;
                 $this->advanceToken();

@@ -31,7 +31,15 @@ readonly class DeclarationCompiler
 
         foreach ($declarations as $declaration) {
             if ($declaration instanceof AstNode) {
-                $css .= $compileAst([$declaration], $parentSelector, $nestingLevel);
+                if ($declaration->type === 'comment') {
+                    $indent = str_repeat('  ', $nestingLevel);
+                    $commentCss = $indent . $declaration->properties['value'] . "\n";
+                    $css .= $commentCss;
+
+                    $this->positionTracker->updatePosition($commentCss);
+                } else {
+                    $css .= $compileAst([$declaration], $parentSelector, $nestingLevel);
+                }
             } else {
                 $indent   = str_repeat('  ', $nestingLevel);
                 $property = key($declaration);

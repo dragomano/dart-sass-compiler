@@ -277,6 +277,15 @@ class CompilerEngine implements CompilerEngineInterface
                 continue;
             }
 
+            if ($node->type === 'comment') {
+                if (str_starts_with($node->properties['value'], '/*')) {
+                    $indent = $this->getIndent($nestingLevel);
+                    $css .= $indent . $node->properties['value'] . "\n";
+                }
+
+                continue;
+            }
+
             $compiler = $this->findNodeCompiler($node->type);
 
             if ($compiler) {
