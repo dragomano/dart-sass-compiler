@@ -35,11 +35,6 @@ class ListModule
         $listObj = $this->toSassList($list);
         $valArr  = $this->toArray($val);
 
-        // Handle single numeric value with unit
-        if (count($valArr) === 1 && is_array($valArr[0]) && isset($valArr[0]['value'])) {
-            $valArr = [$valArr[0]['value'] . ($valArr[0]['unit'] ?? '')];
-        }
-
         if ($separator === 'auto') {
             $separator = $listObj->separator;
         }
@@ -275,9 +270,7 @@ class ListModule
         }
 
         if (is_array($value) && isset($value['value'])) {
-            $unit = $value['unit'] ?? '';
-
-            return [$value['value'] . $unit];
+            return [$value];
         }
 
         if (is_array($value)) {
@@ -328,10 +321,7 @@ class ListModule
     private function formatValueForComparison(mixed $item): string
     {
         if (is_array($item) && isset($item['value'])) {
-            $value = (string) $item['value'];
-            $unit  = $item['unit'] ?? '';
-
-            return $value . $unit;
+            return (string) $item['value'];
         }
 
         return (string) $item;

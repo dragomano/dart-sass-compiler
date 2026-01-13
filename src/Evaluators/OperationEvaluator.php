@@ -35,7 +35,11 @@ readonly class OperationEvaluator
         // Handle string concatenation
         if ($operator === '+') {
             if (is_string($left) && is_string($right)) {
-                return $left . $right;
+                if (is_numeric($left) && is_numeric($right)) {
+                    return (float) $left + (float) $right;
+                } else {
+                    return $left . $right;
+                }
             }
 
             if (is_string($left) && is_numeric($right)) {

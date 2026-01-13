@@ -741,16 +741,29 @@ class ScssParser implements TokenAwareParserInterface
             if ($this->peek('variable')) {
                 $argName = $this->consume('variable')->value;
 
+                $arbitrary = false;
+                if ($this->peek('operator') && $this->stream->current()->value === '.') {
+                    $next1 = $this->stream->peekValue(1);
+                    $next2 = $this->stream->peekValue(2);
+                    if ($next1 === '.' && $next2 === '.') {
+                        $this->advanceToken();
+                        $this->advanceToken();
+                        $this->advanceToken();
+                        $arbitrary = true;
+                    }
+                }
+
                 if ($this->peek('colon')) {
                     $this->consume('colon');
 
                     $defaultValue = $this->parseBinaryExpression(0);
-                    $args[$argName] = $defaultValue;
+                    $args[] = ['name' => $argName, 'arbitrary' => $arbitrary, 'default' => $defaultValue];
                 } else {
-                    $args[] = $argName;
+                    $args[] = ['name' => $argName, 'arbitrary' => $arbitrary];
                 }
             } else {
-                $args[] = $this->consume('identifier')->value;
+                $argName = $this->consume('identifier')->value;
+                $args[] = ['name' => $argName, 'arbitrary' => false];
             }
 
             if (! $this->peek('paren_close')) {

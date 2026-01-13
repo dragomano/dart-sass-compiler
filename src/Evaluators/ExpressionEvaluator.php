@@ -107,10 +107,14 @@ class ExpressionEvaluator
         return $expr;
     }
 
-    public function evaluateNumberExpression(AstNode $expr): mixed
+    public function evaluateNumberExpression(AstNode $expr): string|array|int|float
     {
         $value = $expr->properties['value'];
         $unit  = $expr->properties['unit'] ?? '';
+
+        if (is_array($value)) {
+            $value = $value['value'];
+        }
 
         if ($unit === '' && is_string($value)) {
             if (preg_match('/^(-?\d+(?:\.\d+)?)\s*(\S+)?$/', $value, $matches)) {
@@ -119,7 +123,9 @@ class ExpressionEvaluator
             }
         }
 
-        return $unit === '' ? $value : ['value' => $value, 'unit' => $unit];
+        $numericValue = is_numeric($value) ? $value : (float) $value;
+
+        return $unit === '' ? $numericValue : ['value' => $numericValue, 'unit' => $unit];
     }
 
     public function evaluateStringExpression(AstNode $expr): string
