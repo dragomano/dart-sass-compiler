@@ -539,12 +539,10 @@ readonly class MathModule
 
     private function normalize(mixed $item): ?array
     {
-        // Handle numeric values
         if (is_numeric($item)) {
             return ['value' => (float) $item, 'unit' => ''];
         }
 
-        // Handle array values with value/unit structure
         if (is_array($item) && isset($item['value'])) {
             return ['value' => (float) $item['value'], 'unit' => $item['unit'] ?? ''];
         }
@@ -583,9 +581,9 @@ readonly class MathModule
             $normalized[] = $norm;
         }
 
-        $first = $normalized[0];
+        $first      = $normalized[0];
         $resultUnit = $first['unit'];
-        $values = [];
+        $values     = [];
 
         foreach ($normalized as $norm) {
             if (! $this->areUnitsCompatible($resultUnit, $norm['unit'])) {
@@ -608,7 +606,7 @@ readonly class MathModule
             }
         }
 
-        $unit = $allHaveUnits ? $resultUnit : '';
+        $unit   = $allHaveUnits ? $resultUnit : '';
         $result = ($type === 'min') ? min($values) : max($values);
 
         return ['value' => $result, 'unit' => $unit];

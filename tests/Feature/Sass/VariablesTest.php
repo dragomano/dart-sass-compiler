@@ -106,6 +106,19 @@ dataset('scss interpolation', [
     }
     CSS,
   ],
+
+  'expression interpolation' => [
+    <<<'SCSS'
+    .result {
+        content: "#{1 + 1}";
+    }
+    SCSS,
+    /** @lang text */ <<<'CSS'
+    .result {
+      content: "2";
+    }
+    CSS,
+  ],
 ]);
 
 dataset('sass variables', [
@@ -196,6 +209,18 @@ dataset('sass interpolation', [
     /** @lang text */ <<<'CSS'
     footer {
       color: green;
+    }
+    CSS,
+  ],
+
+  'expression interpolation' => [
+    <<<'SASS'
+    .result
+      content: "#{1 + 1}"
+    SASS,
+    /** @lang text */ <<<'CSS'
+    .result {
+      content: "2";
     }
     CSS,
   ],

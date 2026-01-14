@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace DartSass\Evaluators;
 
 use Closure;
+use DartSass\Parsers\ParserFactory;
+use DartSass\Parsers\Syntax;
 use DartSass\Utils\ValueFormatter;
 use Exception;
 
@@ -12,12 +14,11 @@ use function is_string;
 use function preg_match;
 use function preg_replace_callback;
 use function str_contains;
-use function str_starts_with;
 use function trim;
 
 readonly class InterpolationEvaluator
 {
-    public function __construct(private ValueFormatter $valueFormatter) {}
+    public function __construct(private ValueFormatter $valueFormatter, private ParserFactory $parserFactory) {}
 
     public function evaluate(string $string, Closure $evaluateExpression): string
     {
@@ -49,18 +50,16 @@ readonly class InterpolationEvaluator
                 $expr = $this->evaluate($expr, $evaluateExpression);
             }
 
-            // Evaluate variables
-            if (str_starts_with($expr, '$')) {
-                try {
-                    $value = $evaluateExpression($expr);
+            // Evaluate expression
+            try {
+                $parser = $this->parserFactory->create($expr, Syntax::SCSS);
+                $ast    = $parser->parseExpression();
+                $value  = $evaluateExpression($ast);
 
-                    return $this->unwrapQuotedValue($value);
-                } catch (Exception) {
-                    return $expr;
-                }
+                return $this->unwrapQuotedValue($value);
+            } catch (Exception) {
+                return $expr;
             }
-
-            return $expr;
         }, $string);
     }
 

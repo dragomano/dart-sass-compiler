@@ -7,6 +7,7 @@ namespace DartSass\Parsers;
 use DartSass\Exceptions\SyntaxException;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\AtRuleNode;
+use DartSass\Parsers\Nodes\CommentNode;
 use DartSass\Parsers\Nodes\CssCustomPropertyNode;
 use DartSass\Parsers\Nodes\CssPropertyNode;
 use DartSass\Parsers\Nodes\FunctionNode;
@@ -145,6 +146,10 @@ class ScssParser implements TokenAwareParserInterface
                 }
             } elseif ($token->type === 'variable') {
                 $rules[] = $this->parseVariable();
+            } elseif ($token->type === 'comment') {
+                $rules[] = new CommentNode($token->value, $token->line, $token->column);
+
+                $this->advanceToken();
             } else {
                 $rules[] = $this->parseRule();
             }
@@ -463,6 +468,14 @@ class ScssParser implements TokenAwareParserInterface
 
                     break;
 
+                case 'comment':
+                    $item = new CommentNode($token->value, $token->line, $token->column);
+                    $declarations[] = $item;
+
+                    $this->advanceToken();
+
+                    break;
+
                 case 'operator':
                     $tokenValue = $token->value;
                     if (isset(self::NESTED_SELECTOR_OPERATORS[$tokenValue]) || $tokenValue === '[') {
@@ -726,16 +739,33 @@ class ScssParser implements TokenAwareParserInterface
             if ($this->peek('variable')) {
                 $argName = $this->consume('variable')->value;
 
+                $arbitrary = false;
+
+                if ($this->peek('spread_operator')) {
+                    $this->consume('spread_operator');
+                    $arbitrary = true;
+
+                    $this->skipWhitespace();
+                    if (! $this->peek('paren_close')) {
+                        throw new SyntaxException(
+                            'Arbitrary argument (...) must be the last parameter',
+                            $this->stream->current()->line,
+                            $this->stream->current()->column
+                        );
+                    }
+                }
+
                 if ($this->peek('colon')) {
                     $this->consume('colon');
 
                     $defaultValue = $this->parseBinaryExpression(0);
-                    $args[$argName] = $defaultValue;
+                    $args[] = ['name' => $argName, 'arbitrary' => $arbitrary, 'default' => $defaultValue];
                 } else {
-                    $args[] = $argName;
+                    $args[] = ['name' => $argName, 'arbitrary' => $arbitrary];
                 }
             } else {
-                $args[] = $this->consume('identifier')->value;
+                $argName = $this->consume('identifier')->value;
+                $args[] = ['name' => $argName, 'arbitrary' => false];
             }
 
             if (! $this->peek('paren_close')) {
@@ -1065,6 +1095,12 @@ class ScssParser implements TokenAwareParserInterface
             ($token = $this->stream->current())
             && ! $this->stream->matchesAny('brace_open', 'semicolon')
         ) {
+            if ($token->type === 'comment') {
+                $this->advanceToken();
+
+                continue;
+            }
+
             if (isset(self::SELECTOR_TOKENS[$token->type])) {
                 $value .= $token->value;
                 $this->advanceToken();
@@ -1166,57 +1202,7 @@ class ScssParser implements TokenAwareParserInterface
                 return new FunctionNode('url', [$urlNode], line: $token->line);
             })(),
 
-            'function' => (function () use ($token) {
-                $funcName = $token->value;
-
-                $this->consume('paren_open');
-
-                $args = [];
-
-                while (! $this->peek('paren_close')) {
-                    $this->skipWhitespace();
-
-                    if ($this->peek('paren_close')) {
-                        break;
-                    }
-
-                    if ($this->peek('variable')) {
-                        $varToken = $this->consume('variable');
-
-                        $argName = $varToken->value;
-
-                        if ($this->peek('colon')) {
-                            $this->consume('colon');
-                            $this->skipWhitespace();
-
-                            $argValue = $this->parseBinaryExpression(0);
-
-                            $args[$argName] = $argValue;
-                        } else {
-                            $this->setTokenIndex($this->getTokenIndex() - 1);
-
-                            $arg = $this->parseBinaryExpression(0);
-                            $args[] = $arg;
-                        }
-                    } else {
-                        $arg = $this->parseBinaryExpression(0);
-                        $args[] = $arg;
-                    }
-
-                    if (! $this->peek('paren_close')) {
-                        $this->skipWhitespace();
-
-                        $commaToken = $this->stream->current();
-                        if ($commaToken && $commaToken->type === 'operator' && $commaToken->value === ',') {
-                            $this->advanceToken();
-                        }
-                    }
-                }
-
-                $this->consume('paren_close');
-
-                return new FunctionNode($funcName, $args, line: $token->line);
-            })(),
+            'function' => $this->parseFunctionCall($token),
 
             'paren_open' => (function () use ($token) {
                 $this->skipWhitespace();
@@ -1275,14 +1261,104 @@ class ScssParser implements TokenAwareParserInterface
 
             'important_modifier' => new IdentifierNode('!important', $token->line),
 
-            default => (function () use ($token): void {
+            'spread_operator' => (function () use ($token): void {
                 throw new SyntaxException(
-                    sprintf('Unexpected token in expression: %s', $token->type),
+                    'Spread operator (...) can only be used in function calls',
                     $token->line,
                     $token->column
                 );
             })(),
         };
+    }
+
+    /**
+     * @throws SyntaxException
+     */
+    private function parseFunctionCall(object $token): FunctionNode
+    {
+        $funcName = $token->value;
+
+        $this->consume('paren_open');
+
+        $args = [];
+
+        while (! $this->peek('paren_close')) {
+            $this->skipWhitespace();
+
+            if ($this->peek('paren_close')) {
+                break;
+            }
+
+            // Handle named arguments ($var: value)
+            if ($this->peek('variable')) {
+                $varToken = $this->consume('variable');
+                $argName  = $varToken->value;
+
+                if ($this->peek('colon')) {
+                    $this->consume('colon');
+                    $this->skipWhitespace();
+
+                    $argValue = $this->parseBinaryExpression(0);
+                    $args[$argName] = $argValue;
+
+                    // Skip to next iteration for comma handling
+                    if (! $this->peek('paren_close')) {
+                        $this->skipWhitespace();
+                        $commaToken = $this->stream->current();
+                        if ($commaToken && $commaToken->type === 'operator' && $commaToken->value === ',') {
+                            $this->advanceToken();
+                        }
+                    }
+
+                    continue;
+                }
+
+                // Not a named argument, rollback and parse as regular expression
+                $this->setTokenIndex($this->getTokenIndex() - 1);
+            }
+
+            // Parse regular positional argument
+            $arg = $this->parseBinaryExpression(0);
+            $args[] = $this->maybeWrapWithSpread($arg);
+
+            if (! $this->peek('paren_close')) {
+                $this->skipWhitespace();
+
+                $commaToken = $this->stream->current();
+                if ($commaToken && $commaToken->type === 'operator' && $commaToken->value === ',') {
+                    $this->advanceToken();
+                }
+            }
+        }
+
+        $this->consume('paren_close');
+
+        return new FunctionNode($funcName, $args, line: $token->line);
+    }
+
+    /**
+     * @throws SyntaxException
+     */
+    private function maybeWrapWithSpread(AstNode $arg): array|AstNode
+    {
+        $this->skipWhitespace();
+
+        if ($this->peek('spread_operator')) {
+            $this->consume('spread_operator');
+
+            $this->skipWhitespace();
+            if (! $this->peek('paren_close')) {
+                throw new SyntaxException(
+                    'Spread operator (...) must be the last argument',
+                    $this->stream->current()->line,
+                    $this->stream->current()->column
+                );
+            }
+
+            return ['type' => 'spread', 'value' => $arg];
+        }
+
+        return $arg;
     }
 
     private function parseNameAndInit(): array

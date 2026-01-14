@@ -39,6 +39,27 @@ describe('CSS math functions', function () {
             ->toEqualCss($expected);
     });
 
+    it('simplifies nested calc functions', function () {
+        $scss = <<<'SCSS'
+        body {
+            width: calc(calc(10px + 20%) + 30px);
+            height: calc(calc(50%));
+            margin: calc(calc(10px) + calc(20%));
+        }
+        SCSS;
+
+        $expected = <<<'CSS'
+        body {
+          width: calc((10px + 20%) + 30px);
+          height: 50%;
+          margin: calc(10px + 20%);
+        }
+        CSS;
+
+        expect($this->compiler->compileString($scss))
+            ->toEqualCss($expected);
+    });
+
     it('supports clamp function', function () {
         $scss = <<<'SCSS'
         body {

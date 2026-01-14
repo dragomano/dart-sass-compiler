@@ -126,6 +126,16 @@ dataset('compressed style cases', [
         '/* regular comment */ .test { /* another comment */ width: 10px; } /*# sourceMappingURL=style.css.map */',
         '.test{width:10px}/*# sourceMappingURL=style.css.map */',
     ],
+
+    'preserves important comments' => [
+        '/*! important comment */ .test { width: 10px; }',
+        '/*! important comment */ .test{width:10px}',
+    ],
+
+    'removes regular comments but preserves important comments' => [
+        '/* regular comment */ .test { width: 10px; } /*! important comment */',
+        '.test{width:10px}/*! important comment */',
+    ],
 ]);
 
 dataset('expanded style cases', [

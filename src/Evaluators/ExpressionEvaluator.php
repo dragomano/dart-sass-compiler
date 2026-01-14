@@ -11,6 +11,7 @@ use DartSass\Handlers\ModuleHandler;
 use DartSass\Handlers\VariableHandler;
 use DartSass\Modules\SassList;
 use DartSass\Parsers\Nodes\AstNode;
+use DartSass\Parsers\Nodes\ListNode;
 use DartSass\Parsers\Nodes\OperationNode;
 use DartSass\Parsers\Nodes\VariableNode;
 use DartSass\Utils\ValueFormatter;
@@ -107,10 +108,14 @@ class ExpressionEvaluator
         return $expr;
     }
 
-    public function evaluateNumberExpression(AstNode $expr): mixed
+    public function evaluateNumberExpression(AstNode $expr): string|array|int|float
     {
         $value = $expr->properties['value'];
         $unit  = $expr->properties['unit'] ?? '';
+
+        if (is_array($value)) {
+            $value = $value['value'];
+        }
 
         if ($unit === '' && is_string($value)) {
             if (preg_match('/^(-?\d+(?:\.\d+)?)\s*(\S+)?$/', $value, $matches)) {
@@ -119,7 +124,9 @@ class ExpressionEvaluator
             }
         }
 
-        return $unit === '' ? $value : ['value' => $value, 'unit' => $unit];
+        $numericValue = is_numeric($value) ? $value : (float) $value;
+
+        return $unit === '' ? $numericValue : ['value' => $numericValue, 'unit' => $unit];
     }
 
     public function evaluateStringExpression(AstNode $expr): string
@@ -238,7 +245,50 @@ class ExpressionEvaluator
 
         $args = $this->evaluateArguments($args);
 
-        return $this->functionHandler->call($name, $args);
+        // Only process spread arguments if there are any
+        $hasSpread = false;
+        foreach ($args as $arg) {
+            if (is_array($arg) && isset($arg['type']) && $arg['type'] === 'spread') {
+                $hasSpread = true;
+
+                break;
+            }
+        }
+
+        if ($hasSpread) {
+            // Handle spread arguments by unpacking lists
+            $processedArgs = [];
+            foreach ($args as $arg) {
+                if (is_array($arg) && isset($arg['type']) && $arg['type'] === 'spread') {
+                    $spreadValue = $this->evaluate($arg['value']);
+
+                    // If value is a SassList, unpack its elements
+                    if ($spreadValue instanceof SassList) {
+                        foreach ($spreadValue->value as $item) {
+                            $processedArgs[] = $item;
+                        }
+                    } elseif ($spreadValue instanceof ListNode) {
+                        foreach ($spreadValue->values as $item) {
+                            $processedArgs[] = $this->evaluate($item);
+                        }
+                    } elseif (is_array($spreadValue)) {
+                        foreach ($spreadValue as $item) {
+                            $processedArgs[] = $this->evaluate($item);
+                        }
+                    } else {
+                        // If not a list, add as regular argument
+                        $processedArgs[] = $spreadValue;
+                    }
+                } else {
+                    $processedArgs[] = $arg;
+                }
+            }
+
+            return $this->functionHandler->call($name, $processedArgs);
+        } else {
+            // No spread arguments - use original args
+            return $this->functionHandler->call($name, $args);
+        }
     }
 
     private function hasSlashSeparator(array $args): bool

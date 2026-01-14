@@ -7,7 +7,7 @@ use DartSass\Exceptions\CompilationException;
 use DartSass\Loaders\LoaderInterface;
 
 beforeEach(function () {
-    $this->loader = mock(LoaderInterface::class);
+    $this->loader   = mock(LoaderInterface::class);
     $this->compiler = new Compiler(loader: $this->loader);
 });
 
@@ -161,4 +161,23 @@ it('compiles multiplication with string operands using calc', function () {
 
     expect(fn() => $this->compiler->compileString($scss))
         ->toThrow(CompilationException::class);
+});
+
+it('compiles concatenation of string function results and literals without duplicating quotes', function () {
+    $scss = <<<'SCSS'
+    @use "sass:string";
+
+    test {
+        content: string.slice("hello", 1, 3) + " world";
+    }
+    SCSS;
+
+    $expected = <<<'CSS'
+    test {
+      content: "hel world";
+    }
+    CSS;
+
+    expect($this->compiler->compileString($scss))
+        ->toEqualCss($expected);
 });

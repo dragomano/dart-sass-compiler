@@ -277,6 +277,24 @@ class CompilerEngine implements CompilerEngineInterface
                 continue;
             }
 
+            if ($node->type === 'comment') {
+                if (str_starts_with($node->properties['value'], '/*')) {
+                    $indent = $this->getIndent($nestingLevel);
+                    $commentValue = $node->properties['value'];
+
+                    // Extract content between /* and */
+                    $content = substr($commentValue, 2, -2);
+
+                    // Apply interpolation evaluation
+                    $evaluatedContent = $this->evaluateInterpolationsInString($content);
+
+                    // Rewrap with comment delimiters
+                    $css .= $indent . '/*' . $evaluatedContent . '*/' . "\n";
+                }
+
+                continue;
+            }
+
             $compiler = $this->findNodeCompiler($node->type);
 
             if ($compiler) {

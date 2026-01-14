@@ -57,7 +57,7 @@ class Lexer implements LexerInterface
                     $this->updateBlockState($type);
                     $this->updatePropertyValueState($type);
 
-                    if (in_array($type, ['comment', 'whitespace', 'newline'], true)) {
+                    if (in_array($type, ['whitespace', 'newline'], true)) {
                         $this->updatePosition($matchValue, $matchLength);
 
                         continue 2;

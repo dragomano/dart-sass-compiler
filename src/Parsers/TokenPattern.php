@@ -26,6 +26,7 @@ enum TokenPattern: string
     case INTERPOLATION_OPEN        = '(?P<interpolation_open>#\{)';
     case IMPORTANT_MODIFIER        = '(?P<important_modifier>!important\b)';
     case ATTRIBUTE_SELECTOR        = '(?P<attribute_selector>\[[^\]]+\])';
+    case SPREAD_OPERATOR           = '(?P<spread_operator>\.\.\.)';
     case OPERATOR                  = '(?P<operator>[+\-*\/%=<>!&|.,\]#])';
     case BRACE_OPEN                = '(?P<brace_open>\{)';
     case BRACE_CLOSE               = '(?P<brace_close>\})';
