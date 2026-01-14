@@ -36,6 +36,16 @@ trait LegacyColorFunctions
         return $this->saturate($color, -$amount);
     }
 
+    public function fadeIn(string $color, float $amount): string
+    {
+        return $this->opacify($color, $amount);
+    }
+
+    public function fadeOut(string $color, float $amount): string
+    {
+        return $this->transparentize($color, $amount);
+    }
+
     public function green(string $color): string
     {
         return $this->channel($color, 'green');
@@ -64,16 +74,6 @@ trait LegacyColorFunctions
     public function opacity(string $color): string
     {
         return $this->alpha($color);
-    }
-
-    public function fadeIn(string $color, float $amount): string
-    {
-        return $this->opacify($color, $amount);
-    }
-
-    public function fadeOut(string $color, float $amount): string
-    {
-        return $this->transparentize($color, $amount);
     }
 
     public function red(string $color): string
