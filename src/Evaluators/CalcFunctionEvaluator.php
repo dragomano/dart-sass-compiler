@@ -39,6 +39,10 @@ readonly class CalcFunctionEvaluator
             if ($this->isNumber($result)) {
                 return $result;
             }
+
+            if (is_string($result) && str_starts_with($result, 'calc(')) {
+                return $result;
+            }
         }
 
         $argString = implode(', ', array_map(
@@ -150,6 +154,9 @@ readonly class CalcFunctionEvaluator
         $lStr = $this->formatResult($left);
         $rStr = $this->formatResult($right);
 
+        $lStr = $this->unwrapCalc($lStr);
+        $rStr = $this->unwrapCalc($rStr);
+
         return "$lStr $operator $rStr";
     }
 
@@ -194,5 +201,16 @@ readonly class CalcFunctionEvaluator
         }
 
         return $val;
+    }
+
+    private function unwrapCalc(mixed $val): string
+    {
+        $str = (string) $val;
+
+        if (str_starts_with($str, 'calc(') && str_ends_with($str, ')')) {
+            return '(' . substr($str, 5, -1) . ')';
+        }
+
+        return $str;
     }
 }
