@@ -11,7 +11,6 @@ use function addcslashes;
 use function count;
 use function is_array;
 use function is_string;
-use function preg_match;
 use function str_replace;
 use function trim;
 
@@ -41,11 +40,6 @@ class UrlFunctionHandler extends BaseModuleHandler
         }
 
         $value = trim($value);
-
-        // Remove double quotes that appear in the middle of strings
-        if (preg_match('/"([^"]*)""([^"]*)"/', $value, $matches)) {
-            $value = '"' . $matches[1] . $matches[2] . '"';
-        }
 
         if ($isQuoted) {
             $value = trim($value, '"\'');

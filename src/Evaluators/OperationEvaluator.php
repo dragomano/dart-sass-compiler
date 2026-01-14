@@ -12,90 +12,44 @@ use function in_array;
 use function is_array;
 use function is_numeric;
 use function is_string;
+use function str_contains;
 use function str_starts_with;
+use function strlen;
+use function substr;
 
 readonly class OperationEvaluator
 {
+    private const COMPARISON_OPERATORS = ['==', '!=', '<', '>', '<=', '>=', 'and', 'or'];
+
+    private const MULTIPLICATION_DIVISION_OPERATORS = ['*', '/'];
+
+    private const QUOTE_CHARS = ['"', "'"];
+
     public function __construct(private ValueFormatter $valueFormatter) {}
 
     public function evaluate(mixed $left, string $operator, mixed $right): mixed
     {
-        if ($left instanceof LazyValue) {
-            $left = $left->getValue();
-        }
+        $left  = $this->resolveValue($left);
+        $right = $this->resolveValue($right);
 
-        if ($right instanceof LazyValue) {
-            $right = $right->getValue();
-        }
-
-        if (in_array($operator, ['==', '!=', '<', '>', '<=', '>=', 'and', 'or'], true)) {
+        if (in_array($operator, self::COMPARISON_OPERATORS, true)) {
             return $this->evaluateComparison($left, $operator, $right);
         }
 
-        // Handle string concatenation
         if ($operator === '+') {
-            if (is_string($left) && is_string($right)) {
-                if (is_numeric($left) && is_numeric($right)) {
-                    return (float) $left + (float) $right;
-                } else {
-                    return $left . $right;
-                }
-            }
-
-            if (is_string($left) && is_numeric($right)) {
-                return $left . $right;
-            }
-
-            if (is_numeric($left) && is_string($right)) {
-                return $left . $right;
-            }
-
-            if (is_array($left) && isset($left['value']) && is_string($right)) {
-                return $left['value'] . ($left['unit'] ?? '') . $right;
-            }
-
-            if (is_string($left) && is_array($right) && isset($right['value'])) {
-                return $left . $right['value'] . ($right['unit'] ?? '');
-            }
+            return $this->handleAddition($left, $right);
         }
 
-        // Handle CSS background-size separator
         if ($operator === '/' && is_string($left) && is_string($right)) {
-            return $left . ' / ' . $right;
+            return "$left / $right";
         }
 
-        [$leftValue, $leftUnit, $rightValue, $rightUnit] = $this->extractNumericValues($left, $right);
+        return $this->evaluateArithmetic($left, $operator, $right);
+    }
 
-        if ($leftValue !== null && $rightValue !== null) {
-            // For multiplication and division, allow operations with empty units
-            if ($leftUnit === $rightUnit) {
-                return $this->performNumericOperation($leftValue, $rightValue, $operator, $leftUnit);
-            }
-
-            // For * and / operations, if one side has no unit, use the unit from the other side
-            if (in_array($operator, ['*', '/'], true)) {
-                $unit = $leftUnit !== '' ? $leftUnit : $rightUnit;
-                if ($unit !== '') {
-                    return $this->performNumericOperation($leftValue, $rightValue, $operator, $unit);
-                }
-            }
-        }
-
-        if ($operator === '*' || $operator === '/') {
-            if ($leftValue === null || $rightValue === null) {
-                $isLeftSimpleString  = is_string($left) && ! str_contains($left, '(');
-                $isRightSimpleString = is_string($right) && ! str_contains($right, '(');
-
-                if ($isLeftSimpleString || $isRightSimpleString) {
-                    $leftStr  = $this->valueFormatter->format($left);
-                    $rightStr = $this->valueFormatter->format($right);
-
-                    throw new CompilationException("Undefined operation \"$leftStr $operator $rightStr\".");
-                }
-            }
-        }
-
-        return $this->buildCalcExpression($left, $operator, $right);
+    private function resolveValue(mixed $value): mixed
+    {
+        return $value instanceof LazyValue ? $value->getValue() : $value;
     }
 
     private function evaluateComparison(mixed $left, string $operator, mixed $right): bool
@@ -103,19 +57,91 @@ readonly class OperationEvaluator
         return match ($operator) {
             '=='    => $this->valuesAreEqual($left, $right),
             '!='    => ! $this->valuesAreEqual($left, $right),
-            '<'     => $this->compareValues($left, $right) < 0,
-            '>'     => $this->compareValues($left, $right) > 0,
-            '<='    => $this->compareValues($left, $right) <= 0,
-            '>='    => $this->compareValues($left, $right) >= 0,
+            '<'     => $this->compareNumericValues($left, $right) < 0,
+            '>'     => $this->compareNumericValues($left, $right) > 0,
+            '<='    => $this->compareNumericValues($left, $right) <= 0,
+            '>='    => $this->compareNumericValues($left, $right) >= 0,
             'and'   => $this->isTruthy($left) && $this->isTruthy($right),
             'or'    => $this->isTruthy($left) || $this->isTruthy($right),
             default => throw new CompilationException("Unknown comparison operator: $operator"),
         };
     }
 
+    private function handleAddition(mixed $left, mixed $right): mixed
+    {
+        if (is_string($left) && is_string($right)) {
+            return $this->concatenateStrings($left, $right);
+        }
+
+        if ((is_string($left) && is_numeric($right)) || (is_numeric($left) && is_string($right))) {
+            return $left . $right;
+        }
+
+        if ($this->isStructuredValue($left) && is_string($right)) {
+            return $this->formatStructuredValue($left) . $right;
+        }
+
+        if (is_string($left) && $this->isStructuredValue($right)) {
+            return $left . $this->formatStructuredValue($right);
+        }
+
+        return $this->evaluateArithmetic($left, '+', $right);
+    }
+
+    private function concatenateStrings(string $left, string $right): string|float
+    {
+        if (is_numeric($left) && is_numeric($right)) {
+            return (float) $left + (float) $right;
+        }
+
+        $leftUnquoted  = $this->removeQuotes($left);
+        $rightUnquoted = $this->removeQuotes($right);
+        $shouldQuote   = $this->isQuotedString($left) || $this->isQuotedString($right);
+
+        return $shouldQuote ? "\"$leftUnquoted$rightUnquoted\"" : $leftUnquoted . $rightUnquoted;
+    }
+
+    private function evaluateArithmetic(mixed $left, string $operator, mixed $right): mixed
+    {
+        [$leftValue, $leftUnit, $rightValue, $rightUnit] = $this->extractNumericValues($left, $right);
+
+        if ($leftValue !== null && $rightValue !== null) {
+            if ($leftUnit === $rightUnit) {
+                return $this->performNumericOperation($leftValue, $rightValue, $operator, $leftUnit);
+            }
+
+            if (in_array($operator, self::MULTIPLICATION_DIVISION_OPERATORS, true)) {
+                $unit = $leftUnit !== '' ? $leftUnit : $rightUnit;
+                if ($unit !== '') {
+                    return $this->performNumericOperation($leftValue, $rightValue, $operator, $unit);
+                }
+            }
+        }
+
+        if (in_array($operator, self::MULTIPLICATION_DIVISION_OPERATORS, true)
+            && ($leftValue === null || $rightValue === null)) {
+            $this->throwIfUndefinedOperation($left, $operator, $right);
+        }
+
+        return $this->buildCalcExpression($left, $operator, $right);
+    }
+
+    private function throwIfUndefinedOperation(mixed $left, string $operator, mixed $right): void
+    {
+        $isLeftSimple  = is_string($left) && ! str_contains($left, '(');
+        $isRightSimple = is_string($right) && ! str_contains($right, '(');
+
+        if ($isLeftSimple || $isRightSimple) {
+            $leftStr  = $this->valueFormatter->format($left);
+            $rightStr = $this->valueFormatter->format($right);
+
+            throw new CompilationException("Undefined operation \"$leftStr $operator $rightStr\".");
+        }
+    }
+
     private function valuesAreEqual(mixed $left, mixed $right): bool
     {
-        if ($left === null && $right === null) {
+        if ($left === $right) {
             return true;
         }
 
@@ -123,55 +149,49 @@ readonly class OperationEvaluator
             return false;
         }
 
-        if (is_array($left) && isset($left['value']) && is_array($right) && isset($right['value'])) {
-            $leftUnit  = $left['unit'] ?? '';
-            $rightUnit = $right['unit'] ?? '';
-
-            if ($leftUnit === $rightUnit) {
-                return (float) $left['value'] === (float) $right['value'];
-            }
-
-            return false;
+        if ($this->isStructuredValue($left) && $this->isStructuredValue($right)) {
+            return $this->structuredValuesEqual($left, $right);
         }
 
         if (is_numeric($left) && is_numeric($right)) {
             return (float) $left === (float) $right;
         }
 
-        if (is_string($left) && is_string($right)) {
-            return $left === $right;
+        if ($this->isStructuredValue($left) && is_numeric($right)) {
+            return $this->structuredEqualsNumeric($left, $right);
         }
 
-        if (is_array($left) && isset($left['value']) && is_numeric($right)) {
-            $leftUnit = $left['unit'] ?? '';
-
-            return $leftUnit === '' && (float) $left['value'] === (float) $right;
-        }
-
-        if (is_numeric($left) && is_array($right) && isset($right['value'])) {
-            $rightUnit = $right['unit'] ?? '';
-
-            return $rightUnit === '' && (float) $left === (float) $right['value'];
+        if (is_numeric($left) && $this->isStructuredValue($right)) {
+            return $this->structuredEqualsNumeric($right, $left);
         }
 
         return $left == $right;
     }
 
-    private function compareValues(mixed $left, mixed $right): int
+    private function structuredValuesEqual(array $left, array $right): bool
     {
-        [$leftValue, , $rightValue, ] = $this->extractNumericValues($left, $right);
+        $leftUnit  = $left['unit'] ?? '';
+        $rightUnit = $right['unit'] ?? '';
+
+        return $leftUnit === $rightUnit && (float) $left['value'] === (float) $right['value'];
+    }
+
+    private function structuredEqualsNumeric(array $structured, mixed $numeric): bool
+    {
+        $unit = $structured['unit'] ?? '';
+
+        return $unit === '' && (float) $structured['value'] === (float) $numeric;
+    }
+
+    private function compareNumericValues(mixed $left, mixed $right): int
+    {
+        [$leftValue, , $rightValue,] = $this->extractNumericValues($left, $right);
 
         if ($leftValue === null || $rightValue === null) {
             return 0;
         }
 
-        if ($leftValue < $rightValue) {
-            return -1;
-        } elseif ($leftValue > $rightValue) {
-            return 1;
-        }
-
-        return 0;
+        return $leftValue <=> $rightValue;
     }
 
     private function isTruthy(mixed $value): bool
@@ -181,42 +201,46 @@ readonly class OperationEvaluator
 
     private function extractNumericValues(mixed $left, mixed $right): array
     {
-        if ($left instanceof LazyValue) {
-            $left = $left->getValue();
+        $left  = $this->resolveValue($left);
+        $right = $this->resolveValue($right);
+
+        $leftValue  = $this->getNumericValue($left);
+        $rightValue = $this->getNumericValue($right);
+        $leftUnit   = $this->getUnit($left);
+        $rightUnit  = $this->getUnit($right);
+
+        // Handle special cases for unit inheritance
+        if (is_string($left) && is_numeric($left) && $this->isStructuredValue($right)) {
+            return [(float) $left, '', $rightValue, $rightUnit];
         }
 
-        if ($right instanceof LazyValue) {
-            $right = $right->getValue();
+        if ($this->isStructuredValue($left) && is_string($right) && is_numeric($right)) {
+            return [$leftValue, $leftUnit, (float) $right, $leftUnit];
         }
 
-        if (is_string($left) && is_numeric($left) && is_array($right) && isset($right['value'])) {
-            return [(float) $left, '', $right['value'], $right['unit'] ?? ''];
+        if (is_numeric($left) && $this->isStructuredValue($right)) {
+            return [$left, $rightUnit, $rightValue, $rightUnit];
         }
 
-        if (is_array($left) && isset($left['value']) && is_string($right) && is_numeric($right)) {
-            return [$left['value'], $left['unit'] ?? '', (float) $right, $left['unit'] ?? ''];
+        if ($this->isStructuredValue($left) && is_numeric($right)) {
+            return [$leftValue, $leftUnit, $right, $leftUnit];
         }
-
-        if (is_numeric($left) && is_array($right) && isset($right['value'])) {
-            return [$left, $right['unit'] ?? '', $right['value'], $right['unit'] ?? ''];
-        }
-
-        if (is_array($left) && isset($left['value']) && is_numeric($right)) {
-            return [$left['value'], $left['unit'] ?? '', $right, $left['unit'] ?? ''];
-        }
-
-        $leftValue = is_array($left) && isset($left['value'])
-            ? $left['value']
-            : (is_numeric($left) ? (float) $left : null);
-
-        $rightValue = is_array($right) && isset($right['value'])
-            ? $right['value']
-            : (is_numeric($right) ? (float) $right : null);
-
-        $leftUnit  = is_array($left) && isset($left['unit']) ? $left['unit'] : '';
-        $rightUnit = is_array($right) && isset($right['unit']) ? $right['unit'] : '';
 
         return [$leftValue, $leftUnit, $rightValue, $rightUnit];
+    }
+
+    private function getNumericValue(mixed $value): ?float
+    {
+        if ($this->isStructuredValue($value)) {
+            return $value['value'];
+        }
+
+        return is_numeric($value) ? (float) $value : null;
+    }
+
+    private function getUnit(mixed $value): string
+    {
+        return is_array($value) && isset($value['unit']) ? $value['unit'] : '';
     }
 
     private function performNumericOperation(float $left, float $right, string $operator, string $unit): mixed
@@ -235,13 +259,8 @@ readonly class OperationEvaluator
 
     private function buildCalcExpression(mixed $left, string $operator, mixed $right): string
     {
-        if ($left instanceof LazyValue) {
-            $left = $left->getValue();
-        }
-
-        if ($right instanceof LazyValue) {
-            $right = $right->getValue();
-        }
+        $left  = $this->resolveValue($left);
+        $right = $this->resolveValue($right);
 
         $leftString  = $this->valueFormatter->format($left);
         $rightString = $this->valueFormatter->format($right);
@@ -255,5 +274,40 @@ readonly class OperationEvaluator
         }
 
         return "calc($leftString $operator $rightString)";
+    }
+
+    private function isStructuredValue(mixed $value): bool
+    {
+        return is_array($value) && isset($value['value']);
+    }
+
+    private function formatStructuredValue(array $value): string
+    {
+        return $value['value'] . ($value['unit'] ?? '');
+    }
+
+    private function removeQuotes(string $str): string
+    {
+        $length = strlen($str);
+
+        if ($length >= 2 && $this->hasMatchingQuotes($str)) {
+            return substr($str, 1, -1);
+        }
+
+        return $str;
+    }
+
+    private function isQuotedString(string $str): bool
+    {
+        return strlen($str) >= 2 && $this->hasMatchingQuotes($str);
+    }
+
+    private function hasMatchingQuotes(string $str): bool
+    {
+        $length = strlen($str);
+        $first  = $str[0];
+        $last   = $str[$length - 1];
+
+        return in_array($first, self::QUOTE_CHARS, true) && $first === $last;
     }
 }
