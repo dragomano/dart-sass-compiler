@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace DartSass\Handlers;
 
-use DartSass\Compilers\CompilerBuilder;
 use DartSass\Compilers\CompilerEngineInterface;
 use DartSass\Exceptions\CompilationException;
-use DartSass\Loaders\FileLoader;
 use DartSass\Modules\SassList;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\IdentifierNode;
@@ -30,6 +28,8 @@ class MixinHandler
     private array $contentStack = [];
 
     private ?string $currentContent = null;
+
+    private CompilerEngineInterface $compilerEngine;
 
     private static array $mixinCache = [];
 
@@ -60,7 +60,6 @@ class MixinHandler
         string $name,
         array $args,
         ?array $content = null,
-        ?CompilerEngineInterface $parentCompilerEngine = null,
         string $parentSelector = '',
         int $nestingLevel = 0
     ): string {
@@ -75,15 +74,7 @@ class MixinHandler
 
         $mixin = $this->mixins[$name];
 
-        // Always use parent compiler if available to preserve context
-        if ($parentCompilerEngine !== null) {
-            $compilerEngine = $parentCompilerEngine;
-        } else {
-            // Fallback for when no parent compiler is provided
-            $builder = new CompilerBuilder(['style' => 'expanded'], new FileLoader([]));
-            $compilerEngine = $builder->build();
-        }
-
+        $compilerEngine = $this->compilerEngine;
         $compilerEngine->getContext()->variableHandler->enterScope();
 
         $argIndex = 0;
@@ -195,5 +186,10 @@ class MixinHandler
     public function removeMixin(string $name): void
     {
         unset($this->mixins[$name]);
+    }
+
+    public function setCompilerEngine(CompilerEngineInterface $engine): void
+    {
+        $this->compilerEngine = $engine;
     }
 }

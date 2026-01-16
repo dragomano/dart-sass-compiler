@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DartSass\Utils;
 
 use DartSass\Modules\SassList;
+use DartSass\Modules\SassMath;
 use DartSass\Parsers\Nodes\IdentifierNode;
 
 use function array_filter;
@@ -29,6 +30,10 @@ class ValueFormatter
 
         if ($value instanceof SassList) {
             return $this->formatSassList($value);
+        }
+
+        if ($value instanceof SassMath) {
+            return $this->format(['value' => $value->value, 'unit' => $value->unit]);
         }
 
         if (is_array($value)) {

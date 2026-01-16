@@ -441,10 +441,11 @@ enum ColorConverter
             default             => [$c, 0, $x],
         };
 
+        // Round intermediate calculations to avoid precision issues across PHP versions
         return [
-            'r' => ($rgb[0] + $m) * self::RGB_MAX,
-            'g' => ($rgb[1] + $m) * self::RGB_MAX,
-            'b' => ($rgb[2] + $m) * self::RGB_MAX,
+            'r' => round(round(($rgb[0] + $m) * self::RGB_MAX, 10)),
+            'g' => round(round(($rgb[1] + $m) * self::RGB_MAX, 10)),
+            'b' => round(round(($rgb[2] + $m) * self::RGB_MAX, 10)),
         ];
     }
 

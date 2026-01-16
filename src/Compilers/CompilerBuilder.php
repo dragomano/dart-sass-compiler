@@ -42,8 +42,6 @@ use DartSass\Utils\OutputOptimizer;
 use DartSass\Utils\PositionTracker;
 use DartSass\Utils\ResultFormatter;
 use DartSass\Utils\SourceMapGenerator;
-use DartSass\Utils\StateManager;
-use DartSass\Utils\UnitValidator;
 use DartSass\Utils\ValueFormatter;
 
 readonly class CompilerBuilder
@@ -59,9 +57,11 @@ readonly class CompilerBuilder
         $this->initializeUtils($context);
         $this->initializeEvaluators($context);
         $this->initializeCompilers($context);
-        $this->initializeState($context);
 
-        return new CompilerEngine($context);
+        $engine = new CompilerEngine($context);
+        $context->mixinHandler->setCompilerEngine($engine);
+
+        return $engine;
     }
 
     private function createContext(): CompilerContext
@@ -113,7 +113,7 @@ readonly class CompilerBuilder
             $functionRouter,
             $customFunctionHandler,
             $userFunctionEvaluator,
-            fn($expr): mixed => $context->engine?->evaluateExpression($expr)
+            fn($expr): mixed => $context->engine->evaluateExpression($expr)
         );
     }
 
@@ -124,11 +124,9 @@ readonly class CompilerBuilder
     ): ModuleRegistry {
         $moduleRegistry = new ModuleRegistry();
 
-        $moduleRegistry->register(
-            new IfFunctionHandler(
-                fn($expr): mixed => $context->engine?->evaluateExpression($expr)
-            )
-        );
+        $moduleRegistry->register(new IfFunctionHandler(
+            fn($expr): mixed => $context->engine->evaluateExpression($expr)
+        ));
         $moduleRegistry->register(new UrlFunctionHandler());
         $moduleRegistry->register(new FormatFunctionHandler($context->valueFormatter));
         $moduleRegistry->register($cssColorFunctionHandler = new CssColorFunctionHandler());
@@ -136,11 +134,7 @@ readonly class CompilerBuilder
         $moduleRegistry->register(new StringModuleHandler(new StringModule()));
         $moduleRegistry->register(new ListModuleHandler(new ListModule()));
         $moduleRegistry->register(new MapModuleHandler(new MapModule()));
-        $moduleRegistry->register(new MathModuleHandler(
-            new MathModule($context->valueFormatter),
-            new UnitValidator(),
-            $context->valueFormatter
-        ));
+        $moduleRegistry->register(new MathModuleHandler(new MathModule(), $context->valueFormatter));
         $moduleRegistry->register(new LinearGradientFunctionHandler($resultFormatter));
         $moduleRegistry->register($customFunctionHandler);
 
@@ -163,24 +157,18 @@ readonly class CompilerBuilder
 
     private function initializeSimpleEvaluators(CompilerContext $context): void
     {
-        $context->interpolationEvaluator = new InterpolationEvaluator($context->valueFormatter, $context->parserFactory);
-        $context->operationEvaluator     = new OperationEvaluator($context->valueFormatter);
+        $context->interpolationEvaluator = new InterpolationEvaluator(
+            $context->valueFormatter,
+            $context->parserFactory
+        );
+
+        $context->operationEvaluator = new OperationEvaluator($context->valueFormatter);
+        $context->calcEvaluator      = new CalcFunctionEvaluator($context->valueFormatter);
     }
 
     private function initializeExpressionEvaluator(CompilerContext $context): void
     {
-        $context->expressionEvaluator = new ExpressionEvaluator(
-            $context->variableHandler,
-            $context->functionHandler,
-            $context->moduleHandler,
-            $context->valueFormatter,
-            new CalcFunctionEvaluator($context->valueFormatter),
-            $context->interpolationEvaluator
-        );
-
-        $context->expressionEvaluator->setEvaluateCallback(
-            fn($expr): mixed => $context->engine?->evaluateExpression($expr)
-        );
+        $context->expressionEvaluator = new ExpressionEvaluator($context);
     }
 
     private function initializeCompilers(CompilerContext $context): void
@@ -198,17 +186,8 @@ readonly class CompilerBuilder
 
     private function initializeSpecializedCompilers(CompilerContext $context): void
     {
-        $context->mixinCompiler  = new MixinCompiler($context->mixinHandler, $context->moduleHandler);
-        $context->atRuleCompiler = new AtRuleCompiler($context->ruleCompiler, $context->positionTracker);
-        $context->moduleCompiler = new ModuleCompiler(
-            $context->moduleHandler,
-            $context->variableHandler,
-            $context->mixinHandler
-        );
-    }
-
-    private function initializeState(CompilerContext $context): void
-    {
-        $context->stateManager = new StateManager($context);
+        $context->mixinCompiler  = new MixinCompiler($context);
+        $context->atRuleCompiler = new AtRuleCompiler($context);
+        $context->moduleCompiler = new ModuleCompiler($context);
     }
 }

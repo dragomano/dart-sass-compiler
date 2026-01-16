@@ -4,19 +4,14 @@ declare(strict_types=1);
 
 namespace DartSass\Evaluators;
 
-use Closure;
+use DartSass\Compilers\CompilerContext;
 use DartSass\Exceptions\CompilationException;
-use DartSass\Handlers\FunctionHandler;
-use DartSass\Handlers\ModuleHandler;
-use DartSass\Handlers\VariableHandler;
 use DartSass\Modules\SassList;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\ListNode;
 use DartSass\Parsers\Nodes\OperationNode;
 use DartSass\Parsers\Nodes\VariableNode;
-use DartSass\Utils\ValueFormatter;
 
-use function array_map;
 use function end;
 use function explode;
 use function is_array;
@@ -27,28 +22,14 @@ use function str_contains;
 use function str_starts_with;
 use function strtolower;
 
-class ExpressionEvaluator
+readonly class ExpressionEvaluator
 {
-    private ?Closure $evaluateCallback = null;
-
-    public function __construct(
-        private readonly VariableHandler $variableHandler,
-        private readonly FunctionHandler $functionHandler,
-        private readonly ModuleHandler $moduleHandler,
-        private readonly ValueFormatter $valueFormatter,
-        private readonly CalcFunctionEvaluator $calcEvaluator,
-        private readonly InterpolationEvaluator $interpolationEvaluator
-    ) {}
-
-    public function setEvaluateCallback(Closure $callback): void
-    {
-        $this->evaluateCallback = $callback;
-    }
+    public function __construct(private CompilerContext $context) {}
 
     public function evaluate(mixed $expr)
     {
-        if ($expr instanceof OperationNode && $this->evaluateCallback !== null) {
-            return ($this->evaluateCallback)($expr);
+        if ($expr instanceof OperationNode) {
+            return $this->context->engine->evaluateExpression($expr);
         }
 
         if ($expr instanceof AstNode) {
@@ -66,14 +47,13 @@ class ExpressionEvaluator
                 'list'                => $this->evaluateListExpression($props),
                 'map'                 => $this->evaluateMapExpression($props),
                 'identifier'          => $this->evaluateIdentifierExpression($expr),
-                'variable'            => $this->evaluateVariableNode($props['name']),
-                'condition'           => $this->evaluate($props['expression']),
+                'variable'            => $this->evaluate($this->context->variableHandler->get($props['name'])),
+                'condition',
+                'interpolation'       => $this->evaluate($props['expression']),
                 'css_custom_property' => $props['name'],
-                'interpolation'       => $this->valueFormatter->format($this->evaluate($props['expression'])),
                 'property_access'     => $this->evaluatePropertyAccessExpression($expr),
                 'css_property'        => $this->evaluateCssPropertyExpression($expr),
                 'unary'               => $this->evaluateUnaryExpression($expr),
-                'operation'           => $this->calcEvaluator->evaluate([$expr], $this->evaluate(...)),
                 default               => throw new CompilationException(
                     "Unknown expression type: $type at line " . ($props['line'] ?? 0)
                 ),
@@ -84,25 +64,11 @@ class ExpressionEvaluator
             return $this->evaluateVariableString($expr);
         }
 
-        if (is_string($expr) && str_contains($expr, ',') && ! str_contains($expr, '(')) {
-            $parts = array_map(trim(...), explode(',', $expr));
-
-            foreach ($parts as $i => $part) {
-                $parts[$i] = $this->evaluate($part);
-            }
-
-            return $parts;
-        }
-
         if (is_string($expr) && preg_match('/^(\d+\.?\d*)\s*(px|em|rem|%)?$/', $expr, $matches)) {
             $value = (float) $matches[1];
             $unit  = $matches[2] ?? '';
 
             return $unit === '' ? $value : ['value' => $value, 'unit' => $unit];
-        }
-
-        if (is_string($expr)) {
-            return $this->interpolationEvaluator->evaluate($expr, $this->evaluate(...));
         }
 
         return $expr;
@@ -132,7 +98,7 @@ class ExpressionEvaluator
     public function evaluateStringExpression(AstNode $expr): string
     {
         $value = $expr->properties['value'];
-        $value = $this->interpolationEvaluator->evaluate($value, $this->evaluate(...));
+        $value = $this->context->interpolationEvaluator->evaluate($value, $this->evaluate(...));
 
         if (str_starts_with($value, 'calc(')) {
             return $value;
@@ -177,7 +143,6 @@ class ExpressionEvaluator
     private function convertKeyToString(mixed $key): ?string
     {
         if (is_string($key)) {
-            // Remove quotes from string keys
             return trim($key, "'\"");
         }
 
@@ -186,7 +151,6 @@ class ExpressionEvaluator
                 case 'identifier':
                     return $key->properties['value'];
                 case 'string':
-                    // Remove quotes from string node values
                     return trim($key->properties['value'], "'\"");
                 case 'number':
                     return (string) $key->properties['value'];
@@ -222,73 +186,83 @@ class ExpressionEvaluator
         $args = $expr->properties['args'] ?? [];
 
         if ($name === 'if') {
-            $result = $this->functionHandler->call('if', $args);
+            $result = $this->context->functionHandler->call('if', $args);
 
             return $this->evaluate($result);
         }
 
         if ($name === 'calc') {
-            return $this->calcEvaluator->evaluate($args, $this->evaluate(...));
+            return $this->context->calcEvaluator->evaluate($args, $this->evaluate(...));
         }
 
         if ($this->hasSlashSeparator($args)) {
             $args = $this->evaluateArgumentsWithSlashSeparator($args);
 
-            return $this->functionHandler->call($name, $args);
+            return $this->context->functionHandler->call($name, $args);
         }
 
         if ($name === 'url') {
             $args = $this->evaluateUrlArguments($args);
 
-            return $this->functionHandler->call('url', $args);
+            return $this->context->functionHandler->call('url', $args);
         }
 
         $args = $this->evaluateArguments($args);
 
-        // Only process spread arguments if there are any
-        $hasSpread = false;
-        foreach ($args as $arg) {
-            if (is_array($arg) && isset($arg['type']) && $arg['type'] === 'spread') {
-                $hasSpread = true;
+        if ($this->hasSpreadArguments($args)) {
+            $args = $this->expandSpreadArguments($args);
+        }
 
-                break;
+        return $this->context->functionHandler->call($name, $args);
+    }
+
+    private function isSpreadArgument($arg): bool
+    {
+        return is_array($arg) && isset($arg['type']) && $arg['type'] === 'spread';
+    }
+
+    private function hasSpreadArguments(array $args): bool
+    {
+        foreach ($args as $arg) {
+            if ($this->isSpreadArgument($arg)) {
+                return true;
             }
         }
 
-        if ($hasSpread) {
-            // Handle spread arguments by unpacking lists
-            $processedArgs = [];
-            foreach ($args as $arg) {
-                if (is_array($arg) && isset($arg['type']) && $arg['type'] === 'spread') {
-                    $spreadValue = $this->evaluate($arg['value']);
+        return false;
+    }
 
-                    // If value is a SassList, unpack its elements
-                    if ($spreadValue instanceof SassList) {
-                        foreach ($spreadValue->value as $item) {
-                            $processedArgs[] = $item;
-                        }
-                    } elseif ($spreadValue instanceof ListNode) {
-                        foreach ($spreadValue->values as $item) {
-                            $processedArgs[] = $this->evaluate($item);
-                        }
-                    } elseif (is_array($spreadValue)) {
-                        foreach ($spreadValue as $item) {
-                            $processedArgs[] = $this->evaluate($item);
-                        }
-                    } else {
-                        // If not a list, add as regular argument
-                        $processedArgs[] = $spreadValue;
+    private function expandSpreadArguments(array $args): array
+    {
+        $processedArgs = [];
+
+        foreach ($args as $arg) {
+            if ($this->isSpreadArgument($arg)) {
+                $spreadValue = $this->evaluate($arg['value']);
+
+                // If value is a SassList, unpack its elements
+                if ($spreadValue instanceof SassList) {
+                    foreach ($spreadValue->value as $item) {
+                        $processedArgs[] = $item;
+                    }
+                } elseif ($spreadValue instanceof ListNode) {
+                    foreach ($spreadValue->values as $item) {
+                        $processedArgs[] = $this->evaluate($item);
+                    }
+                } elseif (is_array($spreadValue)) {
+                    foreach ($spreadValue as $item) {
+                        $processedArgs[] = $this->evaluate($item);
                     }
                 } else {
-                    $processedArgs[] = $arg;
+                    // If not a list, add as regular argument
+                    $processedArgs[] = $spreadValue;
                 }
+            } else {
+                $processedArgs[] = $arg;
             }
-
-            return $this->functionHandler->call($name, $processedArgs);
-        } else {
-            // No spread arguments - use original args
-            return $this->functionHandler->call($name, $args);
         }
+
+        return $processedArgs;
     }
 
     private function hasSlashSeparator(array $args): bool
@@ -392,7 +366,7 @@ class ExpressionEvaluator
         }
 
         if (is_string($namespace) && is_string($propertyName) && str_starts_with($propertyName, '$')) {
-            return $this->moduleHandler->getProperty($namespace, $propertyName, $this->evaluate(...));
+            return $this->context->moduleHandler->getProperty($namespace, $propertyName, $this->evaluate(...));
         }
 
         if (is_string($namespace) && ! str_starts_with($namespace, '$')) {
@@ -407,7 +381,7 @@ class ExpressionEvaluator
         $property = $expr->properties['property'];
         $value    = $this->evaluate($expr->properties['value']);
 
-        return $property . ': ' . $this->valueFormatter->format($value);
+        return $property . ': ' . $this->context->valueFormatter->format($value);
     }
 
     private function evaluateUnaryExpression(AstNode $expr): mixed
@@ -434,7 +408,7 @@ class ExpressionEvaluator
 
         return match ($operator) {
             'not'   => ! $operand,
-            default => $operator . $this->valueFormatter->format($operand),
+            default => $operator . $this->context->valueFormatter->format($operand),
         };
     }
 
@@ -445,17 +419,17 @@ class ExpressionEvaluator
             $propertyName = '$' . $name;
 
             try {
-                return $this->moduleHandler->getProperty($namespace, $propertyName, $this->evaluate(...));
+                return $this->context->moduleHandler->getProperty($namespace, $propertyName, $this->evaluate(...));
             } catch (CompilationException) {
                 try {
-                    return $this->variableHandler->get($expr);
+                    return $this->context->variableHandler->get($expr);
                 } catch (CompilationException) {
                     throw new CompilationException("Undefined property: $propertyName in module $namespace");
                 }
             }
         }
 
-        return $this->variableHandler->get($expr);
+        return $this->context->variableHandler->get($expr);
     }
 
     private function evaluateArguments(array $args): array
@@ -465,10 +439,5 @@ class ExpressionEvaluator
         }
 
         return $args;
-    }
-
-    private function evaluateVariableNode(string $varName)
-    {
-        return $this->evaluate($this->variableHandler->get($varName));
     }
 }

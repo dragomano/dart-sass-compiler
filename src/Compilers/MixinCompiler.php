@@ -6,8 +6,6 @@ namespace DartSass\Compilers;
 
 use Closure;
 use DartSass\Exceptions\CompilationException;
-use DartSass\Handlers\MixinHandler;
-use DartSass\Handlers\ModuleHandler;
 use DartSass\Parsers\Nodes\IncludeNode;
 
 use function array_map;
@@ -19,11 +17,10 @@ use function uniqid;
 
 readonly class MixinCompiler
 {
-    public function __construct(private MixinHandler $mixinHandler, private ModuleHandler $moduleHandler) {}
+    public function __construct(private CompilerContext $context) {}
 
     public function compile(
         IncludeNode $node,
-        CompilerEngineInterface $compiler,
         string $parentSelector,
         int $nestingLevel,
         Closure $evaluateExpression
@@ -38,7 +35,6 @@ readonly class MixinCompiler
                 $property,
                 $node->args ?? [],
                 $node->body ?? null,
-                $compiler,
                 $parentSelector,
                 $nestingLevel,
                 $evaluateExpression
@@ -48,16 +44,15 @@ readonly class MixinCompiler
         $evaluatedArgs = array_map($evaluateExpression, $node->args ?? []);
 
         try {
-            return $this->mixinHandler->include(
+            return $this->context->mixinHandler->include(
                 $includeName,
                 $evaluatedArgs,
                 $node->body ?? null,
-                $compiler,
                 $parentSelector,
                 $nestingLevel
             );
         } catch (CompilationException $compilationException) {
-            $moduleState = $this->moduleHandler->getLoadedModules();
+            $moduleState = $this->context->moduleHandler->getLoadedModules();
             $loadedNamespaces = array_values($moduleState['loadedModules']);
 
             foreach ($loadedNamespaces as $namespace) {
@@ -67,7 +62,6 @@ readonly class MixinCompiler
                         $includeName,
                         $node->args ?? [],
                         $node->body ?? null,
-                        $compiler,
                         $parentSelector,
                         $nestingLevel,
                         $evaluateExpression
@@ -86,12 +80,11 @@ readonly class MixinCompiler
         string $mixinName,
         array $args,
         mixed $content,
-        CompilerEngineInterface $compiler,
         string $parentSelector,
         int $nestingLevel,
         Closure $evaluateExpression
     ): string {
-        $mixinData = $this->moduleHandler->getProperty($namespace, $mixinName, $evaluateExpression);
+        $mixinData = $this->context->moduleHandler->getProperty($namespace, $mixinName, $evaluateExpression);
 
         if (! is_array($mixinData) || ! isset($mixinData['type']) || $mixinData['type'] !== 'mixin') {
             throw new CompilationException("Property $mixinName is not a mixin in module $namespace");
@@ -99,20 +92,19 @@ readonly class MixinCompiler
 
         $tempName = 'temp_' . uniqid();
 
-        $this->mixinHandler->define($tempName, $mixinData['args'], $mixinData['body']);
+        $this->context->mixinHandler->define($tempName, $mixinData['args'], $mixinData['body']);
 
         $evaluatedArgs = array_map($evaluateExpression, $args);
 
-        $css = $this->mixinHandler->include(
+        $css = $this->context->mixinHandler->include(
             $tempName,
             $evaluatedArgs,
             $content,
-            $compiler,
             $parentSelector,
             $nestingLevel
         );
 
-        $this->mixinHandler->removeMixin($tempName);
+        $this->context->mixinHandler->removeMixin($tempName);
 
         return $css;
     }

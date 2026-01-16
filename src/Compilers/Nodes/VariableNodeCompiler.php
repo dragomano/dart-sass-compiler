@@ -28,13 +28,7 @@ class VariableNodeCompiler extends AbstractNodeCompiler
     ): string {
         $valueNode = $node->properties['value'];
 
-        $value = match ($valueNode->type) {
-            'number'             => $context->expressionEvaluator->evaluateNumberExpression($valueNode),
-            'string'             => $context->expressionEvaluator->evaluateStringExpression($valueNode),
-            'hex_color', 'color' => $valueNode->properties['value'],
-            'identifier'         => $context->expressionEvaluator->evaluateIdentifierExpression($valueNode),
-            default              => $context->engine->evaluateExpression($valueNode),
-        };
+        $value = $context->engine->evaluateExpression($valueNode);
 
         $context->variableHandler->define(
             $node->properties['name'],

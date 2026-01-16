@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use DartSass\Compilers\CompilerContext;
 use DartSass\Compilers\ModuleCompiler;
 use DartSass\Handlers\MixinHandler;
 use DartSass\Handlers\ModuleHandler;
@@ -11,11 +12,13 @@ beforeEach(function () {
     $this->moduleHandler   = mock(ModuleHandler::class);
     $this->variableHandler = mock(VariableHandler::class);
     $this->mixinHandler    = mock(MixinHandler::class);
-    $this->moduleCompiler  = new ModuleCompiler(
-        $this->moduleHandler,
-        $this->variableHandler,
-        $this->mixinHandler
-    );
+    $this->context         = mock(CompilerContext::class);
+
+    $this->context->moduleHandler   = $this->moduleHandler;
+    $this->context->variableHandler = $this->variableHandler;
+    $this->context->mixinHandler    = $this->mixinHandler;
+
+    $this->moduleCompiler = new ModuleCompiler($this->context);
 });
 
 it('registers module mixins', function () {

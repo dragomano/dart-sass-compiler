@@ -17,12 +17,14 @@ describe('RuleCompiler', function () {
         expect($result)->toBeNull();
     });
 
-    it('throws InvalidArgumentException with message "Unknown rule type: $ruleType" in compileRule for unknown rule type', function () {
+    it('throws InvalidArgumentException for unknown rule type', function () {
         $compiler = new RuleCompiler();
-        $node     = new AstNode('unknown', []);
         $context  = mock(CompilerContext::class);
 
-        expect(fn() => $compiler->compileRule($node, $context, 0, ''))
+        $unknownNode = mock(AstNode::class);
+        $unknownNode->type = 'unknown';
+
+        expect(fn() => $compiler->compileRule($unknownNode, $context, 0, ''))
             ->toThrow(InvalidArgumentException::class, 'Unknown rule type: unknown');
     });
 });
