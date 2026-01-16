@@ -52,7 +52,7 @@ class RuleNodeCompiler extends AbstractNodeCompiler
 
         foreach ($node->properties['nested'] ?? [] as $nestedItem) {
             if ($nestedItem->type === 'include') {
-                $itemCss = $this->compileIncludeNode($nestedItem, $selector, $nestingLevel + 1, $context);
+                $itemCss = $this->compileIncludeNode($nestedItem, $context, $selector, $nestingLevel + 1);
             } elseif ($nestedItem->type === 'media') {
                 $itemCss = $this->bubbleMediaQuery($nestedItem, $selector, $nestingLevel, $context);
             } else {
@@ -156,13 +156,12 @@ class RuleNodeCompiler extends AbstractNodeCompiler
 
     private function compileIncludeNode(
         IncludeNode $node,
+        CompilerContext $context,
         string $parentSelector,
-        int $nestingLevel,
-        CompilerContext $context
+        int $nestingLevel
     ): string {
         return $context->mixinCompiler->compile(
             $node,
-            $context->engine,
             $parentSelector,
             $nestingLevel,
             $context->engine->evaluateExpression(...)
@@ -199,7 +198,7 @@ class RuleNodeCompiler extends AbstractNodeCompiler
 
         foreach ($nested as $item) {
             if ($item->type === 'include') {
-                $includeCss = $this->compileIncludeNode($item, $parentSelector, $nestingLevel + 2, $context);
+                $includeCss = $this->compileIncludeNode($item, $context, $parentSelector, $nestingLevel + 2);
                 $includesCss .= $includeCss;
                 $hasDirectContent = true;
             }

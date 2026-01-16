@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 use DartSass\Compilers\DeclarationCompiler;
-use DartSass\Parsers\Nodes\AstNode;
+use DartSass\Parsers\Nodes\IdentifierNode;
+use DartSass\Parsers\Nodes\RuleNode;
 use DartSass\Utils\PositionTracker;
 use DartSass\Utils\ValueFormatter;
 
@@ -16,12 +17,15 @@ describe('DeclarationCompiler', function () {
 
     describe('compile method', function () {
         it('calls compileAst when declaration is an AstNode', function () {
-            $astNode        = new AstNode('rule', ['selector' => 'body', 'declarations' => []]);
+            $selector = new IdentifierNode('body', 1);
+            $astNode  = new RuleNode($selector, [], [], 1);
+
             $declarations   = [$astNode];
             $nestingLevel   = 0;
             $parentSelector = '';
-            $options        = ['sourceMap' => false];
-            $mappings       = [];
+
+            $options  = ['sourceMap' => false];
+            $mappings = [];
 
             $compileAstCalled = false;
             $compileAst = function ($nodes, $selector, $level) use (&$compileAstCalled, $astNode, $parentSelector, $nestingLevel) {

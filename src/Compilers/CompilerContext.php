@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DartSass\Compilers;
 
+use DartSass\Evaluators\CalcFunctionEvaluator;
 use DartSass\Evaluators\ExpressionEvaluator;
 use DartSass\Evaluators\InterpolationEvaluator;
 use DartSass\Evaluators\OperationEvaluator;
@@ -18,7 +19,6 @@ use DartSass\Parsers\ParserFactory;
 use DartSass\Utils\OutputOptimizer;
 use DartSass\Utils\PositionTracker;
 use DartSass\Utils\SourceMapGenerator;
-use DartSass\Utils\StateManager;
 use DartSass\Utils\ValueFormatter;
 
 class CompilerContext
@@ -53,6 +53,8 @@ class CompilerContext
 
     public OperationEvaluator $operationEvaluator;
 
+    public CalcFunctionEvaluator $calcEvaluator;
+
     public ExpressionEvaluator $expressionEvaluator;
 
     public RuleCompiler $ruleCompiler;
@@ -67,9 +69,7 @@ class CompilerContext
 
     public ModuleCompiler $moduleCompiler;
 
-    public StateManager $stateManager;
-
-    public ?CompilerEngineInterface $engine = null;
+    public CompilerEngineInterface $engine;
 
     public function __construct(public array $options) {}
 }

@@ -6,12 +6,12 @@ namespace DartSass\Handlers\ModuleHandlers;
 
 use DartSass\Handlers\SassModule;
 use DartSass\Modules\MathModule;
-use DartSass\Utils\UnitValidator;
+use DartSass\Modules\SassMath;
 use DartSass\Utils\ValueFormatter;
 
 use function array_map;
 use function implode;
-use function in_array;
+use function is_array;
 
 class MathModuleHandler extends BaseModuleHandler
 {
@@ -58,7 +58,6 @@ class MathModuleHandler extends BaseModuleHandler
 
     public function __construct(
         private readonly MathModule $mathModule,
-        private readonly UnitValidator $unitValidator,
         private readonly ValueFormatter $valueFormatter
     ) {}
 
@@ -74,17 +73,14 @@ class MathModuleHandler extends BaseModuleHandler
 
         $methodName = $functionMapping[$functionName] ?? $functionName;
 
-        $noUnitCheckFunctions = ['comparable', 'compatible', 'is-unitless', 'random'];
-        $shouldCompute = in_array($functionName, $noUnitCheckFunctions, true);
+        $result = $this->mathModule->$methodName($processedArgs);
 
-        if (! $shouldCompute) {
-            $shouldCompute = $this->unitValidator->validate($processedArgs);
+        if ($result instanceof SassMath || (is_array($result) && isset($result['value'], $result['unit']))) {
+            return $this->valueFormatter->format($result);
         }
 
-        if ($shouldCompute) {
-            $result = $this->mathModule->$methodName($processedArgs);
-
-            return $this->valueFormatter->format($result);
+        if (is_array($result) && $result[0] === 'css') {
+            $processedArgs = $result[1];
         }
 
         return $this->formatMathFunctionCall($functionName, $processedArgs);

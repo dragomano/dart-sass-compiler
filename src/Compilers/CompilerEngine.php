@@ -36,92 +36,6 @@ class CompilerEngine implements CompilerEngineInterface
         $this->initializeNodeCompilers();
     }
 
-    private function initializeNodeCompilers(): void
-    {
-        $this->nodeCompilers = [
-            new ForwardNodeCompiler(),
-            new FunctionNodeCompiler(),
-            new MixinNodeCompiler(),
-            new RuleNodeCompiler(),
-            new UseNodeCompiler(),
-            new VariableNodeCompiler(),
-        ];
-    }
-
-    private function findNodeCompiler(string $nodeType): ?NodeCompiler
-    {
-        foreach ($this->nodeCompilers as $compiler) {
-            if ($compiler instanceof NodeCompiler && $compiler->canCompile($nodeType)) {
-                return $compiler;
-            }
-        }
-
-        return null;
-    }
-
-    private function compileSpecialNode($node, string $parentSelector, int $nestingLevel): string
-    {
-        return match ($node->type) {
-            'if',
-            'each',
-            'for',
-            'while' => $this->context->flowControlCompiler->compile(
-                $node,
-                $nestingLevel,
-                $this->evaluateExpression(...),
-                $this->compileAst(...)
-            ),
-            'media',
-            'container',
-            'keyframes',
-            'at-rule' => $this->context->atRuleCompiler->compile(
-                $this->context,
-                $node,
-                $nestingLevel,
-                $parentSelector,
-                $this->evaluateExpression(...),
-                $this->compileDeclarations(...),
-                $this->compileAst(...),
-                $this->evaluateInterpolationsInString(...)
-            ),
-            'include' => $this->compileIncludeNode($node, $parentSelector, $nestingLevel),
-            default => throw new CompilationException("Unknown AST node type: $node->type"),
-        };
-    }
-
-    private function compileIncludeNode($node, string $parentSelector, int $nestingLevel): string
-    {
-        return $this->context->mixinCompiler->compile(
-            $node,
-            $this,
-            $parentSelector,
-            $nestingLevel,
-            $this->evaluateExpression(...)
-        );
-    }
-
-    private function compileImportAst(string $path, string $parentSelector, int $nestingLevel): string
-    {
-        $result = $this->context->moduleHandler->loadModule($path);
-
-        $namespace = $result['namespace'];
-
-        $moduleVars = $this->context->moduleHandler->getVariables($namespace);
-        foreach ($moduleVars as $name => $varNode) {
-            if ($varNode instanceof VariableDeclarationNode) {
-                $value = $this->evaluateExpression($varNode->properties['value']);
-                $this->context->variableHandler->define($name, $value);
-            }
-        }
-
-        return $this->compileAst($result['cssAst'], $parentSelector, $nestingLevel);
-    }
-
-    public function getContext(): CompilerContext
-    {
-        return $this->context;
-    }
-
     public function compileString(string $string, ?Syntax $syntax = null): string
     {
         $syntax ??= Syntax::SCSS;
@@ -180,17 +94,6 @@ class CompilerEngine implements CompilerEngineInterface
         }
     }
 
-    public function compileInIsolatedContext(string $string, ?Syntax $syntax = null): string
-    {
-        $this->pushState();
-
-        try {
-            return $this->compileString($string, $syntax);
-        } finally {
-            $this->popState();
-        }
-    }
-
     public function evaluateExpression(mixed $expr): mixed
     {
         if ($expr instanceof OperationNode) {
@@ -209,40 +112,20 @@ class CompilerEngine implements CompilerEngineInterface
         $this->context->functionHandler->addCustom($name, $callback);
     }
 
-    public function pushState(): void
+    public function getContext(): CompilerContext
     {
-        $this->context->stateManager->push();
+        return $this->context;
     }
 
-    public function popState(): void
+    public function findNodeCompiler(string $nodeType): ?NodeCompiler
     {
-        $this->context->stateManager->pop();
-    }
+        foreach ($this->nodeCompilers as $compiler) {
+            if ($compiler instanceof NodeCompiler && $compiler->canCompile($nodeType)) {
+                return $compiler;
+            }
+        }
 
-    public function compileDeclarations(array $declarations, int $nestingLevel, string $parentSelector = ''): string
-    {
-        return $this->context->declarationCompiler->compile(
-            $declarations,
-            $nestingLevel,
-            $parentSelector,
-            $this->context->options,
-            $this->context->mappings,
-            $this->compileAst(...),
-            $this->evaluateExpression(...)
-        );
-    }
-
-    public function formatRule(string $selector, string $content, int $nestingLevel): string
-    {
-        $indent  = $this->getIndent($nestingLevel);
-        $content = rtrim($content, "\n");
-
-        return "$indent$selector {\n$content\n$indent}\n";
-    }
-
-    public function getIndent(int $level): string
-    {
-        return str_repeat('  ', $level);
+        return null;
     }
 
     public function compileAst(array $ast, string $parentSelector = '', int $nestingLevel = 0): string
@@ -305,6 +188,100 @@ class CompilerEngine implements CompilerEngineInterface
         }
 
         return $css;
+    }
+
+    public function compileDeclarations(array $declarations, int $nestingLevel, string $parentSelector = ''): string
+    {
+        return $this->context->declarationCompiler->compile(
+            $declarations,
+            $nestingLevel,
+            $parentSelector,
+            $this->context->options,
+            $this->context->mappings,
+            $this->compileAst(...),
+            $this->evaluateExpression(...)
+        );
+    }
+
+    public function formatRule(string $selector, string $content, int $nestingLevel): string
+    {
+        $indent  = $this->getIndent($nestingLevel);
+        $content = rtrim($content, "\n");
+
+        return "$indent$selector {\n$content\n$indent}\n";
+    }
+
+    public function getIndent(int $level): string
+    {
+        return str_repeat('  ', $level);
+    }
+
+    private function initializeNodeCompilers(): void
+    {
+        $this->nodeCompilers = [
+            new ForwardNodeCompiler(),
+            new FunctionNodeCompiler(),
+            new MixinNodeCompiler(),
+            new RuleNodeCompiler(),
+            new UseNodeCompiler(),
+            new VariableNodeCompiler(),
+        ];
+    }
+
+    private function compileSpecialNode($node, string $parentSelector, int $nestingLevel): string
+    {
+        return match ($node->type) {
+            'if',
+            'each',
+            'for',
+            'while' => $this->context->flowControlCompiler->compile(
+                $node,
+                $nestingLevel,
+                $this->evaluateExpression(...),
+                $this->compileAst(...)
+            ),
+            'media',
+            'container',
+            'keyframes',
+            'at-rule' => $this->context->atRuleCompiler->compile(
+                $node,
+                $nestingLevel,
+                $parentSelector,
+                $this->evaluateExpression(...),
+                $this->compileDeclarations(...),
+                $this->compileAst(...),
+                $this->evaluateInterpolationsInString(...)
+            ),
+            'include' => $this->compileIncludeNode($node, $parentSelector, $nestingLevel),
+            default => throw new CompilationException("Unknown AST node type: $node->type"),
+        };
+    }
+
+    private function compileIncludeNode($node, string $parentSelector, int $nestingLevel): string
+    {
+        return $this->context->mixinCompiler->compile(
+            $node,
+            $parentSelector,
+            $nestingLevel,
+            $this->evaluateExpression(...)
+        );
+    }
+
+    private function compileImportAst(string $path, string $parentSelector, int $nestingLevel): string
+    {
+        $result = $this->context->moduleHandler->loadModule($path);
+
+        $namespace = $result['namespace'];
+
+        $moduleVars = $this->context->moduleHandler->getVariables($namespace);
+        foreach ($moduleVars as $name => $varNode) {
+            if ($varNode instanceof VariableDeclarationNode) {
+                $value = $this->evaluateExpression($varNode->properties['value']);
+                $this->context->variableHandler->define($name, $value);
+            }
+        }
+
+        return $this->compileAst($result['cssAst'], $parentSelector, $nestingLevel);
     }
 
     private function evaluateInterpolationsInString(string $string): string

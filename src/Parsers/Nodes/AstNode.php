@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DartSass\Parsers\Nodes;
 
-class AstNode
+abstract class AstNode
 {
     public function __construct(public string $type, public array $properties = []) {}
 }

@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 use DartSass\Exceptions\CompilationException;
 use DartSass\Modules\MathModule;
-use DartSass\Utils\ValueFormatter;
 use Tests\ReflectionAccessor;
 
 beforeEach(function () {
-    $this->valueFormatter = new ValueFormatter();
-    $this->mathModule     = new MathModule($this->valueFormatter);
-    $this->accessor       = new ReflectionAccessor($this->mathModule);
+    $this->mathModule = new MathModule();
+    $this->accessor   = new ReflectionAccessor($this->mathModule);
 });
 
 describe('MathFunctions', function () {
@@ -18,25 +16,29 @@ describe('MathFunctions', function () {
         it('rounds up positive number', function () {
             $result = $this->mathModule->ceil([5.1]);
 
-            expect($result)->toEqual(['value' => 6.0, 'unit' => '']);
+            expect($result['value'])->toEqual(6.0)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('rounds up negative number', function () {
             $result = $this->mathModule->ceil([-5.9]);
 
-            expect($result)->toEqual(['value' => -5.0, 'unit' => '']);
+            expect($result['value'])->toEqual(-5.0)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('rounds up number with unit', function () {
             $result = $this->mathModule->ceil([['value' => 5.7, 'unit' => 'px']]);
 
-            expect($result)->toEqual(['value' => 6.0, 'unit' => 'px']);
+            expect($result['value'])->toEqual(6.0)
+                ->and($result['unit'])->toEqual('px');
         });
 
         it('leaves integer unchanged', function () {
             $result = $this->mathModule->ceil([5]);
 
-            expect($result)->toEqual(['value' => 5.0, 'unit' => '']);
+            expect($result['value'])->toEqual(5.0)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('throws exception for wrong argument count', function () {
@@ -55,48 +57,55 @@ describe('MathFunctions', function () {
     describe('clamp', function () {
         it('clamps value within range', function () {
             $result = $this->mathModule->clamp([
-              ['value' => 5, 'unit' => 'px'],
-              ['value' => 10, 'unit' => 'px'],
-              ['value' => 15, 'unit' => 'px'],
+                ['value' => 5, 'unit' => 'px'],
+                ['value' => 10, 'unit' => 'px'],
+                ['value' => 15, 'unit' => 'px'],
             ]);
 
-            expect($result)->toEqual(['value' => 10, 'unit' => 'px']);
+            expect($result['value'])->toEqual(10)
+                ->and($result['unit'])->toEqual('px');
         });
 
         it('clamps value below minimum', function () {
             $result = $this->mathModule->clamp([
-              ['value' => 3, 'unit' => 'px'],
-              ['value' => 10, 'unit' => 'px'],
-              ['value' => 15, 'unit' => 'px'],
+                ['value' => 3, 'unit' => 'px'],
+                ['value' => 10, 'unit' => 'px'],
+                ['value' => 15, 'unit' => 'px'],
             ]);
 
-            expect($result)->toEqual(['value' => 10, 'unit' => 'px']);
+            expect($result['value'])->toEqual(10)
+                ->and($result['unit'])->toEqual('px');
         });
 
         it('clamps value above maximum', function () {
             $result = $this->mathModule->clamp([
-              ['value' => 20, 'unit' => 'px'],
-              ['value' => 5, 'unit' => 'px'],
-              ['value' => 15, 'unit' => 'px'],
+                ['value' => 20, 'unit' => 'px'],
+                ['value' => 5, 'unit' => 'px'],
+                ['value' => 15, 'unit' => 'px'],
             ]);
 
-            expect($result)->toEqual(['value' => 15, 'unit' => 'px']);
+            expect($result['value'])->toEqual(15)
+                ->and($result['unit'])->toEqual('px');
         });
 
         it('returns CSS function for incompatible units', function () {
             $result = $this->mathModule->clamp([
-              ['value' => 5, 'unit' => 'px'],
-              ['value' => 10, 'unit' => 'em'],
-              ['value' => 15, 'unit' => 'px'],
+                ['value' => 5, 'unit' => 'px'],
+                ['value' => 10, 'unit' => 'em'],
+                ['value' => 15, 'unit' => 'px'],
             ]);
 
-            expect($result)->toBe('clamp(5px, 10em, 15px)');
+            expect($result)->toEqual(['css', [
+                ['value' => 5, 'unit' => 'px'],
+                ['value' => 10, 'unit' => 'em'],
+                ['value' => 15, 'unit' => 'px'],
+            ]]);
         });
 
         it('returns CSS function for non-numeric arguments', function () {
             $result = $this->mathModule->clamp(['var(--min)', '10px', 'var(--max)']);
 
-            expect($result)->toBe('clamp(var(--min), 10px, var(--max))');
+            expect($result)->toEqual(['css', ['var(--min)', '10px', 'var(--max)']]);
         });
 
         it('throws exception for wrong argument count', function () {
@@ -111,25 +120,29 @@ describe('MathFunctions', function () {
         it('rounds down positive number', function () {
             $result = $this->mathModule->floor([5.9]);
 
-            expect($result)->toEqual(['value' => 5.0, 'unit' => '']);
+            expect($result['value'])->toEqual(5.0)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('rounds down negative number', function () {
             $result = $this->mathModule->floor([-5.9]);
 
-            expect($result)->toEqual(['value' => -6.0, 'unit' => '']);
+            expect($result['value'])->toEqual(-6.0)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('rounds down number with unit', function () {
             $result = $this->mathModule->floor([['value' => 5.7, 'unit' => 'px']]);
 
-            expect($result)->toEqual(['value' => 5.0, 'unit' => 'px']);
+            expect($result['value'])->toEqual(5.0)
+                ->and($result['unit'])->toEqual('px');
         });
 
         it('leaves integer unchanged', function () {
             $result = $this->mathModule->floor([5]);
 
-            expect($result)->toEqual(['value' => 5.0, 'unit' => '']);
+            expect($result['value'])->toEqual(5.0)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('throws exception for wrong argument count', function () {
@@ -149,32 +162,37 @@ describe('MathFunctions', function () {
         it('returns maximum of simple numbers', function () {
             $result = $this->mathModule->max([5, 3, 8, 1]);
 
-            expect($result)->toEqual(['value' => 8, 'unit' => '']);
+            expect($result['value'])->toEqual(8)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('returns maximum of numbers with same units', function () {
             $result = $this->mathModule->max([
-              ['value' => 10, 'unit' => 'px'],
-              ['value' => 5, 'unit' => 'px'],
-              ['value' => 8, 'unit' => 'px'],
+                ['value' => 10, 'unit' => 'px'],
+                ['value' => 5, 'unit' => 'px'],
+                ['value' => 8, 'unit' => 'px'],
             ]);
 
-            expect($result)->toEqual(['value' => 10, 'unit' => 'px']);
+            expect($result['value'])->toEqual(10)
+                ->and($result['unit'])->toEqual('px');
         });
 
         it('returns maximum of mixed units as CSS function', function () {
             $result = $this->mathModule->max([
-              ['value' => 10, 'unit' => 'px'],
-              ['value' => 5, 'unit' => 'em'],
+                ['value' => 10, 'unit' => 'px'],
+                ['value' => 5, 'unit' => 'em'],
             ]);
 
-            expect($result)->toBe('max(10px, 5em)');
+            expect($result)->toEqual(['css', [
+                ['value' => 10, 'unit' => 'px'],
+                ['value' => 5, 'unit' => 'em'],
+            ]]);
         });
 
         it('returns CSS function for non-numeric arguments', function () {
             $result = $this->mathModule->max(['var(--test)', 10]);
 
-            expect($result)->toBe('max(var(--test), 10)');
+            expect($result)->toEqual(['css', ['var(--test)', 10]]);
         });
 
         it('throws exception for no arguments', function () {
@@ -187,38 +205,44 @@ describe('MathFunctions', function () {
         it('returns minimum of simple numbers', function () {
             $result = $this->mathModule->min([5, 3, 8, 1]);
 
-            expect($result)->toEqual(['value' => 1, 'unit' => '']);
+            expect($result['value'])->toEqual(1)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('returns minimum of numbers with same units', function () {
             $result = $this->mathModule->min([
-              ['value' => 10, 'unit' => 'px'],
-              ['value' => 5, 'unit' => 'px'],
-              ['value' => 8, 'unit' => 'px'],
+                ['value' => 10, 'unit' => 'px'],
+                ['value' => 5, 'unit' => 'px'],
+                ['value' => 8, 'unit' => 'px'],
             ]);
 
-            expect($result)->toEqual(['value' => 5, 'unit' => 'px']);
+            expect($result['value'])->toEqual(5)
+                ->and($result['unit'])->toEqual('px');
         });
 
         it('returns minimum of mixed units as CSS function', function () {
             $result = $this->mathModule->min([
-              ['value' => 10, 'unit' => 'px'],
-              ['value' => 5, 'unit' => 'em'],
+                ['value' => 10, 'unit' => 'px'],
+                ['value' => 5, 'unit' => 'em'],
             ]);
 
-            expect($result)->toBe('min(10px, 5em)');
+            expect($result)->toEqual(['css', [
+                ['value' => 10, 'unit' => 'px'],
+                ['value' => 5, 'unit' => 'em'],
+            ]]);
         });
 
         it('returns minimum when some values have no units', function () {
             $result = $this->mathModule->min([5, ['value' => 3, 'unit' => 'px']]);
 
-            expect($result)->toEqual(['value' => 3, 'unit' => '']);
+            expect($result['value'])->toEqual(3)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('returns CSS function for non-numeric arguments', function () {
             $result = $this->mathModule->min(['var(--test)', 10]);
 
-            expect($result)->toBe('min(var(--test), 10)');
+            expect($result)->toEqual(['css', ['var(--test)', 10]]);
         });
 
         it('throws exception for no arguments', function () {
@@ -231,19 +255,22 @@ describe('MathFunctions', function () {
         it('rounds number', function () {
             $result = $this->mathModule->round([5.7]);
 
-            expect($result)->toEqual(['value' => 6.0, 'unit' => '']);
+            expect($result['value'])->toEqual(6.0)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('rounds number with precision', function () {
             $result = $this->mathModule->round([5.678, ['value' => 2, 'unit' => '']]);
 
-            expect($result)->toEqual(['value' => 5.68, 'unit' => '']);
+            expect($result['value'])->toEqual(5.68)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('rounds number with precision unit ignored', function () {
             $result = $this->mathModule->round([5.678, ['value' => 1, 'unit' => 'px']]);
 
-            expect($result)->toEqual(['value' => 5.7, 'unit' => '']);
+            expect($result['value'])->toEqual(5.7)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('throws exception for wrong argument count', function () {
@@ -263,25 +290,29 @@ describe('MathFunctions', function () {
         it('returns absolute value for positive number', function () {
             $result = $this->mathModule->abs([5.5]);
 
-            expect($result)->toEqual(['value' => 5.5, 'unit' => '']);
+            expect($result['value'])->toEqual(5.5)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('returns absolute value for negative number', function () {
             $result = $this->mathModule->abs([-5.5]);
 
-            expect($result)->toEqual(['value' => 5.5, 'unit' => '']);
+            expect($result['value'])->toEqual(5.5)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('returns absolute value for number with unit', function () {
             $result = $this->mathModule->abs([['value' => -10, 'unit' => 'px']]);
 
-            expect($result)->toEqual(['value' => 10, 'unit' => 'px']);
+            expect($result['value'])->toEqual(10)
+                ->and($result['unit'])->toEqual('px');
         });
 
         it('returns absolute value for zero', function () {
             $result = $this->mathModule->abs([0]);
 
-            expect($result)->toEqual(['value' => 0, 'unit' => '']);
+            expect($result['value'])->toEqual(0)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('throws exception for wrong argument count', function () {
@@ -301,31 +332,36 @@ describe('MathFunctions', function () {
         it('returns hypotenuse for two positive numbers', function () {
             $result = $this->mathModule->hypot([3, 4]);
 
-            expect($result)->toEqual(['value' => 5.0, 'unit' => '']);
+            expect($result['value'])->toEqual(5.0)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('returns input for single argument', function () {
             $result = $this->mathModule->hypot([5]);
 
-            expect($result)->toEqual(['value' => 5.0, 'unit' => '']);
+            expect($result['value'])->toEqual(5.0)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('handles negative numbers correctly', function () {
             $result = $this->mathModule->hypot([-3, 4]);
 
-            expect($result)->toEqual(['value' => 5.0, 'unit' => '']);
+            expect($result['value'])->toEqual(5.0)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('preserves units for numbers with units', function () {
             $result = $this->mathModule->hypot([['value' => 3, 'unit' => 'px'], ['value' => 4, 'unit' => 'px']]);
 
-            expect($result)->toEqual(['value' => 5.0, 'unit' => 'px']);
+            expect($result['value'])->toEqual(5.0)
+                ->and($result['unit'])->toEqual('px');
         });
 
         it('handles zero values', function () {
             $result = $this->mathModule->hypot([0, 0]);
 
-            expect($result)->toEqual(['value' => 0.0, 'unit' => '']);
+            expect($result['value'])->toEqual(0.0)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('throws exception for arguments with different units', function () {
@@ -350,19 +386,22 @@ describe('MathFunctions', function () {
         it('calculates natural logarithm', function () {
             $result = $this->mathModule->log([10]);
 
-            expect($result)->toEqual(['value' => 2.302585092994046, 'unit' => '']);
+            expect($result['value'])->toEqual(2.302585092994046)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('calculates logarithm with base', function () {
             $result = $this->mathModule->log([10, 10]);
 
-            expect($result)->toEqual(['value' => 1.0, 'unit' => '']);
+            expect($result['value'])->toEqual(1.0)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('calculates logarithm of 1', function () {
             $result = $this->mathModule->log([1]);
 
-            expect($result)->toEqual(['value' => 0.0, 'unit' => '']);
+            expect($result['value'])->toEqual(0.0)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('throws exception for wrong argument count', function () {
@@ -409,13 +448,15 @@ describe('MathFunctions', function () {
         it('calculates power of numbers', function () {
             $result = $this->mathModule->pow([2, 3]);
 
-            expect($result)->toEqual(['value' => 8.0, 'unit' => '']);
+            expect($result['value'])->toEqual(8.0)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('calculates power with decimal numbers', function () {
             $result = $this->mathModule->pow([2.5, 2]);
 
-            expect($result)->toEqual(['value' => 6.25, 'unit' => '']);
+            expect($result['value'])->toEqual(6.25)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('throws exception for wrong argument count', function () {
@@ -446,19 +487,22 @@ describe('MathFunctions', function () {
         it('calculates square root of perfect squares', function () {
             $result = $this->mathModule->sqrt([16]);
 
-            expect($result)->toEqual(['value' => 4.0, 'unit' => '']);
+            expect($result['value'])->toEqual(4.0)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('calculates square root of decimal numbers', function () {
             $result = $this->mathModule->sqrt([2]);
 
-            expect($result)->toEqual(['value' => 1.4142135623730951, 'unit' => '']);
+            expect($result['value'])->toEqual(1.4142135623730951)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('calculates square root of zero', function () {
             $result = $this->mathModule->sqrt([0]);
 
-            expect($result)->toEqual(['value' => 0.0, 'unit' => '']);
+            expect($result['value'])->toEqual(0.0)
+                ->and($result['unit'])->toEqual('');
         });
 
         it('throws exception for wrong argument count', function () {
@@ -489,7 +533,8 @@ describe('MathFunctions', function () {
             it('calculates cosine of zero', function () {
                 $result = $this->mathModule->cos([0]);
 
-                expect($result)->toEqual(['value' => 1.0, 'unit' => '']);
+                expect($result['value'])->toEqual(1.0)
+                    ->and($result['unit'])->toEqual('');
             });
 
             it('calculates cosine with radians', function () {

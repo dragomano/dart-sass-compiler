@@ -58,11 +58,6 @@ readonly class Compiler
         return $this->engine->compileFile($filePath);
     }
 
-    public function compileInIsolatedContext(string $string, ?Syntax $syntax = null): string
-    {
-        return $this->engine->compileInIsolatedContext($string, $syntax);
-    }
-
     public function addFunction(string $name, callable $callback): void
     {
         $this->engine->addFunction($name, $callback);

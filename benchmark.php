@@ -155,17 +155,15 @@ try {
     $generateSourceMap = true;
 
     $compilers = [
-        'scssphp/scssphp' => function () use ($generateSourceMap, $minimize) {
-            $compiler = new ScssCompiler();
-            $compiler->setOutputStyle($minimize ? OutputStyle::COMPRESSED : OutputStyle::EXPANDED);
-            $compiler->setSourceMap($generateSourceMap ? ScssCompiler::SOURCE_MAP_FILE : ScssCompiler::SOURCE_MAP_NONE);
-            $compiler->setSourceMapOptions([
-                'sourceMapFilename' => 'generated.scss',
-                'sourceMapURL'      => 'result-scssphp-scssphp.css.map',
-                'outputSourceFiles' => true,
+        'bugo/dart-sass-compiler' => function () use ($generateSourceMap, $minimize) {
+            return new SassCompiler([
+                'sourceMap'         => $generateSourceMap,
+                'includeSources'    => true,
+                'style'             => $minimize ? 'compressed' : 'expanded',
+                'sourceFile'        => 'generated.scss',
+                'sourceMapFilename' => 'result-dart-sass-compiler.css.map',
+                'outputFile'        => 'result-dart-sass-compiler.css',
             ]);
-
-            return $compiler;
         },
         'bugo/sass-embedded-php' => function () use ($generateSourceMap, $minimize) {
             $compiler = new EmbeddedCompiler();
@@ -180,15 +178,17 @@ try {
 
             return $compiler;
         },
-        'bugo/dart-sass-compiler' => function () use ($generateSourceMap, $minimize) {
-            return new SassCompiler([
-                'sourceMap'         => $generateSourceMap,
-                'includeSources'    => true,
-                'style'             => $minimize ? 'compressed' : 'expanded',
-                'sourceFile'        => 'generated.scss',
-                'sourceMapFilename' => 'result-dart-sass-compiler.css.map',
-                'outputFile'        => 'result-dart-sass-compiler.css',
+        'scssphp/scssphp' => function () use ($generateSourceMap, $minimize) {
+            $compiler = new ScssCompiler();
+            $compiler->setOutputStyle($minimize ? OutputStyle::COMPRESSED : OutputStyle::EXPANDED);
+            $compiler->setSourceMap($generateSourceMap ? ScssCompiler::SOURCE_MAP_FILE : ScssCompiler::SOURCE_MAP_NONE);
+            $compiler->setSourceMapOptions([
+                'sourceMapFilename' => 'generated.scss',
+                'sourceMapURL'      => 'result-scssphp-scssphp.css.map',
+                'outputSourceFiles' => true,
             ]);
+
+            return $compiler;
         },
     ];
 

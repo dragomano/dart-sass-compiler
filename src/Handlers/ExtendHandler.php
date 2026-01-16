@@ -62,16 +62,6 @@ class ExtendHandler
         return implode("\n", $result);
     }
 
-    public function getExtends(): array
-    {
-        return $this->extends;
-    }
-
-    public function setExtends(array $extends): void
-    {
-        $this->extends = $extends;
-    }
-
     public function addDefinedSelector(string $selector): void
     {
         $selectors = array_map(trim(...), explode(',', $selector));
@@ -105,20 +95,16 @@ class ExtendHandler
 
     private function selectorMatches(string $selector, string $target): bool
     {
-        // Clean up selectors for comparison
         $cleanSelector = (string) preg_replace('/\s+/', ' ', trim($selector));
         $cleanTarget   = (string) preg_replace('/\s+/', ' ', trim($target));
 
-        // Exact match
         if ($cleanSelector === $cleanTarget) {
             return true;
         }
 
-        // Extract base selector (without pseudo-classes) for comparison
         $baseSelector = (string) preg_replace('/:[^\s,{]+/', '', $cleanSelector);
         $baseTarget   = (string) preg_replace('/:[^\s,{]+/', '', $cleanTarget);
 
-        // Check if target base selector matches selector base
         if (
             preg_match('/\s' . preg_quote($baseTarget, '/') . '(\s|$)/', $baseSelector)
             || preg_match('/' . preg_quote($baseTarget, '/') . '$/', $baseSelector)
@@ -131,13 +117,11 @@ class ExtendHandler
 
     private function replaceInSelector(string $selector, string $target, string $replacement): string
     {
-        // Extract the last part of replacement selector
         $replacementParts    = array_map(trim(...), explode(' ', $replacement));
         $replacementSelector = end($replacementParts);
 
         // Handle simple selectors (like ".article") that appear at the end
         if (preg_match('/\s' . preg_quote($target, '/') . '(\s|$)/', $selector)) {
-            // Split by spaces to handle nested selectors
             $selectorParts = array_map(trim(...), explode(' ', $selector));
             $targetParts   = array_map(trim(...), explode(' ', $target));
 
@@ -158,7 +142,6 @@ class ExtendHandler
             }
         }
 
-        // Handle complex selectors with pseudo-classes
         // For selectors like ".article-container .article" -> ".article-container .featured-article"
         if (preg_match('/^(.*?)\s+' . preg_quote($target, '/') . '(:[^\s,{]+)*/', $selector, $matches)) {
             $context = $matches[1];
@@ -170,7 +153,6 @@ class ExtendHandler
             return $context . ' ' . $replacementSelector . $pseudoClasses;
         }
 
-        // Fallback: simple string replacement
         return str_replace($target, $replacementSelector, $selector);
     }
 }

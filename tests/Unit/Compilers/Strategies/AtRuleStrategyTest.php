@@ -4,20 +4,16 @@ declare(strict_types=1);
 
 use DartSass\Compilers\CompilerContext;
 use DartSass\Compilers\Strategies\AtRuleStrategy;
-use DartSass\Parsers\Nodes\AstNode;
+use DartSass\Parsers\Nodes\AtRuleNode;
 
 describe('AtRuleStrategy', function () {
     it('throws InvalidArgumentException when required parameters are missing', function () {
         $strategy = new AtRuleStrategy();
 
-        $node = new AstNode('at-rule', [
-            'name'  => '@media',
-            'value' => 'screen',
-            'body'  => [
-                'declarations' => [],
-                'nested'       => [],
-            ],
-        ]);
+        $node = new AtRuleNode('@media', 'screen', [
+            'declarations' => [],
+            'nested'       => [],
+        ], 1);
 
         $context = new CompilerContext([]);
 

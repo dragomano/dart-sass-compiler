@@ -5,29 +5,31 @@ declare(strict_types=1);
 use DartSass\Compilers\FlowControlCompiler;
 use DartSass\Exceptions\CompilationException;
 use DartSass\Handlers\VariableHandler;
-use DartSass\Parsers\Nodes\AstNode;
+use DartSass\Parsers\Nodes\ConditionNode;
 use DartSass\Parsers\Nodes\EachNode;
+use DartSass\Parsers\Nodes\IdentifierNode;
 use DartSass\Parsers\Nodes\IfNode;
 use DartSass\Parsers\Nodes\WhileNode;
 use Tests\ReflectionAccessor;
 
 describe('FlowControlCompiler', function () {
     beforeEach(function () {
-        $this->variableHandler = mock(VariableHandler::class);
-        $this->compiler        = new FlowControlCompiler($this->variableHandler);
-        $this->accessor        = new ReflectionAccessor($this->compiler);
+        $this->handler  = mock(VariableHandler::class);
+        $this->compiler = new FlowControlCompiler($this->handler);
+        $this->accessor = new ReflectionAccessor($this->compiler);
     });
 
     describe('compileIf method', function () {
         it('returns empty string when condition is falsy and no else block exists', function () {
-            $condition = new AstNode('condition', []);
-            $body      = [];
-            $node      = new IfNode($condition, $body);
+            $condition = new ConditionNode(new IdentifierNode('true', 1), 1);
 
-            $evaluateExpression = fn($cond) => false; // falsy
-            $compileAst         = fn($nodes, $prefix, $level) => 'compiled';
+            $body = [];
+            $node = new IfNode($condition, $body);
 
-            $result = $this->accessor->callMethod('compileIf', [$node, 0, $evaluateExpression, $compileAst]);
+            $expression = fn($cond) => false; // falsy
+            $compileAst = fn($nodes, $prefix, $level) => 'compiled';
+
+            $result = $this->accessor->callMethod('compileIf', [$node, 0, $expression, $compileAst]);
 
             expect($result)->toBe('');
         });
@@ -36,18 +38,19 @@ describe('FlowControlCompiler', function () {
     describe('compileEach method', function () {
         it('wraps non-array $list into array', function () {
             $variables = ['$item'];
-            $condition = new AstNode('condition', []);
-            $body      = [];
-            $node      = new EachNode($variables, $condition, $body, 0);
+            $condition = new ConditionNode(new IdentifierNode('true', 1), 1);
 
-            $this->variableHandler->shouldReceive('enterScope')->once();
-            $this->variableHandler->shouldReceive('define')->with('$item', 'value')->once();
-            $this->variableHandler->shouldReceive('exitScope')->once();
+            $body = [];
+            $node = new EachNode($variables, $condition, $body, 0);
 
-            $evaluateExpression = fn($cond) => 'value'; // non-array
-            $compileAst         = fn($nodes, $prefix, $level) => 'compiled';
+            $this->handler->shouldReceive('enterScope')->once();
+            $this->handler->shouldReceive('define')->with('$item', 'value')->once();
+            $this->handler->shouldReceive('exitScope')->once();
 
-            $result = $this->accessor->callMethod('compileEach', [$node, 0, $evaluateExpression, $compileAst]);
+            $expression = fn($cond) => 'value'; // non-array
+            $compileAst = fn($nodes, $prefix, $level) => 'compiled';
+
+            $result = $this->accessor->callMethod('compileEach', [$node, 0, $expression, $compileAst]);
 
             expect($result)->toBe('compiled');
         });
@@ -55,17 +58,18 @@ describe('FlowControlCompiler', function () {
 
     describe('compileWhile method', function () {
         it('throws CompilationException when iteration exceeds 1000', function () {
-            $condition = new AstNode('condition', []);
-            $body      = [];
-            $node      = new WhileNode($condition, $body, 0);
+            $condition = new ConditionNode(new IdentifierNode('true', 1), 1);
 
-            $this->variableHandler->shouldReceive('enterScope')->once();
-            $this->variableHandler->shouldReceive('exitScope')->once();
+            $body = [];
+            $node = new WhileNode($condition, $body, 0);
 
-            $evaluateExpression = fn($cond) => true; // always truthy
-            $compileAst         = fn($nodes, $prefix, $level) => '';
+            $this->handler->shouldReceive('enterScope')->once();
+            $this->handler->shouldReceive('exitScope')->once();
 
-            expect(fn() => $this->accessor->callMethod('compileWhile', [$node, 0, $evaluateExpression, $compileAst]))
+            $expression = fn($cond) => true; // always truthy
+            $compileAst = fn($nodes, $prefix, $level) => '';
+
+            expect(fn() => $this->accessor->callMethod('compileWhile', [$node, 0, $expression, $compileAst]))
                 ->toThrow(CompilationException::class, 'Maximum @while iterations exceeded (1000)');
         });
     });

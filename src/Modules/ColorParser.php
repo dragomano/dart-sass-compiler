@@ -352,19 +352,27 @@ enum ColorParser
 
     private static function parseRgbComponents(array $matches): array
     {
-        $r = str_contains($matches[1], '%') ? self::parsePercentageValue($matches[1]) * 2.55 : (float) $matches[1];
-        $g = str_contains($matches[2], '%') ? self::parsePercentageValue($matches[2]) * 2.55 : (float) $matches[2];
-        $b = str_contains($matches[3], '%') ? self::parsePercentageValue($matches[3]) * 2.55 : (float) $matches[3];
+        $multiplier = ColorSerializer::RGB_MAX / ColorSerializer::PERCENT_MAX;
 
-        // Clamp values to valid RGB range before rounding
+        $r = str_contains($matches[1], '%')
+            ? self::parsePercentageValue($matches[1]) * $multiplier
+            : (float) $matches[1];
+        $g = str_contains($matches[2], '%')
+            ? self::parsePercentageValue($matches[2]) * $multiplier
+            : (float) $matches[2];
+        $b = str_contains($matches[3], '%')
+            ? self::parsePercentageValue($matches[3]) * $multiplier
+            : (float) $matches[3];
+
+        // Clamp and round with intermediate precision
         $r = self::clamp($r, 0, ColorSerializer::RGB_MAX);
         $g = self::clamp($g, 0, ColorSerializer::RGB_MAX);
         $b = self::clamp($b, 0, ColorSerializer::RGB_MAX);
 
         return [
-            'r' => (int) round($r),
-            'g' => (int) round($g),
-            'b' => (int) round($b),
+            'r' => (int) round(round($r, 10)),
+            'g' => (int) round(round($g, 10)),
+            'b' => (int) round(round($b, 10)),
         ];
     }
 }

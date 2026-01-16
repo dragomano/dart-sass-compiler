@@ -6,14 +6,12 @@ namespace DartSass\Compilers;
 
 use Closure;
 use DartSass\Parsers\Nodes\AstNode;
-use DartSass\Utils\PositionTracker;
 
 readonly class AtRuleCompiler
 {
-    public function __construct(private RuleCompiler $ruleCompiler, private PositionTracker $positionTracker) {}
+    public function __construct(private CompilerContext $context) {}
 
     public function compile(
-        CompilerContext $context,
         AstNode $node,
         int $nestingLevel,
         string $parentSelector,
@@ -22,9 +20,9 @@ readonly class AtRuleCompiler
         Closure $compileAst,
         Closure $evaluateInterpolationsInString
     ): string {
-        $css = $this->ruleCompiler->compileRule(
+        $css = $this->context->ruleCompiler->compileRule(
             $node,
-            $context,
+            $this->context,
             $nestingLevel,
             $parentSelector,
             $evaluateInterpolationsInString,
@@ -33,7 +31,7 @@ readonly class AtRuleCompiler
             $evaluateExpression
         );
 
-        $this->positionTracker->updatePosition($css);
+        $this->context->positionTracker->updatePosition($css);
 
         return $css;
     }

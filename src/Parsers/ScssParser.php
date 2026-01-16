@@ -151,6 +151,8 @@ class ScssParser implements TokenAwareParserInterface
 
                 $this->advanceToken();
             } else {
+                $this->skipWhitespace();
+
                 $rules[] = $this->parseRule();
             }
         }
@@ -623,6 +625,7 @@ class ScssParser implements TokenAwareParserInterface
     public function parseVariable(): AstNode
     {
         $token = $this->consume('variable');
+
         $this->consume('colon');
 
         $value = $this->parseExpression();

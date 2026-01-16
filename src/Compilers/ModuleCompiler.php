@@ -5,20 +5,13 @@ declare(strict_types=1);
 namespace DartSass\Compilers;
 
 use Closure;
-use DartSass\Handlers\MixinHandler;
-use DartSass\Handlers\ModuleHandler;
-use DartSass\Handlers\VariableHandler;
 use DartSass\Parsers\Nodes\VariableDeclarationNode;
 
 use function is_array;
 
 readonly class ModuleCompiler
 {
-    public function __construct(
-        private ModuleHandler   $moduleHandler,
-        private VariableHandler $variableHandler,
-        private MixinHandler    $mixinHandler
-    ) {}
+    public function __construct(private CompilerContext $context) {}
 
     public function compile(
         array $result,
@@ -28,19 +21,19 @@ readonly class ModuleCompiler
         Closure $evaluateExpression,
         Closure $compileAst
     ): string {
-        $this->variableHandler->enterScope();
+        $this->context->variableHandler->enterScope();
 
-        $moduleVars = $this->moduleHandler->getVariables($actualNamespace);
+        $moduleVars = $this->context->moduleHandler->getVariables($actualNamespace);
         foreach ($moduleVars as $name => $varNode) {
             if ($varNode instanceof VariableDeclarationNode) {
                 $value = $evaluateExpression($varNode->properties['value']);
-                $this->variableHandler->define($name, $value);
+                $this->context->variableHandler->define($name, $value);
             }
         }
 
         $css = $compileAst($result['cssAst'], '', $nestingLevel);
 
-        $this->variableHandler->exitScope();
+        $this->context->variableHandler->exitScope();
 
         if ($namespace === '*') {
             $this->defineGlobalVariablesFromModule($evaluateExpression);
@@ -51,11 +44,11 @@ readonly class ModuleCompiler
 
     public function registerModuleMixins(string $namespace): void
     {
-        $moduleProperties = $this->moduleHandler->getVariables($namespace);
+        $moduleProperties = $this->context->moduleHandler->getVariables($namespace);
 
         foreach ($moduleProperties as $propertyName => $propertyData) {
             if (is_array($propertyData) && isset($propertyData['type']) && $propertyData['type'] === 'mixin') {
-                $this->mixinHandler->define(
+                $this->context->mixinHandler->define(
                     $namespace . '.' . $propertyName,
                     $propertyData['args'],
                     $propertyData['body']
@@ -66,13 +59,13 @@ readonly class ModuleCompiler
 
     private function defineGlobalVariablesFromModule(Closure $evaluateExpression): void
     {
-        $globalVariables = $this->moduleHandler->getGlobalVariables();
+        $globalVariables = $this->context->moduleHandler->getGlobalVariables();
 
         foreach ($globalVariables as $varName => $varValue) {
             if ($varValue instanceof VariableDeclarationNode) {
                 $evaluatedValue = $evaluateExpression($varValue->properties['value']);
 
-                $this->variableHandler->define($varName, $evaluatedValue, true);
+                $this->context->variableHandler->define($varName, $evaluatedValue, true);
             }
         }
     }
