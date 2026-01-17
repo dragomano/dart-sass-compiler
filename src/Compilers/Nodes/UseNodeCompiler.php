@@ -7,6 +7,9 @@ namespace DartSass\Compilers\Nodes;
 use DartSass\Compilers\CompilerContext;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\UseNode;
+use DartSass\Parsers\Nodes\VariableDeclarationNode;
+
+use function is_array;
 
 class UseNodeCompiler extends AbstractNodeCompiler
 {
@@ -34,6 +37,17 @@ class UseNodeCompiler extends AbstractNodeCompiler
             $actualNamespace = $result['namespace'];
 
             $context->moduleCompiler->registerModuleMixins($actualNamespace);
+
+            // Register variables and mixins in current scope for @use without namespace
+            $moduleVars = $context->moduleHandler->getVariables($actualNamespace);
+            foreach ($moduleVars as $name => $varNode) {
+                if ($varNode instanceof VariableDeclarationNode) {
+                    $value = $context->engine->evaluateExpression($varNode->properties['value']);
+                    $context->variableHandler->define($name, $value);
+                } elseif (is_array($varNode) && isset($varNode['type']) && $varNode['type'] === 'mixin') {
+                    $context->mixinHandler->define($name, $varNode['args'], $varNode['body']);
+                }
+            }
 
             return $context->moduleCompiler->compile(
                 $result,

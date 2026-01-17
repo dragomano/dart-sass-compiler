@@ -1,0 +1,8 @@
+$font-size: 14px;
+$border-radius: 5px;
+
+@mixin flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
