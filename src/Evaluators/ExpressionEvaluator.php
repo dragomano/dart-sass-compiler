@@ -100,10 +100,6 @@ readonly class ExpressionEvaluator
         $value = $expr->properties['value'];
         $value = $this->context->interpolationEvaluator->evaluate($value, $this->evaluate(...));
 
-        if (str_starts_with($value, 'calc(')) {
-            return $value;
-        }
-
         if (preg_match('/^[a-zA-Z_-][a-zA-Z0-9_-]*$/', $value)) {
             return $value;
         }

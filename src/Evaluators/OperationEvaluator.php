@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace DartSass\Evaluators;
 
 use DartSass\Exceptions\CompilationException;
+use DartSass\Utils\CalcValue;
+use DartSass\Utils\LazyEvaluatable;
 use DartSass\Utils\LazyValue;
 use DartSass\Utils\ValueFormatter;
 
@@ -13,7 +15,6 @@ use function is_array;
 use function is_numeric;
 use function is_string;
 use function str_contains;
-use function str_starts_with;
 use function strlen;
 use function substr;
 
@@ -49,7 +50,15 @@ readonly class OperationEvaluator
 
     private function resolveValue(mixed $value): mixed
     {
-        return $value instanceof LazyValue ? $value->getValue() : $value;
+        if ($value instanceof LazyValue) {
+            return $value->getValue();
+        }
+
+        if ($value instanceof LazyEvaluatable) {
+            return $value->evaluate();
+        }
+
+        return $value;
     }
 
     private function evaluateComparison(mixed $left, string $operator, mixed $right): bool
@@ -259,21 +268,14 @@ readonly class OperationEvaluator
 
     private function buildCalcExpression(mixed $left, string $operator, mixed $right): string
     {
-        $left  = $this->resolveValue($left);
-        $right = $this->resolveValue($right);
-
-        $leftString  = $this->valueFormatter->format($left);
-        $rightString = $this->valueFormatter->format($right);
-
         if ($operator === ':') {
+            $leftString  = $this->valueFormatter->format($this->resolveValue($left));
+            $rightString = $this->valueFormatter->format($this->resolveValue($right));
+
             return "$leftString: $rightString";
         }
 
-        if (str_starts_with($leftString, 'calc(') || str_starts_with($rightString, 'calc(')) {
-            return "$leftString $operator $rightString";
-        }
-
-        return "calc($leftString $operator $rightString)";
+        return (string) new CalcValue($left, $operator, $right);
     }
 
     private function isStructuredValue(mixed $value): bool
