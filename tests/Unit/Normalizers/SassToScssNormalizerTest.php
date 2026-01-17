@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use DartSass\Normalizers\SassToScssNormalizer;
+use DartSass\Normalizers\SassNormalizer;
 
 beforeEach(function () {
-    $this->normalizer = new SassToScssNormalizer();
+    $this->normalizer = new SassNormalizer();
 });
 
 it('converts variables and simple rules', function () {

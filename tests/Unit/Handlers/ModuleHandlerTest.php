@@ -13,17 +13,17 @@ use DartSass\Parsers\Nodes\VariableDeclarationNode;
 use DartSass\Parsers\ParserFactory;
 use Tests\ReflectionAccessor;
 
-describe('ModuleHandler', function () {
-    beforeEach(function () {
-        $this->loaderInterface = mock(LoaderInterface::class);
-        $this->parserFactory   = mock(ParserFactory::class);
-        $this->moduleLoader    = mock(ModuleLoader::class, [$this->loaderInterface, $this->parserFactory]);
-        $this->forwarder       = mock(ModuleForwarder::class, [$this->moduleLoader])->makePartial();
-        $this->provider        = mock(BuiltInModuleProvider::class);
-        $this->handler         = new ModuleHandler($this->moduleLoader, $this->forwarder, $this->provider);
-        $this->accessor        = new ReflectionAccessor($this->handler);
-    });
+beforeEach(function () {
+    $this->loaderInterface = mock(LoaderInterface::class);
+    $this->parserFactory   = mock(ParserFactory::class);
+    $this->moduleLoader    = mock(ModuleLoader::class, [$this->loaderInterface, $this->parserFactory]);
+    $this->forwarder       = mock(ModuleForwarder::class, [$this->moduleLoader])->makePartial();
+    $this->provider        = mock(BuiltInModuleProvider::class);
+    $this->handler         = new ModuleHandler($this->moduleLoader, $this->forwarder, $this->provider);
+    $this->accessor        = new ReflectionAccessor($this->handler);
+});
 
+describe('ModuleHandler', function () {
     describe('loadModule method', function () {
         it('returns cached result for already loaded module', function () {
             $this->moduleLoader->shouldReceive('loadAst')->never();
@@ -31,7 +31,7 @@ describe('ModuleHandler', function () {
             // Simulate already loaded
             $loadedModules = $this->accessor->getProperty('loadedModules');
             $loadedModules['test.scss'] = ['namespace' => 'test', 'cssAst' => []];
-            $this->accessor->callMethod('setLoadedModules', [['loadedModules' => $loadedModules]]);
+            $this->handler->setLoadedModules(['loadedModules' => $loadedModules]);
 
             $result = $this->handler->loadModule('test.scss');
 
@@ -87,7 +87,7 @@ describe('ModuleHandler', function () {
             // Simulate loaded
             $loadedModules = $this->accessor->getProperty('loadedModules');
             $loadedModules['test.scss'] = ['namespace' => 'test', 'cssAst' => []];
-            $this->accessor->callMethod('setLoadedModules', [['loadedModules' => $loadedModules]]);
+            $this->handler->setLoadedModules(['loadedModules' => $loadedModules]);
 
             $result = $this->handler->forwardModule('test.scss', fn() => null);
 
@@ -113,7 +113,7 @@ describe('ModuleHandler', function () {
             // Simulate property
             $properties = $this->accessor->getProperty('forwardedProperties');
             $properties['test']['$prop'] = 'value';
-            $this->accessor->callMethod('setLoadedModules', [['forwardedProperties' => $properties]]);
+            $this->handler->setLoadedModules(['forwardedProperties' => $properties]);
 
             $result = $this->handler->getProperty('test', '$prop');
 
@@ -126,7 +126,7 @@ describe('ModuleHandler', function () {
             // Simulate property
             $properties = $this->accessor->getProperty('forwardedProperties');
             $properties['test']['$prop'] = $node;
-            $this->accessor->callMethod('setLoadedModules', [['forwardedProperties' => $properties]]);
+            $this->handler->setLoadedModules(['forwardedProperties' => $properties]);
 
             $evaluate = fn($expr) => 'evaluated';
 

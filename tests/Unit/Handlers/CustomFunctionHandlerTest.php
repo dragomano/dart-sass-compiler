@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use DartSass\Handlers\ModuleHandlers\CustomFunctionHandler;
+use DartSass\Handlers\Builtins\CustomFunctionHandler;
 use DartSass\Handlers\ModuleRegistry;
 use DartSass\Handlers\SassModule;
 use Tests\ReflectionAccessor;

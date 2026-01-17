@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use DartSass\Handlers\ModuleHandlers\UrlFunctionHandler;
+use DartSass\Handlers\Builtins\UrlFunctionHandler;
 use DartSass\Handlers\SassModule;
 
 beforeEach(function () {

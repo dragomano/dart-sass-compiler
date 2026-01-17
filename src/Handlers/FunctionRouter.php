@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace DartSass\Handlers;
 
 use DartSass\Exceptions\CompilationException;
-use DartSass\Handlers\ModuleHandlers\ConditionalPreservationHandlerInterface;
-use DartSass\Handlers\ModuleHandlers\LazyEvaluationHandlerInterface;
-use DartSass\Handlers\ModuleHandlers\ModuleHandlerInterface;
+use DartSass\Handlers\Builtins\ConditionalPreservationInterface;
+use DartSass\Handlers\Builtins\LazyEvaluationInterface;
+use DartSass\Handlers\Builtins\ModuleHandlerInterface;
 use DartSass\Utils\ResultFormatterInterface;
 use Exception;
 
@@ -39,14 +39,14 @@ readonly class FunctionRouter
         try {
             $result = $handler->handle($shortName, $args);
 
-            $requiresRawResult = $handler instanceof LazyEvaluationHandlerInterface
+            $requiresRawResult = $handler instanceof LazyEvaluationInterface
                 && $handler->requiresRawResult($shortName);
 
             if ($requiresRawResult) {
                 return $result;
             }
 
-            $shouldPreserve = $handler instanceof ConditionalPreservationHandlerInterface
+            $shouldPreserve = $handler instanceof ConditionalPreservationInterface
                 && $handler->shouldPreserveForConditions($shortName);
 
             if ($shouldPreserve && ($result === null || is_bool($result))) {

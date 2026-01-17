@@ -12,7 +12,7 @@ use function substr;
 
 class ModuleHandler
 {
-    private array $loadedModules = []; // path => ['namespace' => , 'cssAst' => ]
+    private array $loadedModules = [];
 
     private array $forwardedProperties = [];
 
@@ -94,23 +94,16 @@ class ModuleHandler
 
         $result = $this->forwarder->forwardModule($path, $evaluateExpression, $config, $hide, $show);
 
-        // Store forwarded properties
         foreach ($result['variables'] as $name => $value) {
             $this->forwardedProperties[$namespace][$name] = $value;
         }
 
         foreach ($result['mixins'] as $name => $mixin) {
-            $this->forwardedProperties[$namespace][$name] = [
-                'type' => 'mixin',
-                ...$mixin,
-            ];
+            $this->forwardedProperties[$namespace][$name] = ['type' => 'mixin', ...$mixin];
         }
 
         foreach ($result['functions'] as $name => $function) {
-            $this->forwardedProperties[$namespace][$name] = [
-                'type' => 'function',
-                ...$function,
-            ];
+            $this->forwardedProperties[$namespace][$name] = ['type' => 'function', ...$function];
         }
 
         return $result;

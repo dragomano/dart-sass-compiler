@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace DartSass\Handlers;
 
 use DartSass\Evaluators\UserFunctionEvaluator;
-use DartSass\Handlers\ModuleHandlers\CustomFunctionHandler;
+use DartSass\Handlers\Builtins\CustomFunctionHandler;
 
 use function count;
 use function explode;

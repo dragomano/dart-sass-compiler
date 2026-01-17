@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Handlers\ModuleHandlers;
+namespace DartSass\Handlers\Builtins;
 
 use DartSass\Handlers\SassModule;
 use DartSass\Modules\SassColor;

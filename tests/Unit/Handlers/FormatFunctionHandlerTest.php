@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use DartSass\Handlers\ModuleHandlers\FormatFunctionHandler;
+use DartSass\Handlers\Builtins\FormatFunctionHandler;
 use DartSass\Handlers\SassModule;
 use DartSass\Utils\ValueFormatter;
 use Tests\ReflectionAccessor;

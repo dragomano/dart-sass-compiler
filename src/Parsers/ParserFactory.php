@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace DartSass\Parsers;
 
 use DartSass\Normalizers\NoOpNormalizer;
-use DartSass\Normalizers\SassToScssNormalizer;
+use DartSass\Normalizers\SassNormalizer;
 
 final class ParserFactory
 {
@@ -26,7 +26,7 @@ final class ParserFactory
 
         $stream = $this->lexer->tokenize($content);
 
-        return new ScssParser($stream);
+        return new Parser($stream);
     }
 
     public function createFromPath(string $content, string $path): ParserInterface
@@ -38,7 +38,7 @@ final class ParserFactory
     {
         return [
             new NoOpNormalizer(),
-            new SassToScssNormalizer(),
+            new SassNormalizer(),
         ];
     }
 }

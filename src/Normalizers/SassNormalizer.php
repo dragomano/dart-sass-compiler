@@ -23,7 +23,7 @@ use function strlen;
 use function substr;
 use function trim;
 
-readonly class SassToScssNormalizer implements SourceNormalizer
+readonly class SassNormalizer implements SourceNormalizer
 {
     public function supports(Syntax $syntax): bool
     {

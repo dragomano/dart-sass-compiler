@@ -158,5 +158,5 @@ it('validates internal mappings for simple SCSS', function () {
         ], // margin: 10px;
     ];
 
-    expect($compiler->getMappings())->toBe($expected);
+    expect($compiler->getContext()->mappings)->toBe($expected);
 });

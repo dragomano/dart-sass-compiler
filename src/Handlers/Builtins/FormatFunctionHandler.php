@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Handlers\ModuleHandlers;
+namespace DartSass\Handlers\Builtins;
 
 use DartSass\Handlers\SassModule;
 use DartSass\Utils\ValueFormatter;
@@ -13,7 +13,7 @@ use function str_ends_with;
 use function str_starts_with;
 use function substr;
 
-class FormatFunctionHandler extends BaseModuleHandler implements LazyEvaluationHandlerInterface
+class FormatFunctionHandler extends BaseModuleHandler implements LazyEvaluationInterface
 {
     protected const GLOBAL_FUNCTIONS = ['format'];
 

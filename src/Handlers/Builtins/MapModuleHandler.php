@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Handlers\ModuleHandlers;
+namespace DartSass\Handlers\Builtins;
 
 use DartSass\Handlers\SassModule;
 use DartSass\Modules\MapModule;
 
-class MapModuleHandler extends BaseModuleHandler implements LazyEvaluationHandlerInterface
+class MapModuleHandler extends BaseModuleHandler implements LazyEvaluationInterface
 {
     protected const MODULE_FUNCTIONS = [
         'deep-merge',

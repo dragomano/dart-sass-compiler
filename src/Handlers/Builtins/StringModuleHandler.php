@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Handlers\ModuleHandlers;
+namespace DartSass\Handlers\Builtins;
 
 use DartSass\Exceptions\CompilationException;
 use DartSass\Handlers\SassModule;
@@ -10,7 +10,7 @@ use DartSass\Modules\StringModule;
 
 use function in_array;
 
-class StringModuleHandler extends BaseModuleHandler implements ConditionalPreservationHandlerInterface
+class StringModuleHandler extends BaseModuleHandler implements ConditionalPreservationInterface
 {
     protected const MODULE_FUNCTIONS = [
         'quote',

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use DartSass\Handlers\ModuleHandlers\BaseModuleHandler;
+use DartSass\Handlers\Builtins\BaseModuleHandler;
 use DartSass\Handlers\ModuleRegistry;
 use DartSass\Handlers\SassModule;
 use Tests\ReflectionAccessor;

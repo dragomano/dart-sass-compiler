@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use DartSass\Exceptions\CompilationException;
+use DartSass\Handlers\Builtins\ModuleHandlerInterface;
 use DartSass\Handlers\FunctionRouter;
-use DartSass\Handlers\ModuleHandlers\ModuleHandlerInterface;
 use DartSass\Handlers\ModuleRegistry;
 use DartSass\Utils\ResultFormatterInterface;
 

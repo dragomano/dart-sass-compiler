@@ -11,6 +11,8 @@ use function basename;
 use function ltrim;
 use function pathinfo;
 
+use const PATHINFO_EXTENSION;
+
 readonly class ModuleLoader
 {
     public function __construct(

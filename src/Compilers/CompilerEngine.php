@@ -23,17 +23,25 @@ use function rtrim;
 use function str_contains;
 use function str_repeat;
 use function str_starts_with;
+use function substr;
 use function trim;
 
 class CompilerEngine implements CompilerEngineInterface
 {
-    private array $nodeCompilers = [];
+    private const NODE_COMPILER_CLASSES = [
+        ForwardNodeCompiler::class,
+        FunctionNodeCompiler::class,
+        MixinNodeCompiler::class,
+        RuleNodeCompiler::class,
+        UseNodeCompiler::class,
+        VariableNodeCompiler::class,
+    ];
+
+    private array $compilerInstances = [];
 
     public function __construct(private readonly CompilerContext $context)
     {
         $this->context->engine = $this;
-
-        $this->initializeNodeCompilers();
     }
 
     public function compileString(string $string, ?Syntax $syntax = null): string
@@ -119,8 +127,16 @@ class CompilerEngine implements CompilerEngineInterface
 
     public function findNodeCompiler(string $nodeType): ?NodeCompiler
     {
-        foreach ($this->nodeCompilers as $compiler) {
+        if (isset($this->compilerInstances[$nodeType])) {
+            return $this->compilerInstances[$nodeType];
+        }
+
+        foreach (self::NODE_COMPILER_CLASSES as $className) {
+            $compiler = new $className();
+
             if ($compiler instanceof NodeCompiler && $compiler->canCompile($nodeType)) {
+                $this->compilerInstances[$nodeType] = $compiler;
+
                 return $compiler;
             }
         }
@@ -214,18 +230,6 @@ class CompilerEngine implements CompilerEngineInterface
     public function getIndent(int $level): string
     {
         return str_repeat('  ', $level);
-    }
-
-    private function initializeNodeCompilers(): void
-    {
-        $this->nodeCompilers = [
-            new ForwardNodeCompiler(),
-            new FunctionNodeCompiler(),
-            new MixinNodeCompiler(),
-            new RuleNodeCompiler(),
-            new UseNodeCompiler(),
-            new VariableNodeCompiler(),
-        ];
     }
 
     private function compileSpecialNode($node, string $parentSelector, int $nestingLevel): string

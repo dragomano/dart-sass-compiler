@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use DartSass\Handlers\ModuleHandlers\IfFunctionHandler;
+use DartSass\Handlers\Builtins\IfFunctionHandler;
 use DartSass\Handlers\SassModule;
 use Tests\ReflectionAccessor;
 

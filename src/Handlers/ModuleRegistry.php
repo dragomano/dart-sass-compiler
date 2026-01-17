@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DartSass\Handlers;
 
-use DartSass\Handlers\ModuleHandlers\ModuleHandlerInterface;
+use DartSass\Handlers\Builtins\ModuleHandlerInterface;
 
 class ModuleRegistry
 {

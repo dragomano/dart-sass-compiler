@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Handlers\ModuleHandlers;
+namespace DartSass\Handlers\Builtins;
 
 use DartSass\Handlers\SassModule;
 
@@ -10,7 +10,7 @@ use function count;
 use function is_string;
 use function strtolower;
 
-class IfFunctionHandler extends BaseModuleHandler implements LazyEvaluationHandlerInterface
+class IfFunctionHandler extends BaseModuleHandler implements LazyEvaluationInterface
 {
     protected const GLOBAL_FUNCTIONS = ['if'];
 

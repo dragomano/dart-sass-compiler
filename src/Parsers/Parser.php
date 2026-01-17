@@ -55,7 +55,7 @@ use function str_ends_with;
 use function str_starts_with;
 use function trim;
 
-class ScssParser implements TokenAwareParserInterface
+class Parser implements TokenAwareParserInterface
 {
     protected const UNARY_OPERATORS = [
         '-'   => true,

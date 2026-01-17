@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Handlers\ModuleHandlers;
+namespace DartSass\Handlers\Builtins;
 
 use DartSass\Handlers\SassModule;
 use DartSass\Modules\ListModule;
@@ -13,7 +13,7 @@ use function count;
 use function in_array;
 use function intdiv;
 
-class ListModuleHandler extends BaseModuleHandler implements ConditionalPreservationHandlerInterface
+class ListModuleHandler extends BaseModuleHandler implements ConditionalPreservationInterface
 {
     protected const MODULE_FUNCTIONS = [
         'append',

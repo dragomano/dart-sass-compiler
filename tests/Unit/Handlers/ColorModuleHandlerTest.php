@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use DartSass\Exceptions\CompilationException;
-use DartSass\Handlers\ModuleHandlers\ColorModuleHandler;
-use DartSass\Handlers\ModuleHandlers\CssColorFunctionHandler;
+use DartSass\Handlers\Builtins\ColorModuleHandler;
+use DartSass\Handlers\Builtins\CssColorFunctionHandler;
 use DartSass\Handlers\SassModule;
 use DartSass\Modules\ColorModule;
 use Tests\ReflectionAccessor;
