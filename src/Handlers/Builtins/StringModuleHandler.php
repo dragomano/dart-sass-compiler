@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DartSass\Handlers\Builtins;
 
-use DartSass\Exceptions\CompilationException;
 use DartSass\Handlers\SassModule;
 use DartSass\Modules\StringModule;
 
@@ -39,23 +38,23 @@ class StringModuleHandler extends BaseModuleHandler implements ConditionalPreser
 
     public function __construct(private readonly StringModule $stringModule) {}
 
-    public function handle(string $functionName, array $args): string|int|array|null
+    public function handle(string $functionName, array $args): mixed
     {
-        $args = $this->normalizeArgs($args);
+        $processedArgs = $this->normalizeArgs($args);
 
-        return match ($functionName) {
-            'quote'                => $this->stringModule->quote($args),
-            'index', 'str-index'   => $this->stringModule->index($args),
-            'insert', 'str-insert' => $this->stringModule->insert($args),
-            'length', 'str-length' => $this->stringModule->length($args),
-            'slice', 'str-slice'   => $this->stringModule->slice($args),
-            'split'                => $this->stringModule->split($args),
-            'to-upper-case'        => $this->stringModule->toUpperCase($args),
-            'to-lower-case'        => $this->stringModule->toLowerCase($args),
-            'unique-id'            => $this->stringModule->uniqueId($args),
-            'unquote'              => $this->stringModule->unquote($args),
-            default                => throw new CompilationException("Unknown string function: $functionName"),
-        };
+        $functionMapping = [
+            'str-index'     => 'index',
+            'str-insert'    => 'insert',
+            'str-length'    => 'length',
+            'str-slice'     => 'slice',
+            'to-upper-case' => 'toUpperCase',
+            'to-lower-case' => 'toLowerCase',
+            'unique-id'     => 'uniqueId',
+        ];
+
+        $methodName = $functionMapping[$functionName] ?? $functionName;
+
+        return $this->stringModule->$methodName($processedArgs);
     }
 
     public function getModuleNamespace(): SassModule
