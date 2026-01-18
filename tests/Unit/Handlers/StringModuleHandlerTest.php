@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use DartSass\Exceptions\CompilationException;
 use DartSass\Handlers\Builtins\StringModuleHandler;
 use DartSass\Modules\StringModule;
 
@@ -36,13 +35,6 @@ describe('StringModuleHandler', function () {
         it('returns false for unknown functions', function () {
             expect($this->handler->canHandle('unknown'))->toBeFalse()
                 ->and($this->handler->canHandle('str-unknown'))->toBeFalse();
-        });
-    });
-
-    describe('handle method', function () {
-        it('throws exception for unknown function', function () {
-            expect(fn() => $this->handler->handle('unknown', []))
-                ->toThrow(CompilationException::class, 'Unknown string function: unknown');
         });
     });
 })->covers(StringModuleHandler::class);

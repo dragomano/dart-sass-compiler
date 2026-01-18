@@ -14,5 +14,4 @@ generated.scss
 node_modules/
 output.css.map
 package-lock.json
-result*
 vendor/
