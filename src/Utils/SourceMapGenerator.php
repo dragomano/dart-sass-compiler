@@ -4,19 +4,25 @@ declare(strict_types=1);
 
 namespace DartSass\Utils;
 
-use function abs;
-use function implode;
+use function array_multisort;
 use function is_string;
 use function json_encode;
-use function usort;
+
+use const PHP_INT_MAX;
 
 class SourceMapGenerator
 {
-    private const BASE64_ALPHABET = [
-        'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P',
-        'Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f',
-        'g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v',
-        'w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/',
+    private const VLQ_BASE_SHIFT       = 5;
+
+    private const VLQ_BASE_MASK        = 31;
+
+    private const VLQ_CONTINUATION_BIT = 32;
+
+    private const BASE64_MAP = [
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+        'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
+        'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+        'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/',
     ];
 
     public function generate(array $mappings, string $sourceFile, string $outputFile, array $options = []): string
@@ -41,65 +47,86 @@ class SourceMapGenerator
 
     private function generateMappings(array $mappings): string
     {
-        usort(
-            $mappings,
-            fn($a, $b): int
-                => ($a['generated']['line'] ?? 0) <=> ($b['generated']['line'] ?? 0)
-                ?: ($a['generated']['column'] ?? 0) <=> ($b['generated']['column'] ?? 0)
-        );
+        $genLines   = [];
+        $genColumns = [];
 
-        $lineGroups  = $currentLineMappings = [];
-        $lastGenLine = $lastGenCol = $lastOrigLine = $lastOrigCol = $lastSourceIdx = 0;
+        foreach ($mappings as $key => $mapping) {
+            $genLines[$key]   = $mapping['generated']['line'] ?? 0;
+            $genColumns[$key] = $mapping['generated']['column'] ?? 0;
+        }
+
+        array_multisort($genLines, SORT_ASC, $genColumns, SORT_ASC, $mappings);
+
+        $result        = '';
+        $lineSegments  = '';
+        $lastGenLine   = 0;
+        $lastGenCol    = 0;
+        $lastOrigLine  = 0;
+        $lastOrigCol   = 0;
+        $lastSourceIdx = 0;
 
         foreach ($mappings as $mapping) {
-            extract([
-                'generatedLine'   => $mapping['generated']['line'],
-                'generatedColumn' => $mapping['generated']['column'],
-                'originalLine'    => $mapping['original']['line'],
-                'originalColumn'  => $mapping['original']['column'],
-                'sourceIndex'     => $mapping['sourceIndex'] ?? 0,
-            ]);
+            $gen       = $mapping['generated'];
+            $orig      = $mapping['original'];
+            $genLine   = $gen['line'];
+            $genCol    = $gen['column'];
+            $origLine  = $orig['line'];
+            $origCol   = $orig['column'];
+            $sourceIdx = $mapping['sourceIndex'] ?? 0;
 
-            if ($generatedLine !== $lastGenLine) {
-                if ($currentLineMappings) {
-                    $lineGroups[] = implode(',', $currentLineMappings);
-                    $currentLineMappings = [];
+            if ($genLine !== $lastGenLine) {
+                if ($lineSegments !== '') {
+                    $result       .= $lineSegments . ';';
+                    $lineSegments  = '';
                 }
 
-                [$lastGenCol, $lastOrigLine, $lastOrigCol, $lastSourceIdx, $lastGenLine] = [0, 0, 0, 0, $generatedLine];
+                $lastGenCol    = 0;
+                $lastOrigLine  = 0;
+                $lastOrigCol   = 0;
+                $lastSourceIdx = 0;
+                $lastGenLine   = $genLine;
             }
 
-            $segment = implode('', [
-                $this->encodeVLQ($generatedColumn - $lastGenCol),
-                $this->encodeVLQ($sourceIndex - $lastSourceIdx),
-                $this->encodeVLQ($originalLine - $lastOrigLine),
-                $this->encodeVLQ($originalColumn - $lastOrigCol),
-            ]);
+            if ($lineSegments !== '') {
+                $lineSegments .= ',';
+            }
 
-            $currentLineMappings[] = $segment;
+            $lineSegments
+                .= $this->encodeVLQ($genCol - $lastGenCol)
+                .  $this->encodeVLQ($sourceIdx - $lastSourceIdx)
+                .  $this->encodeVLQ($origLine - $lastOrigLine)
+                .  $this->encodeVLQ($origCol - $lastOrigCol);
 
-            [$lastGenCol, $lastOrigLine, $lastOrigCol, $lastSourceIdx]
-                = [$generatedColumn, $originalLine, $originalColumn, $sourceIndex];
+            $lastGenCol    = $genCol;
+            $lastOrigLine  = $origLine;
+            $lastOrigCol   = $origCol;
+            $lastSourceIdx = $sourceIdx;
         }
 
-        if ($currentLineMappings) {
-            $lineGroups[] = implode(',', $currentLineMappings);
+        if ($lineSegments !== '') {
+            $result .= $lineSegments;
         }
 
-        return implode(';', $lineGroups);
+        return $result;
     }
 
     private function encodeVLQ(int $value): string
     {
-        $vlq   = '';
-        $sign  = $value < 0 ? 1 : 0;
-        $value = abs($value) << 1 | $sign;
+        $encoded = '';
+
+        $vlq = $value < 0 ? ((-$value) << 1) + 1 : $value << 1;
 
         do {
-            $vlq .= self::BASE64_ALPHABET[$value & 0x1F];
-            $value >>= 5;
-        } while ($value > 0);
+            $digit = $vlq & self::VLQ_BASE_MASK;
+            $vlq   = (($vlq >> 1) & PHP_INT_MAX) >> (self::VLQ_BASE_SHIFT - 1);
 
-        return $vlq;
+            if ($vlq > 0) {
+                $digit |= self::VLQ_CONTINUATION_BIT;
+            }
+
+            $encoded .= self::BASE64_MAP[$digit];
+        } while ($vlq > 0);
+
+        return $encoded;
     }
 }

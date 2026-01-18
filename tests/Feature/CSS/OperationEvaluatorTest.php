@@ -167,13 +167,13 @@ it('compiles concatenation of string function results and literals without dupli
     $scss = <<<'SCSS'
     @use "sass:string";
 
-    test {
+    .test {
         content: string.slice("hello", 1, 3) + " world";
     }
     SCSS;
 
-    $expected = <<<'CSS'
-    test {
+    $expected = /** @lang text */ <<<'CSS'
+    .test {
       content: "hel world";
     }
     CSS;

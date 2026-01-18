@@ -14,20 +14,32 @@ use InvalidArgumentException;
 
 class RuleCompiler
 {
+    private const STRATEGIES = [
+        AtRuleStrategy::class,
+        ContainerRuleStrategy::class,
+        KeyframesRuleStrategy::class,
+        MediaRuleStrategy::class,
+    ];
+
+    private array $strategyInstances = [];
+
     public function __construct(private ?array $strategies = null)
     {
-        $this->strategies ??= [
-            new AtRuleStrategy(),
-            new ContainerRuleStrategy(),
-            new KeyframesRuleStrategy(),
-            new MediaRuleStrategy(),
-        ];
+        $this->strategies ??= self::STRATEGIES;
     }
 
     private function findStrategy(string $ruleType): ?RuleCompilationStrategy
     {
-        foreach ($this->strategies as $strategy) {
+        if (isset($this->strategyInstances[$ruleType])) {
+            return $this->strategyInstances[$ruleType];
+        }
+
+        foreach ($this->strategies as $className) {
+            $strategy = new $className();
+
             if ($strategy instanceof RuleCompilationStrategy && $strategy->canHandle($ruleType)) {
+                $this->strategyInstances[$ruleType] = $strategy;
+
                 return $strategy;
             }
         }

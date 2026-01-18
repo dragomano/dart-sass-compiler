@@ -26,4 +26,4 @@ describe('CompilerEngine', function () {
         expect(fn() => $this->engine->compileAst([$unknownNode]))
             ->toThrow(CompilationException::class, 'Unknown AST node type: unknown');
     });
-});
+})->covers(CompilerEngine::class);

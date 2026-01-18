@@ -132,28 +132,36 @@ class Parser implements TokenAwareParserInterface
                 break;
             }
 
-            if ($token->type === 'at_rule') {
-                if ($token->value === '@function') {
-                    $rules[] = $this->parseFunction();
-                } elseif ($token->value === '@mixin') {
-                    $rules[] = $this->parseMixin();
-                } elseif ($token->value === '@include') {
-                    $rules[] = $this->parseInclude();
-                } elseif ($token->value === '@import') {
-                    $rules[] = $this->parseImport();
-                } else {
-                    $rules[] = $this->parseAtRule();
-                }
-            } elseif ($token->type === 'variable') {
-                $rules[] = $this->parseVariable();
-            } elseif ($token->type === 'comment') {
-                $rules[] = new CommentNode($token->value, $token->line, $token->column);
+            switch ($token->type) {
+                case 'at_rule':
+                    $rules[] = match ($token->value) {
+                        '@function' => $this->parseFunction(),
+                        '@mixin'    => $this->parseMixin(),
+                        '@include'  => $this->parseInclude(),
+                        '@import'   => $this->parseImport(),
+                        default     => $this->parseAtRule(),
+                    };
 
-                $this->advanceToken();
-            } else {
-                $this->skipWhitespace();
+                    break;
 
-                $rules[] = $this->parseRule();
+                case 'variable':
+                    $rules[] = $this->parseVariable();
+
+                    break;
+
+                case 'comment':
+                    $rules[] = new CommentNode($token->value, $token->line, $token->column);
+
+                    $this->advanceToken();
+
+                    break;
+
+                default:
+                    $this->skipWhitespace();
+
+                    $rules[] = $this->parseRule();
+
+                    break;
             }
         }
 
@@ -432,14 +440,13 @@ class Parser implements TokenAwareParserInterface
         $declarations = $nested = $items = [];
 
         while (($token = $this->stream->current()) && $token->type !== 'brace_close') {
-            $this->skipWhitespace();
-
-            if (! $token = $this->stream->current()) {
-                break;
-            }
-
-            if ($token->type === 'brace_close') {
-                break;
+            // Skip whitespace at the start of each iteration
+            if ($token->type === 'whitespace') {
+                $this->skipWhitespace();
+                $token = $this->stream->current();
+                if (! $token || $token->type === 'brace_close') {
+                    break;
+                }
             }
 
             $tokenType = $token->type;

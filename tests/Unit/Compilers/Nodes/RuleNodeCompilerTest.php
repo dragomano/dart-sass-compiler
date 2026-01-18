@@ -56,7 +56,6 @@ describe('RuleNodeCompiler', function () {
         $declarationCompiler    = new DeclarationCompiler($valueFormatter, $positionTrackerForDecl);
 
         $positionTracker = mock(PositionTracker::class);
-        $positionTracker->shouldReceive('getCurrentPosition')->once()->andReturn(['line' => 0, 'column' => 0]);
         $positionTracker->shouldReceive('updatePosition')->andReturn();
 
         $extendHandler = mock(ExtendHandler::class);

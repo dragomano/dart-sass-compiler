@@ -46,7 +46,6 @@ readonly class DeclarationCompiler
                 $value    = current($declaration);
 
                 $generatedPosition = $this->positionTracker->getCurrentPosition();
-                $generatedPosition['line'] += 1;
 
                 $evaluatedValue = $evaluateExpression($value);
                 if ($evaluatedValue === null || $evaluatedValue === 'null') {
@@ -66,7 +65,7 @@ readonly class DeclarationCompiler
                         'column' => $generatedPosition['column'] + strlen($indent),
                     ];
 
-                    $originalLine   = $generatedPosition['line'];
+                    $originalLine   = $value->line ?? 0;
                     $originalColumn = $this->positionTracker->calculateIndentation($originalLine);
 
                     $mappings[] = [

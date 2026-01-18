@@ -64,7 +64,7 @@ class CompilerEngine implements CompilerEngineInterface
 
         $compiled = $this->context->extendHandler->applyExtends($compiled);
 
-        if ($this->context->options['sourceMap'] && $this->context->options['sourceMapFilename']) {
+        if ($this->context->options['sourceMap'] && $this->context->options['sourceMapFile']) {
             $sourceMapOptions = [];
 
             if ($this->context->options['includeSources']) {
@@ -79,9 +79,9 @@ class CompilerEngine implements CompilerEngineInterface
                 $sourceMapOptions
             );
 
-            file_put_contents($this->context->options['sourceMapFilename'], $sourceMap);
+            file_put_contents($this->context->options['sourceMapFile'], $sourceMap);
 
-            $compiled .= "\n/*# sourceMappingURL=" . $this->context->options['sourceMapFilename'] . ' */';
+            $compiled .= "\n/*# sourceMappingURL=" . $this->context->options['sourceMapFile'] . ' */';
         }
 
         return $this->context->outputOptimizer->optimize($compiled);
@@ -238,27 +238,37 @@ class CompilerEngine implements CompilerEngineInterface
             'if',
             'each',
             'for',
-            'while' => $this->context->flowControlCompiler->compile(
-                $node,
-                $nestingLevel,
-                $this->evaluateExpression(...),
-                $this->compileAst(...)
-            ),
+            'while' => $this->compileFlowControlNode($node, $nestingLevel),
             'media',
             'container',
             'keyframes',
-            'at-rule' => $this->context->atRuleCompiler->compile(
-                $node,
-                $nestingLevel,
-                $parentSelector,
-                $this->evaluateExpression(...),
-                $this->compileDeclarations(...),
-                $this->compileAst(...),
-                $this->evaluateInterpolationsInString(...)
-            ),
+            'at-rule' => $this->compileAtRuleNode($node, $parentSelector, $nestingLevel),
             'include' => $this->compileIncludeNode($node, $parentSelector, $nestingLevel),
             default => throw new CompilationException("Unknown AST node type: $node->type"),
         };
+    }
+
+    private function compileFlowControlNode($node, int $nestingLevel): string
+    {
+        return $this->context->flowControlCompiler->compile(
+            $node,
+            $nestingLevel,
+            $this->evaluateExpression(...),
+            $this->compileAst(...)
+        );
+    }
+
+    private function compileAtRuleNode($node, string $parentSelector, int $nestingLevel): string
+    {
+        return $this->context->atRuleCompiler->compile(
+            $node,
+            $nestingLevel,
+            $parentSelector,
+            $this->evaluateExpression(...),
+            $this->compileDeclarations(...),
+            $this->compileAst(...),
+            $this->evaluateInterpolationsInString(...)
+        );
     }
 
     private function compileIncludeNode($node, string $parentSelector, int $nestingLevel): string

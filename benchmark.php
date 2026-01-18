@@ -150,25 +150,24 @@ try {
     echo "Generated SCSS saved to generated.scss\n";
     echo 'SCSS size: ' . strlen($scss) . " bytes\n";
 
-
     $minimize = false;
-    $generateSourceMap = true;
+    $sourceMap = true;
 
     $compilers = [
-        'bugo/dart-sass-compiler' => function () use ($generateSourceMap, $minimize) {
+        'bugo/dart-sass-compiler' => function () use ($sourceMap, $minimize) {
             return new SassCompiler([
-                'sourceMap'         => $generateSourceMap,
-                'includeSources'    => true,
-                'style'             => $minimize ? 'compressed' : 'expanded',
-                'sourceFile'        => 'generated.scss',
-                'sourceMapFilename' => 'result-dart-sass-compiler.css.map',
-                'outputFile'        => 'result-dart-sass-compiler.css',
+                'sourceMap'      => $sourceMap,
+                'includeSources' => true,
+                'style'          => $minimize ? 'compressed' : 'expanded',
+                'sourceFile'     => 'generated.scss',
+                'sourceMapFile'  => 'result-dart-sass-compiler.css.map',
+                'outputFile'     => 'result-dart-sass-compiler.css',
             ]);
         },
-        'bugo/sass-embedded-php' => function () use ($generateSourceMap, $minimize) {
+        'bugo/sass-embedded-php' => function () use ($sourceMap, $minimize) {
             $compiler = new EmbeddedCompiler();
             $compiler->setOptions([
-                'sourceMap'      => $generateSourceMap,
+                'sourceMap'      => $sourceMap,
                 'sourceFile'     => 'generated.scss',
                 'sourceMapPath'  => 'result-sass-embedded-php.css.map',
                 'minimize'       => $minimize,
@@ -178,10 +177,10 @@ try {
 
             return $compiler;
         },
-        'scssphp/scssphp' => function () use ($generateSourceMap, $minimize) {
+        'scssphp/scssphp' => function () use ($sourceMap, $minimize) {
             $compiler = new ScssCompiler();
             $compiler->setOutputStyle($minimize ? OutputStyle::COMPRESSED : OutputStyle::EXPANDED);
-            $compiler->setSourceMap($generateSourceMap ? ScssCompiler::SOURCE_MAP_FILE : ScssCompiler::SOURCE_MAP_NONE);
+            $compiler->setSourceMap($sourceMap ? ScssCompiler::SOURCE_MAP_FILE : ScssCompiler::SOURCE_MAP_NONE);
             $compiler->setSourceMapOptions([
                 'sourceMapFilename' => 'generated.scss',
                 'sourceMapURL'      => 'result-scssphp-scssphp.css.map',
@@ -262,8 +261,6 @@ try {
             $cssSize = filesize("result-$package.css") / 1024;
 
             $results[$name] = ['time' => $time, 'size' => $cssSize, 'memory' => $memUsed];
-
-            echo "Compiler: $name, Time: " . number_format($time, 4) . " sec (avg of $runs runs), Size: " . number_format($cssSize, 2) . ' KB' . PHP_EOL;
         } catch (CompilationException $e) {
             echo "Compilation error in $name: " . $e->getMessage() . PHP_EOL;
             $results[$name] = ['time' => 'Compilation error', 'size' => 'N/A', 'memory' => 'N/A'];

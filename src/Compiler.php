@@ -21,13 +21,13 @@ readonly class Compiler
     {
         $options = array_merge(
             [
-                'style'             => 'expanded',
-                'sourceMap'         => false,
-                'includeSources'    => false,
-                'loadPaths'         => [],
-                'sourceFile'        => 'input.scss',
-                'sourceMapFilename' => 'output.css.map',
-                'outputFile'        => 'output.css',
+                'style'          => 'expanded',
+                'sourceMap'      => false,
+                'includeSources' => false,
+                'loadPaths'      => [],
+                'sourceFile'     => 'input.scss',
+                'sourceMapFile'  => 'output.css.map',
+                'outputFile'     => 'output.css',
             ],
             $options
         );
