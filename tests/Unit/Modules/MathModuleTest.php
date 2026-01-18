@@ -11,8 +11,8 @@ beforeEach(function () {
     $this->accessor   = new ReflectionAccessor($this->mathModule);
 });
 
-describe('MathFunctions', function () {
-    describe('ceil', function () {
+describe('MathModule', function () {
+    describe('ceil()', function () {
         it('rounds up positive number', function () {
             $result = $this->mathModule->ceil([5.1]);
 
@@ -54,7 +54,7 @@ describe('MathFunctions', function () {
         });
     });
 
-    describe('clamp', function () {
+    describe('clamp()', function () {
         it('clamps value within range', function () {
             $result = $this->mathModule->clamp([
                 ['value' => 5, 'unit' => 'px'],
@@ -116,7 +116,7 @@ describe('MathFunctions', function () {
         });
     });
 
-    describe('floor', function () {
+    describe('floor()', function () {
         it('rounds down positive number', function () {
             $result = $this->mathModule->floor([5.9]);
 
@@ -158,7 +158,7 @@ describe('MathFunctions', function () {
         });
     });
 
-    describe('max', function () {
+    describe('max()', function () {
         it('returns maximum of simple numbers', function () {
             $result = $this->mathModule->max([5, 3, 8, 1]);
 
@@ -201,7 +201,7 @@ describe('MathFunctions', function () {
         });
     });
 
-    describe('min', function () {
+    describe('min()', function () {
         it('returns minimum of simple numbers', function () {
             $result = $this->mathModule->min([5, 3, 8, 1]);
 
@@ -251,7 +251,7 @@ describe('MathFunctions', function () {
         });
     });
 
-    describe('round', function () {
+    describe('round()', function () {
         it('rounds number', function () {
             $result = $this->mathModule->round([5.7]);
 
@@ -286,7 +286,7 @@ describe('MathFunctions', function () {
         });
     });
 
-    describe('abs', function () {
+    describe('abs()', function () {
         it('returns absolute value for positive number', function () {
             $result = $this->mathModule->abs([5.5]);
 
@@ -328,7 +328,7 @@ describe('MathFunctions', function () {
         });
     });
 
-    describe('hypot', function () {
+    describe('hypot()', function () {
         it('returns hypotenuse for two positive numbers', function () {
             $result = $this->mathModule->hypot([3, 4]);
 
@@ -382,7 +382,7 @@ describe('MathFunctions', function () {
         });
     });
 
-    describe('log', function () {
+    describe('log()', function () {
         it('calculates natural logarithm', function () {
             $result = $this->mathModule->log([10]);
 
@@ -444,7 +444,7 @@ describe('MathFunctions', function () {
         });
     });
 
-    describe('pow', function () {
+    describe('pow()', function () {
         it('calculates power of numbers', function () {
             $result = $this->mathModule->pow([2, 3]);
 
@@ -483,7 +483,7 @@ describe('MathFunctions', function () {
         });
     });
 
-    describe('sqrt', function () {
+    describe('sqrt()', function () {
         it('calculates square root of perfect squares', function () {
             $result = $this->mathModule->sqrt([16]);
 
@@ -529,7 +529,7 @@ describe('MathFunctions', function () {
     });
 
     describe('trigonometric functions', function () {
-        describe('cos', function () {
+        describe('cos()', function () {
             it('calculates cosine of zero', function () {
                 $result = $this->mathModule->cos([0]);
 
@@ -569,7 +569,7 @@ describe('MathFunctions', function () {
             });
         });
 
-        describe('sin', function () {
+        describe('sin()', function () {
             it('calculates sine of zero', function () {
                 $result = $this->mathModule->sin([0]);
 
@@ -608,7 +608,7 @@ describe('MathFunctions', function () {
             });
         });
 
-        describe('tan', function () {
+        describe('tan()', function () {
             it('calculates tangent of zero', function () {
                 $result = $this->mathModule->tan([0]);
 
@@ -649,7 +649,7 @@ describe('MathFunctions', function () {
     });
 
     describe('inverse trigonometric functions', function () {
-        describe('acos', function () {
+        describe('acos()', function () {
             it('calculates arc cosine', function () {
                 $result = $this->mathModule->acos([0]);
 
@@ -688,7 +688,7 @@ describe('MathFunctions', function () {
             });
         });
 
-        describe('asin', function () {
+        describe('asin()', function () {
             it('calculates arc sine', function () {
                 $result = $this->mathModule->asin([0]);
 
@@ -727,7 +727,7 @@ describe('MathFunctions', function () {
             });
         });
 
-        describe('atan', function () {
+        describe('atan()', function () {
             it('calculates arc tangent', function () {
                 $result = $this->mathModule->atan([0]);
 
@@ -759,7 +759,7 @@ describe('MathFunctions', function () {
             });
         });
 
-        describe('atan2', function () {
+        describe('atan2()', function () {
             it('calculates arc tangent of two variables', function () {
                 $result = $this->mathModule->atan2([1, 1]);
 
@@ -799,7 +799,7 @@ describe('MathFunctions', function () {
     });
 
     describe('utility functions', function () {
-        describe('compatible', function () {
+        describe('compatible()', function () {
             it('returns true for compatible units', function () {
                 $result = $this->mathModule->compatible([
                     ['value' => 10, 'unit' => 'px'],
@@ -850,7 +850,7 @@ describe('MathFunctions', function () {
             });
         });
 
-        describe('isUnitless', function () {
+        describe('isUnitless()', function () {
             it('returns true for unitless value', function () {
                 $result = $this->mathModule->isUnitless([10]);
 
@@ -876,7 +876,7 @@ describe('MathFunctions', function () {
             });
         });
 
-        describe('unit', function () {
+        describe('unit()', function () {
             it('returns unit for value with unit', function () {
                 $result = $this->mathModule->unit([['value' => 10, 'unit' => 'px']]);
 
@@ -902,7 +902,7 @@ describe('MathFunctions', function () {
             });
         });
 
-        describe('div', function () {
+        describe('div()', function () {
             it('divides two numbers', function () {
                 $result = $this->mathModule->div([10, 2]);
 
@@ -967,7 +967,7 @@ describe('MathFunctions', function () {
             });
         });
 
-        describe('percentage', function () {
+        describe('percentage()', function () {
             it('converts decimal to percentage', function () {
                 $result = $this->mathModule->percentage([0.5]);
 
@@ -1004,7 +1004,7 @@ describe('MathFunctions', function () {
             });
         });
 
-        describe('random', function () {
+        describe('random()', function () {
             it('generates random number with no arguments', function () {
                 $result = $this->mathModule->random([]);
 
@@ -1048,7 +1048,7 @@ describe('MathFunctions', function () {
         });
     });
 
-    describe('normalize', function () {
+    describe('normalize()', function () {
         it('normalizes numeric string', function () {
             $result = $this->accessor->callMethod('normalize', ['42']);
 
@@ -1079,7 +1079,7 @@ describe('MathFunctions', function () {
         });
     });
 
-    describe('areUnitsCompatible', function () {
+    describe('areUnitsCompatible()', function () {
         it('considers same units as compatible', function () {
             $result = $this->accessor->callMethod('areUnitsCompatible', ['px', 'px']);
 
@@ -1099,4 +1099,4 @@ describe('MathFunctions', function () {
             expect($result)->toBeFalse();
         });
     });
-});
+})->covers(MathModule::class);
