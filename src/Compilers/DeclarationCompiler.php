@@ -10,6 +10,7 @@ use DartSass\Utils\PositionTracker;
 use DartSass\Utils\ValueFormatter;
 
 use function current;
+use function in_array;
 use function key;
 use function str_repeat;
 use function strlen;
@@ -48,7 +49,7 @@ readonly class DeclarationCompiler
                 $generatedPosition = $this->positionTracker->getCurrentPosition();
 
                 $evaluatedValue = $evaluateExpression($value);
-                if ($evaluatedValue === null || $evaluatedValue === 'null') {
+                if (in_array($evaluatedValue, [null, 'null', ''], true)) {
                     continue;
                 }
 

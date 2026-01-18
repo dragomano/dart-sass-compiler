@@ -43,12 +43,15 @@ abstract class BaseModuleHandler implements ModuleHandlerInterface
     private function normalizeArg(mixed $arg): mixed
     {
         if (is_array($arg) && isset($arg['value'], $arg['unit'])) {
-            // Keep the full array if it has both value and unit
             return $arg;
         }
 
         if (is_array($arg) && isset($arg['value'])) {
-            return $arg['value'];
+            return $this->normalizeArg($arg['value']);
+        }
+
+        if (is_string($arg)) {
+            return trim($arg, '"\'');
         }
 
         return $arg;

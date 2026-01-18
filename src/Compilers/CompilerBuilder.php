@@ -19,6 +19,7 @@ use DartSass\Handlers\Builtins\LinearGradientFunctionHandler;
 use DartSass\Handlers\Builtins\ListModuleHandler;
 use DartSass\Handlers\Builtins\MapModuleHandler;
 use DartSass\Handlers\Builtins\MathModuleHandler;
+use DartSass\Handlers\Builtins\SelectorModuleHandler;
 use DartSass\Handlers\Builtins\StringModuleHandler;
 use DartSass\Handlers\Builtins\UrlFunctionHandler;
 use DartSass\Handlers\ExtendHandler;
@@ -36,6 +37,7 @@ use DartSass\Modules\ColorModule;
 use DartSass\Modules\ListModule;
 use DartSass\Modules\MapModule;
 use DartSass\Modules\MathModule;
+use DartSass\Modules\SelectorModule;
 use DartSass\Modules\StringModule;
 use DartSass\Parsers\ParserFactory;
 use DartSass\Utils\OutputOptimizer;
@@ -135,6 +137,7 @@ readonly class CompilerBuilder
         $moduleRegistry->register(new ListModuleHandler(new ListModule()));
         $moduleRegistry->register(new MapModuleHandler(new MapModule()));
         $moduleRegistry->register(new MathModuleHandler(new MathModule(), $context->valueFormatter));
+        $moduleRegistry->register(new SelectorModuleHandler(new SelectorModule()));
         $moduleRegistry->register(new LinearGradientFunctionHandler($resultFormatter));
         $moduleRegistry->register($customFunctionHandler);
 
