@@ -4,31 +4,28 @@ declare(strict_types=1);
 
 namespace DartSass\Utils;
 
+use DartSass\Values\SassNumber;
+use Exception;
 use Stringable;
 
 use function is_array;
-use function is_numeric;
+use function reset;
 
 readonly class CalcValue implements LazyEvaluatable, Stringable
 {
-    private ?array $normalizedLeft;
+    private ?SassNumber $normalizedLeft;
 
-    private ?array $normalizedRight;
+    private ?SassNumber $normalizedRight;
 
-    public function __construct(
-        public mixed $left,
-        public string $operator,
-        public mixed $right
-    ) {
-        $this->normalizedLeft  = $this->normalizeValue($this->left);
-        $this->normalizedRight = $this->normalizeValue($this->right);
+    public function __construct(private mixed $left, private string $operator, private mixed $right)
+    {
+        $this->normalizedLeft  = SassNumber::tryFrom($this->left);
+        $this->normalizedRight = SassNumber::tryFrom($this->right);
     }
 
     public function __toString(): string
     {
-        $formatter = new ValueFormatter();
-
-        return "calc({$formatter->format($this->left)} $this->operator {$formatter->format($this->right)})";
+        return "calc({$this->format($this->left)} $this->operator {$this->format($this->right)})";
     }
 
     public function evaluate(): string|array
@@ -37,38 +34,29 @@ readonly class CalcValue implements LazyEvaluatable, Stringable
             return (string) $this;
         }
 
-        if ($this->normalizedLeft['unit'] !== $this->normalizedRight['unit']) {
+        try {
+            $result = match ($this->operator) {
+                '+'     => $this->normalizedLeft->add($this->normalizedRight),
+                '-'     => $this->normalizedLeft->subtract($this->normalizedRight),
+                '*'     => $this->normalizedLeft->multiply($this->normalizedRight),
+                '/'     => $this->normalizedLeft->divide($this->normalizedRight),
+                default => null,
+            };
+
+            return $result?->toArray() ?? (string) $this;
+        } catch (Exception) {
             return (string) $this;
         }
-
-        return $this->compute();
     }
 
-    private function compute(): string|array
+    private function format(mixed $value): string
     {
-        $result = match ($this->operator) {
-            '+' => $this->normalizedLeft['value'] + $this->normalizedRight['value'],
-            '-' => $this->normalizedLeft['value'] - $this->normalizedRight['value'],
-            '*' => $this->normalizedLeft['value'] * $this->normalizedRight['value'],
-            '/' => $this->normalizedRight['value'] != 0
-                ? $this->normalizedLeft['value'] / $this->normalizedRight['value']
-                : null,
-            default => null,
-        };
+        $number = SassNumber::tryFrom($value);
 
-        return $result !== null
-            ? ['value' => $result, 'unit' => $this->normalizedLeft['unit']]
-            : (string) $this;
-    }
-
-    private function normalizeValue(mixed $value): ?array
-    {
-        if (is_array($value) && isset($value['value'])) {
-            return $value;
+        if ($number !== null) {
+            return (string) $number;
         }
 
-        return is_numeric($value)
-            ? ['value' => (float) $value, 'unit' => '']
-            : null;
+        return is_array($value) ? (string) reset($value) : (string) $value;
     }
 }

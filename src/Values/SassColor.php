@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Modules;
+namespace DartSass\Values;
 
+use DartSass\Modules\ColorFormat;
+use DartSass\Modules\ColorSerializer;
 use Stringable;
 
 readonly class SassColor implements Stringable
@@ -12,7 +14,7 @@ readonly class SassColor implements Stringable
 
     private const DEFAULT_CHANNEL = 0.0;
 
-    public function __construct(public array $data, public ?string $format = null) {}
+    public function __construct(private array $data, private ?string $format = null) {}
 
     public function __toString(): string
     {

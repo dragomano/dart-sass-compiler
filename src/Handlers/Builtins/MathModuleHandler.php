@@ -6,8 +6,8 @@ namespace DartSass\Handlers\Builtins;
 
 use DartSass\Handlers\SassModule;
 use DartSass\Modules\MathModule;
-use DartSass\Modules\SassMath;
-use DartSass\Utils\ValueFormatter;
+use DartSass\Utils\ResultFormatterInterface;
+use DartSass\Values\SassNumber;
 
 use function array_map;
 use function implode;
@@ -58,7 +58,7 @@ class MathModuleHandler extends BaseModuleHandler
 
     public function __construct(
         private readonly MathModule $mathModule,
-        private readonly ValueFormatter $valueFormatter
+        private readonly ResultFormatterInterface $resultFormatter
     ) {}
 
     public function handle(string $functionName, array $args): string
@@ -75,8 +75,8 @@ class MathModuleHandler extends BaseModuleHandler
 
         $result = $this->mathModule->$methodName($processedArgs);
 
-        if ($result instanceof SassMath || (is_array($result) && isset($result['value'], $result['unit']))) {
-            return $this->valueFormatter->format($result);
+        if ($result instanceof SassNumber || (is_array($result) && isset($result['value'], $result['unit']))) {
+            return $this->resultFormatter->format($result);
         }
 
         if (is_array($result) && $result[0] === 'css') {
@@ -98,7 +98,7 @@ class MathModuleHandler extends BaseModuleHandler
 
     private function formatMathFunctionCall(string $name, array $args): string
     {
-        $argsList = implode(', ', array_map($this->valueFormatter->format(...), $args));
+        $argsList = implode(', ', array_map($this->resultFormatter->format(...), $args));
 
         return "$name($argsList)";
     }

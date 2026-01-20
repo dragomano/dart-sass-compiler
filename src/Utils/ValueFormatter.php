@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace DartSass\Utils;
 
-use DartSass\Modules\SassList;
-use DartSass\Modules\SassMath;
 use DartSass\Parsers\Nodes\IdentifierNode;
+use DartSass\Values\SassList;
+use DartSass\Values\SassNumber;
 
 use function array_filter;
 use function array_map;
@@ -32,8 +32,13 @@ class ValueFormatter
             return $this->formatSassList($value);
         }
 
-        if ($value instanceof SassMath) {
-            return $this->format(['value' => $value->value, 'unit' => $value->unit]);
+        if ($value instanceof SassNumber) {
+            $val  = $value->getValue();
+            $unit = $value->getUnit();
+
+            $formattedValue = $this->formatNumber($val);
+
+            return $unit ? $formattedValue . $unit : $formattedValue;
         }
 
         if (is_array($value)) {

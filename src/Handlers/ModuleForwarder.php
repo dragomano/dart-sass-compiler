@@ -13,7 +13,7 @@ readonly class ModuleForwarder
 
     public function forwardModule(
         string $path,
-        callable $evaluateExpression,
+        callable $expression,
         array $config = [],
         array $hide = [],
         array $show = [],
@@ -29,7 +29,7 @@ readonly class ModuleForwarder
         $this->processAst(
             $ast,
             onVariable: function ($node) use (
-                $evaluateExpression,
+                $expression,
                 $config,
                 $hide,
                 $show,
@@ -42,7 +42,7 @@ readonly class ModuleForwarder
                     return;
                 }
 
-                $value = $config[$configKey] ?? $evaluateExpression($node->properties['value']);
+                $value = $config[$configKey] ?? $expression($node->properties['value']);
 
                 $result['variables'][$name] = $value;
             },

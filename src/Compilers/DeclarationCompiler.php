@@ -7,7 +7,8 @@ namespace DartSass\Compilers;
 use Closure;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Utils\PositionTracker;
-use DartSass\Utils\ValueFormatter;
+use DartSass\Utils\ResultFormatterInterface;
+use DartSass\Utils\StringFormatter;
 
 use function current;
 use function in_array;
@@ -17,7 +18,10 @@ use function strlen;
 
 readonly class DeclarationCompiler
 {
-    public function __construct(private ValueFormatter $valueFormatter, private PositionTracker $positionTracker) {}
+    public function __construct(
+        private ResultFormatterInterface $resultFormatter,
+        private PositionTracker $positionTracker
+    ) {}
 
     public function compile(
         array $declarations,
@@ -26,15 +30,16 @@ readonly class DeclarationCompiler
         array $options,
         array &$mappings,
         Closure $compileAst,
-        Closure $evaluateExpression
+        Closure $expression
     ): string {
         $css = '';
 
         foreach ($declarations as $declaration) {
             if ($declaration instanceof AstNode) {
                 if ($declaration->type === 'comment') {
-                    $indent = str_repeat('  ', $nestingLevel);
-                    $commentCss = $indent . $declaration->properties['value'] . "\n";
+                    $indent     = str_repeat('  ', $nestingLevel);
+                    $commentCss = StringFormatter::concatMultiple([$indent, $declaration->properties['value'], "\n"]);
+
                     $css .= $commentCss;
 
                     $this->positionTracker->updatePosition($commentCss);
@@ -48,13 +53,13 @@ readonly class DeclarationCompiler
 
                 $generatedPosition = $this->positionTracker->getCurrentPosition();
 
-                $evaluatedValue = $evaluateExpression($value);
+                $evaluatedValue = $expression($value);
                 if (in_array($evaluatedValue, [null, 'null', ''], true)) {
                     continue;
                 }
 
-                $formattedValue = $this->valueFormatter->format($evaluatedValue);
-                $declarationCss = "$indent$property: " . $formattedValue . ";\n";
+                $formattedValue = $this->resultFormatter->format($evaluatedValue);
+                $declarationCss = StringFormatter::concatMultiple([$indent, $property, ': ', $formattedValue, ";\n"]);
 
                 $css .= $declarationCss;
 

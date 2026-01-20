@@ -22,7 +22,7 @@ use function substr;
 readonly class FunctionRouter
 {
     public function __construct(
-        private ModuleRegistry           $registry,
+        private ModuleRegistry $registry,
         private ResultFormatterInterface $resultFormatter
     ) {}
 

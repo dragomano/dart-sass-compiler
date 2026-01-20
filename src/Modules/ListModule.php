@@ -6,6 +6,9 @@ namespace DartSass\Modules;
 
 use DartSass\Exceptions\CompilationException;
 use DartSass\Parsers\Nodes\ListNode;
+use DartSass\Utils\ValueComparator;
+use DartSass\Values\SassList;
+use DartSass\Values\SassNumber;
 
 use function array_filter;
 use function array_map;
@@ -52,7 +55,7 @@ class ListModule
         $listObj = $this->toSassList($list);
 
         foreach ($listObj->value as $index => $item) {
-            if ($this->valuesEqual($item, $value)) {
+            if (ValueComparator::equals($item, $value)) {
                 return $index + 1;
             }
         }
@@ -165,7 +168,7 @@ class ListModule
         }
 
         $sassLists = array_map($this->toSassList(...), $args);
-        $values    = array_map(fn($sl): array => $sl->value, $sassLists);
+        $values    = array_map(fn(SassList $sl): array => $sl->value, $sassLists);
         $minLength = min(array_map(count(...), $values));
         $result    = [];
 
@@ -247,9 +250,15 @@ class ListModule
 
     private function parseIndex(mixed $indexArg, int $listLength): int
     {
-        $index = is_numeric($indexArg)
-            ? (int) $indexArg
-            : (is_array($indexArg) && isset($indexArg['value']) ? (int) $indexArg['value'] : 1);
+        $index = 1;
+
+        if (is_numeric($indexArg)) {
+            $index = (int) $indexArg;
+        } elseif ($indexArg instanceof SassNumber) {
+            $index = (int) $indexArg->getValue();
+        } elseif (is_array($indexArg) && isset($indexArg['value'])) {
+            $index = (int) $indexArg['value'];
+        }
 
         // Handle negative indices
         if ($index < 0) {
@@ -311,19 +320,5 @@ class ListModule
         $valArr = $this->toArray($value);
 
         return new SassList($valArr, $separator, $bracketed);
-    }
-
-    private function valuesEqual(mixed $item1, mixed $item2): bool
-    {
-        return $this->formatValueForComparison($item1) === $this->formatValueForComparison($item2);
-    }
-
-    private function formatValueForComparison(mixed $item): string
-    {
-        if (is_array($item) && isset($item['value'])) {
-            return (string) $item['value'];
-        }
-
-        return (string) $item;
     }
 }

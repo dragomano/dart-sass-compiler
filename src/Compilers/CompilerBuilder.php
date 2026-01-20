@@ -75,7 +75,7 @@ readonly class CompilerBuilder
     {
         $context->loader          = $this->loader;
         $context->parserFactory   = new ParserFactory();
-        $context->valueFormatter  = new ValueFormatter();
+        $context->resultFormatter = new ResultFormatter(new ValueFormatter());
         $context->positionTracker = new PositionTracker();
     }
 
@@ -105,9 +105,8 @@ readonly class CompilerBuilder
     private function initializeFunctionHandlers(CompilerContext $context): void
     {
         $customFunctionHandler = new CustomFunctionHandler();
-        $resultFormatter       = new ResultFormatter($context->valueFormatter);
-        $moduleRegistry        = $this->createModuleRegistry($context, $customFunctionHandler, $resultFormatter);
-        $functionRouter        = new FunctionRouter($moduleRegistry, $resultFormatter);
+        $moduleRegistry        = $this->createModuleRegistry($context, $customFunctionHandler);
+        $functionRouter        = new FunctionRouter($moduleRegistry, $context->resultFormatter);
         $userFunctionEvaluator = new UserFunctionEvaluator();
 
         $context->functionHandler = new FunctionHandler(
@@ -121,8 +120,7 @@ readonly class CompilerBuilder
 
     private function createModuleRegistry(
         CompilerContext $context,
-        CustomFunctionHandler $customFunctionHandler,
-        ResultFormatter $resultFormatter
+        CustomFunctionHandler $customFunctionHandler
     ): ModuleRegistry {
         $moduleRegistry = new ModuleRegistry();
 
@@ -130,15 +128,15 @@ readonly class CompilerBuilder
             fn($expr): mixed => $context->engine->evaluateExpression($expr)
         ));
         $moduleRegistry->register(new UrlFunctionHandler());
-        $moduleRegistry->register(new FormatFunctionHandler($context->valueFormatter));
+        $moduleRegistry->register(new FormatFunctionHandler($context->resultFormatter));
         $moduleRegistry->register($cssColorFunctionHandler = new CssColorFunctionHandler());
         $moduleRegistry->register(new ColorModuleHandler(new ColorModule(), $cssColorFunctionHandler));
         $moduleRegistry->register(new StringModuleHandler(new StringModule()));
         $moduleRegistry->register(new ListModuleHandler(new ListModule()));
         $moduleRegistry->register(new MapModuleHandler(new MapModule()));
-        $moduleRegistry->register(new MathModuleHandler(new MathModule(), $context->valueFormatter));
+        $moduleRegistry->register(new MathModuleHandler(new MathModule(), $context->resultFormatter));
         $moduleRegistry->register(new SelectorModuleHandler(new SelectorModule()));
-        $moduleRegistry->register(new LinearGradientFunctionHandler($resultFormatter));
+        $moduleRegistry->register(new LinearGradientFunctionHandler($context->resultFormatter));
         $moduleRegistry->register($customFunctionHandler);
 
         $customFunctionHandler->setRegistry($moduleRegistry);
@@ -160,13 +158,9 @@ readonly class CompilerBuilder
 
     private function initializeSimpleEvaluators(CompilerContext $context): void
     {
-        $context->interpolationEvaluator = new InterpolationEvaluator(
-            $context->valueFormatter,
-            $context->parserFactory
-        );
-
-        $context->operationEvaluator = new OperationEvaluator($context->valueFormatter);
-        $context->calcEvaluator      = new CalcFunctionEvaluator($context->valueFormatter);
+        $context->interpolationEvaluator = new InterpolationEvaluator($context->resultFormatter, $context->parserFactory);
+        $context->operationEvaluator     = new OperationEvaluator($context);
+        $context->calcEvaluator          = new CalcFunctionEvaluator($context->resultFormatter);
     }
 
     private function initializeExpressionEvaluator(CompilerContext $context): void
@@ -184,7 +178,7 @@ readonly class CompilerBuilder
     {
         $context->ruleCompiler        = new RuleCompiler();
         $context->flowControlCompiler = new FlowControlCompiler($context->variableHandler);
-        $context->declarationCompiler = new DeclarationCompiler($context->valueFormatter, $context->positionTracker);
+        $context->declarationCompiler = new DeclarationCompiler($context->resultFormatter, $context->positionTracker);
     }
 
     private function initializeSpecializedCompilers(CompilerContext $context): void

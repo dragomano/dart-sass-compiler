@@ -41,6 +41,7 @@ use DartSass\Parsers\Rules\KeyframesRuleParser;
 use DartSass\Parsers\Rules\MediaRuleParser;
 use DartSass\Parsers\Rules\UseRuleParser;
 use DartSass\Parsers\Rules\WhileRuleParser;
+use DartSass\Utils\StringFormatter;
 
 use function array_filter;
 use function array_merge;
@@ -571,7 +572,7 @@ class Parser implements TokenAwareParserInterface
             $this->consume('operator');
 
             $nextToken = $this->stream->expectAny('identifier', 'function');
-            $name .= '.' . $nextToken->value;
+            $name = StringFormatter::concat($name, StringFormatter::concat('.', $nextToken->value));
         }
 
         $args = [];
@@ -1077,9 +1078,9 @@ class Parser implements TokenAwareParserInterface
             $content = trim($content);
 
             if (str_starts_with($content, "'") && str_ends_with($content, "'")) {
-                $content = '"' . trim($content, "'") . '"';
+                $content = StringFormatter::forceQuoteString(trim($content, "'"));
             } elseif (! str_starts_with($content, '"') && ! str_ends_with($content, '"')) {
-                $content = '"' . $content . '"';
+                $content = StringFormatter::forceQuoteString($content);
             }
 
             return 'url(' . $content . ')';
@@ -1099,7 +1100,7 @@ class Parser implements TokenAwareParserInterface
     private function parseSelector(): AstNode
     {
         $value = '';
-        $line = $this->stream->current()->line;
+        $line  = $this->stream->current()->line;
 
         while (
             ($token = $this->stream->current())
@@ -1113,27 +1114,32 @@ class Parser implements TokenAwareParserInterface
 
             if (isset(self::SELECTOR_TOKENS[$token->type])) {
                 $value .= $token->value;
+
                 $this->advanceToken();
             } elseif ($token->type === 'function') {
                 $value .= $this->parsePseudoClassFunction($token);
             } elseif ($token->type === 'operator') {
                 $value .= $token->value;
+
                 $this->advanceToken();
             } elseif ($token->type === 'double_hash_interpolation') {
                 $this->advanceToken();
 
                 $variableToken = $this->consume('variable');
+
                 $this->consume('brace_close');
 
-                $value .= '#' . $variableToken->value;
+                $value = StringFormatter::concat($value, StringFormatter::concat('#', $variableToken->value));
             } elseif ($token->type === 'attribute_selector') {
                 $value .= $this->optimizeAttributeSelector($token->value);
+
                 $this->advanceToken();
             } elseif ($token->type === 'interpolation_open') {
                 $value .= $this->parseInterpolationInSelector();
             } elseif ($token->type === 'at_rule') {
                 if ($token->value === '@content') {
                     $value .= '@content';
+
                     $this->advanceToken();
                 } else {
                     throw new SyntaxException(
@@ -1314,6 +1320,7 @@ class Parser implements TokenAwareParserInterface
                     // Skip to next iteration for comma handling
                     if (! $this->peek('paren_close')) {
                         $this->skipWhitespace();
+
                         $commaToken = $this->stream->current();
                         if ($commaToken && $commaToken->type === 'operator' && $commaToken->value === ',') {
                             $this->advanceToken();
@@ -1427,7 +1434,7 @@ class Parser implements TokenAwareParserInterface
 
         $this->consume('brace_close');
 
-        return '#{' . $this->formatExpressionForSelector($expression) . '}';
+        return StringFormatter::concatMultiple(['#{', $this->formatExpressionForSelector($expression), '}']);
     }
 
     private function formatExpressionForSelector(AstNode $expr): string
@@ -1455,7 +1462,7 @@ class Parser implements TokenAwareParserInterface
         }
 
         if ($expr->type === 'interpolation') {
-            return '#{' . $this->formatExpressionForSelector($expr->properties['expression']) . '}';
+            return StringFormatter::concatMultiple(['#{', $this->formatExpressionForSelector($expr->properties['expression']), '}']);
         }
 
         return 'expression';

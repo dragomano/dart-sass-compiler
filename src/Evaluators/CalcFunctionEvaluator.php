@@ -8,35 +8,52 @@ use Closure;
 use DartSass\Exceptions\CompilationException;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\OperationNode;
-use DartSass\Utils\ValueFormatter;
+use DartSass\Utils\ResultFormatterInterface;
+use DartSass\Values\SassNumber;
 
 use function array_map;
 use function count;
 use function implode;
+use function in_array;
 use function is_array;
 use function is_numeric;
 use function is_string;
-use function preg_match;
-use function trim;
+use function str_ends_with;
+use function str_starts_with;
+use function substr;
 
 readonly class CalcFunctionEvaluator
 {
-    private const UNIT_REGEX = '(px|em|rem|%|vw|vh|vmin|vmax|pt|pc|in|cm|mm|deg|rad|turn|s|ms|Hz|kHz|dpi|dpcm|dppx)?';
+    public function __construct(private ResultFormatterInterface $resultFormatter) {}
 
-    public function __construct(private ValueFormatter $valueFormatter) {}
-
-    public function evaluate(array $args, Closure $evaluateExpression): mixed
+    public function evaluate(array $args, Closure $expression): mixed
     {
         $resolvedArgs = [];
 
         foreach ($args as $arg) {
-            $resolvedArgs[] = $this->resolveNode($arg, $evaluateExpression);
+            $resolvedArgs[] = $this->resolveNode($arg, $expression);
         }
 
         if (count($resolvedArgs) === 1) {
             $result = $resolvedArgs[0];
 
-            if ($this->isNumber($result)) {
+            if ($result instanceof SassNumber) {
+                if ($result->getUnit() === null) {
+                    return $result->getValue();
+                }
+
+                return $result;
+            }
+
+            if (is_array($result) && isset($result['value'], $result['unit'])) {
+                if ($result['unit'] === '') {
+                    return $result['value'];
+                }
+
+                return $result;
+            }
+
+            if (is_numeric($result)) {
                 return $result;
             }
 
@@ -46,20 +63,20 @@ readonly class CalcFunctionEvaluator
         }
 
         $argString = implode(', ', array_map(
-            $this->valueFormatter->format(...),
+            $this->resultFormatter->format(...),
             $resolvedArgs
         ));
 
         return 'calc(' . $argString . ')';
     }
 
-    private function resolveNode(mixed $node, Closure $evaluateExpression): mixed
+    private function resolveNode(mixed $node, Closure $expression): mixed
     {
         if ($node instanceof OperationNode) {
             $node = $this->ensurePrecedence($node);
 
-            $left  = $this->resolveNode($node->properties['left'], $evaluateExpression);
-            $right = $this->resolveNode($node->properties['right'], $evaluateExpression);
+            $left  = $this->resolveNode($node->properties['left'], $expression);
+            $right = $this->resolveNode($node->properties['right'], $expression);
 
             $operator = $node->properties['operator'];
 
@@ -67,7 +84,7 @@ readonly class CalcFunctionEvaluator
         }
 
         if ($node instanceof AstNode) {
-            return $evaluateExpression($node);
+            return $expression($node);
         }
 
         return $node;
@@ -97,57 +114,24 @@ readonly class CalcFunctionEvaluator
 
     private function computeOperation(mixed $left, string $operator, mixed $right): string|array
     {
-        if ($this->isNumber($left) && $this->isNumber($right)) {
-            $lVal = $this->normalizeNumber($left);
-            $rVal = $this->normalizeNumber($right);
+        $leftNumber  = SassNumber::tryFrom($left);
+        $rightNumber = SassNumber::tryFrom($right);
 
-            $canCompute = false;
-            $resultUnit = '';
+        if ($leftNumber !== null && $rightNumber !== null) {
+            if (! in_array($operator, ['+', '-', '*', '/'], true)) {
+                throw new CompilationException("Unknown operator: $operator");
+            }
 
-            switch ($operator) {
-                case '+':
-                case '-':
-                    if ($lVal['unit'] === $rVal['unit']) {
-                        $canCompute = true;
-                        $resultUnit = $lVal['unit'];
-                    } elseif ($lVal['unit'] === '' || $rVal['unit'] === '') {
-                        $resultUnit = $lVal['unit'] ?: $rVal['unit'];
-                        $canCompute = true;
-                    }
+            try {
+                $result = match ($operator) {
+                    '+' => $leftNumber->add($rightNumber),
+                    '-' => $leftNumber->subtract($rightNumber),
+                    '*' => $leftNumber->multiply($rightNumber),
+                    '/' => $leftNumber->divide($rightNumber),
+                };
 
-                    if ($canCompute) {
-                        $value = match ($operator) {
-                            '+' => $lVal['value'] + $rVal['value'],
-                            '-' => $lVal['value'] - $rVal['value'],
-                        };
-
-                        return ['value' => $value, 'unit' => $resultUnit];
-                    }
-
-                    break;
-
-                case '*':
-                    if ($lVal['unit'] === '' || $rVal['unit'] === '') {
-                        $value = $lVal['value'] * $rVal['value'];
-                        $unit  = $lVal['unit'] ?: $rVal['unit'];
-
-                        return ['value' => $value, 'unit' => $unit];
-                    }
-
-                    break;
-
-                case '/':
-                    if ($rVal['value'] == 0) {
-                        throw new CompilationException('Division by zero in calc');
-                    }
-
-                    if ($rVal['unit'] === '') {
-                        return ['value' => $lVal['value'] / $rVal['value'], 'unit' => $lVal['unit']];
-                    } elseif ($lVal['unit'] === $rVal['unit']) {
-                        return ['value' => $lVal['value'] / $rVal['value'], 'unit' => ''];
-                    }
-
-                    break;
+                return $result->toArray();
+            } catch (CompilationException) {
             }
         }
 
@@ -160,57 +144,23 @@ readonly class CalcFunctionEvaluator
         return "$lStr $operator $rStr";
     }
 
-    private function isNumber(mixed $val): bool
+    private function formatResult(mixed $val): string
     {
-        if (is_numeric($val) || (is_array($val) && isset($val['value'], $val['unit']))) {
-            return true;
+        $number = SassNumber::tryFrom($val);
+
+        if ($number !== null) {
+            return (string) $number;
         }
 
-        if (is_string($val)) {
-            $val = trim($val);
-
-            if (preg_match('/^(-?\d+(?:\.\d+)?)' . self::UNIT_REGEX . '$/', $val)) {
-                return true;
-            }
-        }
-
-        return false;
+        return (string) $val;
     }
 
-    private function normalizeNumber(mixed $val): array
+    private function unwrapCalc(string $val): string
     {
-        if (is_array($val)) {
-            return $val;
-        }
-
-        if (is_string($val)) {
-            $val = trim($val);
-
-            if (preg_match('/^(-?\d+(?:\.\d+)?)' . self::UNIT_REGEX . '$/', $val, $matches)) {
-                return ['value' => (float) $matches[1], 'unit' => $matches[2] ?? ''];
-            }
-        }
-
-        return ['value' => (float) $val, 'unit' => ''];
-    }
-
-    private function formatResult(mixed $val): string|int|float
-    {
-        if (is_array($val) && isset($val['value'])) {
-            return $val['value'] . ($val['unit'] ?? '');
+        if (str_starts_with($val, 'calc(') && str_ends_with($val, ')')) {
+            return '(' . substr($val, 5, -1) . ')';
         }
 
         return $val;
-    }
-
-    private function unwrapCalc(mixed $val): string
-    {
-        $str = (string) $val;
-
-        if (str_starts_with($str, 'calc(') && str_ends_with($str, ')')) {
-            return '(' . substr($str, 5, -1) . ')';
-        }
-
-        return $str;
     }
 }

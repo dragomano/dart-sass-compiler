@@ -12,6 +12,7 @@ use DartSass\Parsers\Nodes\EachNode;
 use DartSass\Parsers\Nodes\ForNode;
 use DartSass\Parsers\Nodes\IfNode;
 use DartSass\Parsers\Nodes\WhileNode;
+use DartSass\Utils\ValueComparator;
 
 use function count;
 use function explode;
@@ -29,14 +30,14 @@ readonly class FlowControlCompiler
     public function compile(
         AstNode $node,
         int $nestingLevel,
-        Closure $evaluateExpression,
+        Closure $expression,
         Closure $compileAst
     ): string {
         return match (true) {
-            $node instanceof IfNode    => $this->compileIf($node, $nestingLevel, $evaluateExpression, $compileAst),
-            $node instanceof EachNode  => $this->compileEach($node, $nestingLevel, $evaluateExpression, $compileAst),
-            $node instanceof ForNode   => $this->compileFor($node, $nestingLevel, $evaluateExpression, $compileAst),
-            $node instanceof WhileNode => $this->compileWhile($node, $nestingLevel, $evaluateExpression, $compileAst),
+            $node instanceof IfNode    => $this->compileIf($node, $nestingLevel, $expression, $compileAst),
+            $node instanceof EachNode  => $this->compileEach($node, $nestingLevel, $expression, $compileAst),
+            $node instanceof ForNode   => $this->compileFor($node, $nestingLevel, $expression, $compileAst),
+            $node instanceof WhileNode => $this->compileWhile($node, $nestingLevel, $expression, $compileAst),
             default => throw new CompilationException('Unknown control flow node type: ' . $node::class),
         };
     }
@@ -44,12 +45,12 @@ readonly class FlowControlCompiler
     private function compileIf(
         IfNode $node,
         int $nestingLevel,
-        Closure $evaluateExpression,
+        Closure $expression,
         Closure $compileAst
     ): string {
-        $condition = $evaluateExpression($node->condition);
+        $condition = $expression($node->condition);
 
-        if ($this->isTruthy($condition)) {
+        if (ValueComparator::isTruthy($condition)) {
             return $compileAst($node->body, '', $nestingLevel + 1);
         } elseif (is_array($node->else) && count($node->else) > 0) {
             return $compileAst($node->else, '', $nestingLevel + 1);
@@ -61,10 +62,10 @@ readonly class FlowControlCompiler
     private function compileEach(
         EachNode $node,
         int $nestingLevel,
-        Closure $evaluateExpression,
+        Closure $expression,
         Closure $compileAst
     ): string {
-        $list = $evaluateExpression($node->condition);
+        $list = $expression($node->condition);
 
         if (is_object($list) && property_exists($list, 'value')) {
             $list = $list->value;
@@ -140,11 +141,11 @@ readonly class FlowControlCompiler
     private function compileFor(
         ForNode $node,
         int $nestingLevel,
-        Closure $evaluateExpression,
+        Closure $expression,
         Closure $compileAst
     ): string {
-        $from = (int) $evaluateExpression($node->from);
-        $to   = (int) $evaluateExpression($node->to);
+        $from = (int) $expression($node->from);
+        $to   = (int) $expression($node->to);
 
         $varName   = $node->variable ?? throw new CompilationException('Missing variable name for @for');
         $inclusive = $node->inclusive ?? false;
@@ -176,7 +177,7 @@ readonly class FlowControlCompiler
     private function compileWhile(
         WhileNode $node,
         int $nestingLevel,
-        Closure $evaluateExpression,
+        Closure $expression,
         Closure $compileAst
     ): string {
         $css = '';
@@ -187,8 +188,8 @@ readonly class FlowControlCompiler
         $this->variableHandler->enterScope();
 
         while ($iteration < $maxIterations) {
-            $condition = $evaluateExpression($node->condition);
-            if (! $this->isTruthy($condition)) {
+            $condition = $expression($node->condition);
+            if (! ValueComparator::isTruthy($condition)) {
                 break;
             }
 
@@ -203,10 +204,5 @@ readonly class FlowControlCompiler
         }
 
         return $css;
-    }
-
-    private function isTruthy(mixed $value): bool
-    {
-        return $value !== false && $value !== null;
     }
 }
