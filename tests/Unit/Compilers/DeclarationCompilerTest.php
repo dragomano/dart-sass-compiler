@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use DartSass\Compilers\CompilerContext;
 use DartSass\Compilers\DeclarationCompiler;
 use DartSass\Parsers\Nodes\IdentifierNode;
 use DartSass\Parsers\Nodes\RuleNode;
@@ -13,6 +14,9 @@ describe('DeclarationCompiler', function () {
         $this->resultFormatter     = mock(ResultFormatterInterface::class);
         $this->positionTracker     = mock(PositionTracker::class);
         $this->declarationCompiler = new DeclarationCompiler($this->resultFormatter, $this->positionTracker);
+        $this->context             = mock(CompilerContext::class);
+        $this->context->options    = ['sourceMap' => false];
+        $this->context->mappings   = [];
     });
 
     describe('compile method', function () {
@@ -24,11 +28,13 @@ describe('DeclarationCompiler', function () {
             $nestingLevel   = 0;
             $parentSelector = '';
 
-            $options  = ['sourceMap' => false];
-            $mappings = [];
-
             $compileAstCalled = false;
-            $compileAst = function ($nodes, $selector, $level) use (&$compileAstCalled, $astNode, $parentSelector, $nestingLevel) {
+            $compileAst = function ($nodes, $selector, $level) use (
+                &$compileAstCalled,
+                $astNode,
+                $parentSelector,
+                $nestingLevel
+            ) {
                 $compileAstCalled = true;
                 expect($nodes)->toEqual([$astNode])
                     ->and($selector)->toBe($parentSelector)
@@ -43,8 +49,7 @@ describe('DeclarationCompiler', function () {
                 $declarations,
                 $nestingLevel,
                 $parentSelector,
-                $options,
-                $mappings,
+                $this->context,
                 $compileAst,
                 $expression
             );
@@ -58,10 +63,11 @@ describe('DeclarationCompiler', function () {
             $declarations   = [$declaration];
             $nestingLevel   = 0;
             $parentSelector = '';
-            $options        = ['sourceMap' => false];
-            $mappings       = [];
 
-            $this->positionTracker->shouldReceive('getCurrentPosition')->once()->andReturn(['line' => 1, 'column' => 0]);
+            $this->positionTracker
+                ->shouldReceive('getCurrentPosition')
+                ->once()
+                ->andReturn(['line' => 1, 'column' => 0]);
 
             $compileAst = fn() => 'should not be called';
             $expression = fn() => null;
@@ -70,8 +76,7 @@ describe('DeclarationCompiler', function () {
                 $declarations,
                 $nestingLevel,
                 $parentSelector,
-                $options,
-                $mappings,
+                $this->context,
                 $compileAst,
                 $expression
             );
@@ -84,10 +89,11 @@ describe('DeclarationCompiler', function () {
             $declarations   = [$declaration];
             $nestingLevel   = 0;
             $parentSelector = '';
-            $options        = ['sourceMap' => false];
-            $mappings       = [];
 
-            $this->positionTracker->shouldReceive('getCurrentPosition')->once()->andReturn(['line' => 1, 'column' => 0]);
+            $this->positionTracker
+                ->shouldReceive('getCurrentPosition')
+                ->once()
+                ->andReturn(['line' => 1, 'column' => 0]);
 
             $compileAst = fn() => 'should not be called';
             $expression = fn() => 'null';
@@ -96,8 +102,7 @@ describe('DeclarationCompiler', function () {
                 $declarations,
                 $nestingLevel,
                 $parentSelector,
-                $options,
-                $mappings,
+                $this->context,
                 $compileAst,
                 $expression
             );

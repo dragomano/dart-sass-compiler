@@ -32,7 +32,7 @@ class SourceMapGenerator
             'sourceRoot' => $options['sourceMapRoot'] ?? '',
             'sources'    => $options['sources'] ?? [$sourceFile],
             'names'      => [],
-            'mappings'   => $this->generateMappings($mappings),
+            'mappings'   => $this->generateMappings($mappings, $options['outputLines'] ?? null),
             'file'       => $outputFile,
         ];
 
@@ -45,7 +45,7 @@ class SourceMapGenerator
         return json_encode($sourceMap, JSON_UNESCAPED_SLASHES);
     }
 
-    private function generateMappings(array $mappings): string
+    private function generateMappings(array $mappings, ?int $totalLines = null): string
     {
         $genLines   = [];
         $genColumns = [];
@@ -61,7 +61,7 @@ class SourceMapGenerator
         $lineSegments  = '';
         $lastGenLine   = 0;
         $lastGenCol    = 0;
-        $lastOrigLine  = 0;
+        $lastOrigLine  = 0; // 0-based indexing
         $lastOrigCol   = 0;
         $lastSourceIdx = 0;
 
@@ -74,28 +74,27 @@ class SourceMapGenerator
             $origCol   = $orig['column'];
             $sourceIdx = $mapping['sourceIndex'] ?? 0;
 
-            if ($genLine !== $lastGenLine) {
+            // Add empty segments for lines between lastGenLine + 1 and genLine - 1
+            while ($lastGenLine < $genLine) {
                 if ($lineSegments !== '') {
                     $result       .= $lineSegments . ';';
                     $lineSegments  = '';
+                } else {
+                    $result .= ';';
                 }
 
-                $lastGenCol    = 0;
-                $lastOrigLine  = 0;
-                $lastOrigCol   = 0;
-                $lastSourceIdx = 0;
-                $lastGenLine   = $genLine;
+                $lastGenLine++;
+                $lastGenCol = 0;
             }
 
             if ($lineSegments !== '') {
                 $lineSegments .= ',';
             }
 
-            $lineSegments
-                .= $this->encodeVLQ($genCol - $lastGenCol)
-                .  $this->encodeVLQ($sourceIdx - $lastSourceIdx)
-                .  $this->encodeVLQ($origLine - $lastOrigLine)
-                .  $this->encodeVLQ($origCol - $lastOrigCol);
+            $lineSegments .= $this->encodeVLQ($genCol - $lastGenCol)
+                . $this->encodeVLQ($sourceIdx - $lastSourceIdx)
+                . $this->encodeVLQ($origLine - $lastOrigLine)
+                . $this->encodeVLQ($origCol - $lastOrigCol);
 
             $lastGenCol    = $genCol;
             $lastOrigLine  = $origLine;
@@ -105,6 +104,14 @@ class SourceMapGenerator
 
         if ($lineSegments !== '') {
             $result .= $lineSegments;
+        }
+
+        // Add empty segments for remaining lines up to totalLines
+        if ($totalLines !== null) {
+            while ($lastGenLine < $totalLines - 1) {
+                $result .= ';';
+                $lastGenLine++;
+            }
         }
 
         return $result;

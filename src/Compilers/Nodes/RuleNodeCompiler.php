@@ -12,6 +12,7 @@ use DartSass\Parsers\Nodes\SelectorNode;
 
 use function explode;
 use function in_array;
+use function max;
 use function preg_match;
 use function rtrim;
 use function str_repeat;
@@ -42,6 +43,7 @@ class RuleNodeCompiler extends AbstractNodeCompiler
             : null;
 
         $selectorString = $this->evaluateInterpolationsInString($selectorString, $context);
+
         $selector = $context->nestingHandler->resolveSelector($selectorString, $parentSelector);
 
         $compileAstClosure = $context->engine->compileAst(...);
@@ -105,20 +107,25 @@ class RuleNodeCompiler extends AbstractNodeCompiler
             }
         }
 
-
-        if ($context->options['sourceMap']) {
-            $generatedPosition = $context->positionTracker->getCurrentPosition();
-            $context->mappings[] = [
-                'generated'   => $generatedPosition,
-                'original'    => ['line' => $node->line ?? 0, 'column' => $node->column ?? 0],
-                'sourceIndex' => 0,
-            ];
-        }
-
         $expression = $context->engine->evaluateExpression(...);
         $indent     = str_repeat('  ', $nestingLevel);
         $ruleStart  = "$indent$selector {\n";
         $ruleEnd    = "$indent}\n";
+
+        if ($context->options['sourceMap'] ?? false) {
+            $generatedPosition = $context->positionTracker->getCurrentPosition();
+
+            $originalPosition = [
+                'line'   => max(0, ($node->line ?? 1) - 1),
+                'column' => max(0, ($node->column ?? 1) - 1),
+            ];
+
+            $context->mappings[] = [
+                'generated'   => ['line' => $generatedPosition['line'] - 1, 'column' => $generatedPosition['column']],
+                'original'    => ['line' => $originalPosition['line'], 'column' => $originalPosition['column']],
+                'sourceIndex' => 0,
+            ];
+        }
 
         $context->positionTracker->updatePosition($ruleStart);
 
@@ -126,8 +133,7 @@ class RuleNodeCompiler extends AbstractNodeCompiler
             $node->declarations ?? [],
             $nestingLevel + 1,
             $selector,
-            $context->options,
-            $context->mappings,
+            $context,
             $compileAstClosure,
             $expression
         ) . $flowControlCss;
@@ -136,13 +142,13 @@ class RuleNodeCompiler extends AbstractNodeCompiler
         if (trim($combinedRuleCss) !== '') {
             $css .= $ruleStart;
             $css .= $combinedRuleCss;
-            $context->positionTracker->updatePosition($combinedRuleCss);
             $css .= $ruleEnd;
+
             $context->positionTracker->updatePosition($ruleEnd);
         }
 
         $css .= $otherNestedCss;
-        $context->positionTracker->updatePosition($otherNestedCss);
+
         $context->extendHandler->addDefinedSelector($selector);
         $context->variableHandler->exitScope();
 
@@ -198,12 +204,12 @@ class RuleNodeCompiler extends AbstractNodeCompiler
             }
         }
 
-        $indent = $context->engine->getIndent($nestingLevel);
+        $indent = str_repeat('  ', $nestingLevel);
 
         $css = "$indent@media $query {\n";
 
         if ($hasDirectContent) {
-            $bodyIndent = $context->engine->getIndent($nestingLevel + 1);
+            $bodyIndent = str_repeat('  ', $nestingLevel + 1);
 
             $css .= "$bodyIndent$parentSelector {\n";
             $css .= $includesCss;
@@ -211,8 +217,7 @@ class RuleNodeCompiler extends AbstractNodeCompiler
                 $declarations,
                 $nestingLevel + 2,
                 $parentSelector,
-                $context->options,
-                $context->mappings,
+                $context,
                 $context->engine->compileAst(...),
                 $context->engine->evaluateExpression(...)
             );

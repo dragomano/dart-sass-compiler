@@ -13,6 +13,7 @@ use DartSass\Utils\StringFormatter;
 use function current;
 use function in_array;
 use function key;
+use function max;
 use function str_repeat;
 use function strlen;
 
@@ -27,8 +28,7 @@ readonly class DeclarationCompiler
         array $declarations,
         int $nestingLevel,
         string $parentSelector,
-        array $options,
-        array &$mappings,
+        CompilerContext $context,
         Closure $compileAst,
         Closure $expression
     ): string {
@@ -37,7 +37,8 @@ readonly class DeclarationCompiler
         foreach ($declarations as $declaration) {
             if ($declaration instanceof AstNode) {
                 if ($declaration->type === 'comment') {
-                    $indent     = str_repeat('  ', $nestingLevel);
+                    $indent = str_repeat('  ', $nestingLevel);
+
                     $commentCss = StringFormatter::concatMultiple([$indent, $declaration->properties['value'], "\n"]);
 
                     $css .= $commentCss;
@@ -65,18 +66,20 @@ readonly class DeclarationCompiler
 
                 $this->positionTracker->updatePosition($declarationCss);
 
-                if (($options['sourceMap'] ?? false)) {
-                    $propertyGeneratedPosition = [
-                        'line'   => $generatedPosition['line'],
+                if ($context->options['sourceMap'] ?? false) {
+                    $generatedPosition = [
+                        'line'   => $generatedPosition['line'] - 1,
                         'column' => $generatedPosition['column'] + strlen($indent),
                     ];
 
-                    $originalLine   = $value->line ?? 0;
-                    $originalColumn = $this->positionTracker->calculateIndentation($originalLine);
+                    $originalPosition = [
+                        'line'   => max(0, ($value->properties['property_line'] ?? 1) - 1),
+                        'column' => max(0, ($value->properties['property_column'] ?? 1) - 1),
+                    ];
 
-                    $mappings[] = [
-                        'generated'   => $propertyGeneratedPosition,
-                        'original'    => ['line' => $originalLine, 'column' => $originalColumn],
+                    $context->mappings[] = [
+                        'generated'   => $generatedPosition,
+                        'original'    => $originalPosition,
                         'sourceIndex' => 0,
                     ];
                 }
