@@ -17,8 +17,8 @@ This file contains a performance comparison of SCSS compilation runs across thre
 
 | Compiler | Time (sec) | CSS Size (KB) | Memory (MB) |
 |------------|-------------|---------------|-------------|
-| bugo/dart-sass-compiler | 0.4410 | 299.76 | 0.29 |
-| bugo/sass-embedded-php | 0.6848 | 363.50 | 0.36 |
-| scssphp/scssphp | 0.8332 | 300.96 | 0.66 |
+| bugo/dart-sass-compiler | 0.3119 | 299.67 | 0.29 |
+| bugo/sass-embedded-php | 0.6157 | 363.38 | 0.36 |
+| scssphp/scssphp | 0.6348 | 300.86 | 0.66 |
 
 *Note: These results are approximate. Run `php benchmark.php` from the project root to see the actual results.*
