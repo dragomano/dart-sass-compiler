@@ -7,8 +7,8 @@ use DartSass\Compilers\CompilerEngineInterface;
 use DartSass\Exceptions\CompilationException;
 use DartSass\Handlers\MixinHandler;
 use DartSass\Handlers\VariableHandler;
-use DartSass\Modules\SassList;
 use DartSass\Parsers\Nodes\IdentifierNode;
+use DartSass\Values\SassList;
 use Tests\ReflectionAccessor;
 
 beforeEach(function () {
@@ -183,11 +183,11 @@ describe('MixinHandler', function () {
             );
 
             // Mock methods for include calls
-            $this->compilerEngine->shouldReceive('getContext')->andReturn($this->context)->atLeast(1);
-            $this->compilerEngine->shouldReceive('compileDeclarations')->andReturn('color: test;')->atLeast(1);
-            $this->variableHandler->shouldReceive('enterScope')->atLeast(1);
-            $this->variableHandler->shouldReceive('define')->atLeast(1);
-            $this->variableHandler->shouldReceive('exitScope')->atLeast(1);
+            $this->compilerEngine->shouldReceive('getContext')->andReturn($this->context)->atLeast();
+            $this->compilerEngine->shouldReceive('compileDeclarations')->andReturn('color: test;')->atLeast();
+            $this->variableHandler->shouldReceive('enterScope')->atLeast();
+            $this->variableHandler->shouldReceive('define')->atLeast();
+            $this->variableHandler->shouldReceive('exitScope')->atLeast();
 
             // Fill cache beyond limit (101 entries)
             for ($i = 0; $i < 101; $i++) {

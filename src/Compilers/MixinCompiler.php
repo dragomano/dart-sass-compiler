@@ -23,7 +23,7 @@ readonly class MixinCompiler
         IncludeNode $node,
         string $parentSelector,
         int $nestingLevel,
-        Closure $evaluateExpression
+        Closure $expression
     ): string {
         $includeName = $node->name;
 
@@ -37,11 +37,11 @@ readonly class MixinCompiler
                 $node->body ?? null,
                 $parentSelector,
                 $nestingLevel,
-                $evaluateExpression
+                $expression
             );
         }
 
-        $evaluatedArgs = array_map($evaluateExpression, $node->args ?? []);
+        $evaluatedArgs = array_map($expression, $node->args ?? []);
 
         try {
             return $this->context->mixinHandler->include(
@@ -64,7 +64,7 @@ readonly class MixinCompiler
                         $node->body ?? null,
                         $parentSelector,
                         $nestingLevel,
-                        $evaluateExpression
+                        $expression
                     );
                 } catch (CompilationException) {
                     continue;
@@ -82,9 +82,9 @@ readonly class MixinCompiler
         mixed $content,
         string $parentSelector,
         int $nestingLevel,
-        Closure $evaluateExpression
+        Closure $expression
     ): string {
-        $mixinData = $this->context->moduleHandler->getProperty($namespace, $mixinName, $evaluateExpression);
+        $mixinData = $this->context->moduleHandler->getProperty($namespace, $mixinName, $expression);
 
         if (! is_array($mixinData) || ! isset($mixinData['type']) || $mixinData['type'] !== 'mixin') {
             throw new CompilationException("Property $mixinName is not a mixin in module $namespace");
@@ -94,7 +94,7 @@ readonly class MixinCompiler
 
         $this->context->mixinHandler->define($tempName, $mixinData['args'], $mixinData['body']);
 
-        $evaluatedArgs = array_map($evaluateExpression, $args);
+        $evaluatedArgs = array_map($expression, $args);
 
         $css = $this->context->mixinHandler->include(
             $tempName,

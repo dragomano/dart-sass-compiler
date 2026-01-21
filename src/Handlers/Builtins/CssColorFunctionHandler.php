@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace DartSass\Handlers\Builtins;
 
 use DartSass\Handlers\SassModule;
-use DartSass\Modules\SassColor;
+use DartSass\Values\SassColor;
 
 use function is_array;
 

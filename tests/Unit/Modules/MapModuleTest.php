@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use DartSass\Modules\MapModule;
-use DartSass\Modules\SassList;
-use DartSass\Modules\SassMap;
+use DartSass\Values\SassList;
+use DartSass\Values\SassMap;
 
 beforeEach(function () {
     $this->mapModule = new MapModule();

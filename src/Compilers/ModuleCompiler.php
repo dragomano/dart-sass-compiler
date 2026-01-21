@@ -18,7 +18,7 @@ readonly class ModuleCompiler
         string $actualNamespace,
         ?string $namespace,
         int $nestingLevel,
-        Closure $evaluateExpression,
+        Closure $expression,
         Closure $compileAst
     ): string {
         $this->context->variableHandler->enterScope();
@@ -26,7 +26,7 @@ readonly class ModuleCompiler
         $moduleVars = $this->context->moduleHandler->getVariables($actualNamespace);
         foreach ($moduleVars as $name => $varNode) {
             if ($varNode instanceof VariableDeclarationNode) {
-                $value = $evaluateExpression($varNode->properties['value']);
+                $value = $expression($varNode->properties['value']);
                 $this->context->variableHandler->define($name, $value);
             }
         }
@@ -36,7 +36,7 @@ readonly class ModuleCompiler
         $this->context->variableHandler->exitScope();
 
         if ($namespace === '*') {
-            $this->defineGlobalVariablesFromModule($evaluateExpression);
+            $this->defineGlobalVariablesFromModule($expression);
         }
 
         return $css;
@@ -57,13 +57,13 @@ readonly class ModuleCompiler
         }
     }
 
-    private function defineGlobalVariablesFromModule(Closure $evaluateExpression): void
+    private function defineGlobalVariablesFromModule(Closure $expression): void
     {
         $globalVariables = $this->context->moduleHandler->getGlobalVariables();
 
         foreach ($globalVariables as $varName => $varValue) {
             if ($varValue instanceof VariableDeclarationNode) {
-                $evaluatedValue = $evaluateExpression($varValue->properties['value']);
+                $evaluatedValue = $expression($varValue->properties['value']);
 
                 $this->context->variableHandler->define($varName, $evaluatedValue, true);
             }

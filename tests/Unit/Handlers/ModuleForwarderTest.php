@@ -158,9 +158,9 @@ describe('ModuleForwarder', function () {
 
             $this->moduleLoader->shouldReceive('loadAst')->andReturn([$variableNode]);
 
-            $evaluateExpression = fn($expr) => 42;
+            $expression = fn($expr) => 42;
 
-            $result = $this->forwarder->forwardModule('test.scss', $evaluateExpression);
+            $result = $this->forwarder->forwardModule('test.scss', $expression);
 
             expect($result)->toHaveKey('variables')
                 ->and($result['variables'])->toHaveKey('$testVar');
@@ -177,9 +177,9 @@ describe('ModuleForwarder', function () {
 
             $this->moduleLoader->shouldReceive('loadAst')->andReturn([$variableNode]);
 
-            $evaluateExpression = fn($expr) => 42;
+            $expression = fn($expr) => 42;
 
-            $result = $this->forwarder->forwardModule('test.scss', $evaluateExpression, ['testVar' => 'configured']);
+            $result = $this->forwarder->forwardModule('test.scss', $expression, ['testVar' => 'configured']);
 
             expect($result['variables']['$testVar'])->toBe('configured');
         });

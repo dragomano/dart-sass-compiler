@@ -25,15 +25,15 @@ readonly class AtRuleStrategy implements RuleCompilationStrategy
         string $parentSelector,
         ...$params
     ): string {
-        $evaluateExpression  = $params[0] ?? null;
+        $expression  = $params[0] ?? null;
         $compileDeclarations = $params[1] ?? null;
         $compileAst          = $params[2] ?? null;
 
-        if (! $evaluateExpression || ! $compileDeclarations || ! $compileAst) {
+        if (! $expression || ! $compileDeclarations || ! $compileAst) {
             throw new InvalidArgumentException('Missing required parameters for at-rule compilation');
         }
 
-        $value = $evaluateExpression($node->properties['value'] ?? '');
+        $value = $expression($node->properties['value'] ?? '');
 
         $bodyNestingLevel = $currentNestingLevel + 1;
         $bodyDeclarations = $node->properties['body']['declarations'] ?? [];

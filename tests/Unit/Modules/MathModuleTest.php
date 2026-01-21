@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use DartSass\Exceptions\CompilationException;
 use DartSass\Modules\MathModule;
+use DartSass\Values\SassNumber;
 use Tests\ReflectionAccessor;
 
 beforeEach(function () {
@@ -16,29 +17,33 @@ describe('MathModule', function () {
         it('rounds up positive number', function () {
             $result = $this->mathModule->ceil([5.1]);
 
-            expect($result['value'])->toEqual(6.0)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(6.0)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('rounds up negative number', function () {
             $result = $this->mathModule->ceil([-5.9]);
 
-            expect($result['value'])->toEqual(-5.0)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(-5.0)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('rounds up number with unit', function () {
             $result = $this->mathModule->ceil([['value' => 5.7, 'unit' => 'px']]);
 
-            expect($result['value'])->toEqual(6.0)
-                ->and($result['unit'])->toEqual('px');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(6.0)
+                ->and($result->getUnit())->toEqual('px');
         });
 
         it('leaves integer unchanged', function () {
             $result = $this->mathModule->ceil([5]);
 
-            expect($result['value'])->toEqual(5.0)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(5.0)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('throws exception for wrong argument count', function () {
@@ -62,8 +67,9 @@ describe('MathModule', function () {
                 ['value' => 15, 'unit' => 'px'],
             ]);
 
-            expect($result['value'])->toEqual(10)
-                ->and($result['unit'])->toEqual('px');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(10)
+                ->and($result->getUnit())->toEqual('px');
         });
 
         it('clamps value below minimum', function () {
@@ -73,8 +79,9 @@ describe('MathModule', function () {
                 ['value' => 15, 'unit' => 'px'],
             ]);
 
-            expect($result['value'])->toEqual(10)
-                ->and($result['unit'])->toEqual('px');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(10)
+                ->and($result->getUnit())->toEqual('px');
         });
 
         it('clamps value above maximum', function () {
@@ -84,8 +91,9 @@ describe('MathModule', function () {
                 ['value' => 15, 'unit' => 'px'],
             ]);
 
-            expect($result['value'])->toEqual(15)
-                ->and($result['unit'])->toEqual('px');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(15)
+                ->and($result->getUnit())->toEqual('px');
         });
 
         it('returns CSS function for incompatible units', function () {
@@ -120,29 +128,33 @@ describe('MathModule', function () {
         it('rounds down positive number', function () {
             $result = $this->mathModule->floor([5.9]);
 
-            expect($result['value'])->toEqual(5.0)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(5.0)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('rounds down negative number', function () {
             $result = $this->mathModule->floor([-5.9]);
 
-            expect($result['value'])->toEqual(-6.0)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(-6.0)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('rounds down number with unit', function () {
             $result = $this->mathModule->floor([['value' => 5.7, 'unit' => 'px']]);
 
-            expect($result['value'])->toEqual(5.0)
-                ->and($result['unit'])->toEqual('px');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(5.0)
+                ->and($result->getUnit())->toEqual('px');
         });
 
         it('leaves integer unchanged', function () {
             $result = $this->mathModule->floor([5]);
 
-            expect($result['value'])->toEqual(5.0)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(5.0)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('throws exception for wrong argument count', function () {
@@ -162,8 +174,9 @@ describe('MathModule', function () {
         it('returns maximum of simple numbers', function () {
             $result = $this->mathModule->max([5, 3, 8, 1]);
 
-            expect($result['value'])->toEqual(8)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(8.0)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('returns maximum of numbers with same units', function () {
@@ -173,8 +186,9 @@ describe('MathModule', function () {
                 ['value' => 8, 'unit' => 'px'],
             ]);
 
-            expect($result['value'])->toEqual(10)
-                ->and($result['unit'])->toEqual('px');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(10.0)
+                ->and($result->getUnit())->toEqual('px');
         });
 
         it('returns maximum of mixed units as CSS function', function () {
@@ -205,8 +219,9 @@ describe('MathModule', function () {
         it('returns minimum of simple numbers', function () {
             $result = $this->mathModule->min([5, 3, 8, 1]);
 
-            expect($result['value'])->toEqual(1)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(1.0)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('returns minimum of numbers with same units', function () {
@@ -216,8 +231,9 @@ describe('MathModule', function () {
                 ['value' => 8, 'unit' => 'px'],
             ]);
 
-            expect($result['value'])->toEqual(5)
-                ->and($result['unit'])->toEqual('px');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(5.0)
+                ->and($result->getUnit())->toEqual('px');
         });
 
         it('returns minimum of mixed units as CSS function', function () {
@@ -235,8 +251,9 @@ describe('MathModule', function () {
         it('returns minimum when some values have no units', function () {
             $result = $this->mathModule->min([5, ['value' => 3, 'unit' => 'px']]);
 
-            expect($result['value'])->toEqual(3)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(3.0)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('returns CSS function for non-numeric arguments', function () {
@@ -255,22 +272,25 @@ describe('MathModule', function () {
         it('rounds number', function () {
             $result = $this->mathModule->round([5.7]);
 
-            expect($result['value'])->toEqual(6.0)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(6.0)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('rounds number with precision', function () {
             $result = $this->mathModule->round([5.678, ['value' => 2, 'unit' => '']]);
 
-            expect($result['value'])->toEqual(5.68)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(5.68)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('rounds number with precision unit ignored', function () {
             $result = $this->mathModule->round([5.678, ['value' => 1, 'unit' => 'px']]);
 
-            expect($result['value'])->toEqual(5.7)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(5.7)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('throws exception for wrong argument count', function () {
@@ -290,29 +310,33 @@ describe('MathModule', function () {
         it('returns absolute value for positive number', function () {
             $result = $this->mathModule->abs([5.5]);
 
-            expect($result['value'])->toEqual(5.5)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(5.5)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('returns absolute value for negative number', function () {
             $result = $this->mathModule->abs([-5.5]);
 
-            expect($result['value'])->toEqual(5.5)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(5.5)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('returns absolute value for number with unit', function () {
             $result = $this->mathModule->abs([['value' => -10, 'unit' => 'px']]);
 
-            expect($result['value'])->toEqual(10)
-                ->and($result['unit'])->toEqual('px');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(10)
+                ->and($result->getUnit())->toEqual('px');
         });
 
         it('returns absolute value for zero', function () {
             $result = $this->mathModule->abs([0]);
 
-            expect($result['value'])->toEqual(0)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(0)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('throws exception for wrong argument count', function () {
@@ -332,36 +356,41 @@ describe('MathModule', function () {
         it('returns hypotenuse for two positive numbers', function () {
             $result = $this->mathModule->hypot([3, 4]);
 
-            expect($result['value'])->toEqual(5.0)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(5.0)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('returns input for single argument', function () {
             $result = $this->mathModule->hypot([5]);
 
-            expect($result['value'])->toEqual(5.0)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(5.0)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('handles negative numbers correctly', function () {
             $result = $this->mathModule->hypot([-3, 4]);
 
-            expect($result['value'])->toEqual(5.0)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(5.0)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('preserves units for numbers with units', function () {
             $result = $this->mathModule->hypot([['value' => 3, 'unit' => 'px'], ['value' => 4, 'unit' => 'px']]);
 
-            expect($result['value'])->toEqual(5.0)
-                ->and($result['unit'])->toEqual('px');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(5.0)
+                ->and($result->getUnit())->toEqual('px');
         });
 
         it('handles zero values', function () {
             $result = $this->mathModule->hypot([0, 0]);
 
-            expect($result['value'])->toEqual(0.0)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(0.0)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('throws exception for arguments with different units', function () {
@@ -386,22 +415,25 @@ describe('MathModule', function () {
         it('calculates natural logarithm', function () {
             $result = $this->mathModule->log([10]);
 
-            expect($result['value'])->toEqual(2.302585092994046)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(2.302585092994046)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('calculates logarithm with base', function () {
             $result = $this->mathModule->log([10, 10]);
 
-            expect($result['value'])->toEqual(1.0)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(1.0)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('calculates logarithm of 1', function () {
             $result = $this->mathModule->log([1]);
 
-            expect($result['value'])->toEqual(0.0)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(0.0)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('throws exception for wrong argument count', function () {
@@ -448,15 +480,17 @@ describe('MathModule', function () {
         it('calculates power of numbers', function () {
             $result = $this->mathModule->pow([2, 3]);
 
-            expect($result['value'])->toEqual(8.0)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(8.0)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('calculates power with decimal numbers', function () {
             $result = $this->mathModule->pow([2.5, 2]);
 
-            expect($result['value'])->toEqual(6.25)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(6.25)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('throws exception for wrong argument count', function () {
@@ -487,22 +521,25 @@ describe('MathModule', function () {
         it('calculates square root of perfect squares', function () {
             $result = $this->mathModule->sqrt([16]);
 
-            expect($result['value'])->toEqual(4.0)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(4.0)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('calculates square root of decimal numbers', function () {
             $result = $this->mathModule->sqrt([2]);
 
-            expect($result['value'])->toEqual(1.4142135623730951)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(1.4142135623730951)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('calculates square root of zero', function () {
             $result = $this->mathModule->sqrt([0]);
 
-            expect($result['value'])->toEqual(0.0)
-                ->and($result['unit'])->toEqual('');
+            expect($result)->toBeInstanceOf(SassNumber::class)
+                ->and($result->getValue())->toEqual(0.0)
+                ->and($result->getUnit())->toBeNull();
         });
 
         it('throws exception for wrong argument count', function () {
@@ -533,22 +570,25 @@ describe('MathModule', function () {
             it('calculates cosine of zero', function () {
                 $result = $this->mathModule->cos([0]);
 
-                expect($result['value'])->toEqual(1.0)
-                    ->and($result['unit'])->toEqual('');
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toEqual(1.0)
+                    ->and($result->getUnit())->toBeNull();
             });
 
             it('calculates cosine with radians', function () {
                 $result = $this->mathModule->cos([['value' => pi(), 'unit' => 'rad']]);
 
-                expect($result['value'])->toBeCloseTo(-1.0, 10)
-                    ->and($result['unit'])->toBe('');
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toBeCloseTo(-1.0, 10)
+                    ->and($result->getUnit())->toBeNull();
             });
 
             it('calculates cosine with degrees', function () {
                 $result = $this->mathModule->cos([['value' => 180, 'unit' => 'deg']]);
 
-                expect($result['value'])->toBeCloseTo(-1.0, 10)
-                    ->and($result['unit'])->toBe('');
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toBeCloseTo(-1.0, 10)
+                    ->and($result->getUnit())->toBeNull();
             });
 
             it('throws exception for wrong argument count', function () {
@@ -573,21 +613,25 @@ describe('MathModule', function () {
             it('calculates sine of zero', function () {
                 $result = $this->mathModule->sin([0]);
 
-                expect($result)->toEqual(['value' => 0.0, 'unit' => '']);
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toEqual(0.0)
+                    ->and($result->getUnit())->toBeNull();
             });
 
             it('calculates sine with radians', function () {
                 $result = $this->mathModule->sin([['value' => pi() / 2, 'unit' => 'rad']]);
 
-                expect($result['value'])->toBeCloseTo(1.0, 10)
-                    ->and($result['unit'])->toBe('');
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toBeCloseTo(1.0, 10)
+                    ->and($result->getUnit())->toBeNull();
             });
 
             it('calculates sine with degrees', function () {
                 $result = $this->mathModule->sin([['value' => 90, 'unit' => 'deg']]);
 
-                expect($result['value'])->toBeCloseTo(1.0, 10)
-                    ->and($result['unit'])->toBe('');
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toBeCloseTo(1.0, 10)
+                    ->and($result->getUnit())->toBeNull();
             });
 
             it('throws exception for wrong argument count', function () {
@@ -612,21 +656,25 @@ describe('MathModule', function () {
             it('calculates tangent of zero', function () {
                 $result = $this->mathModule->tan([0]);
 
-                expect($result)->toEqual(['value' => 0.0, 'unit' => '']);
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toEqual(0.0)
+                    ->and($result->getUnit())->toBeNull();
             });
 
             it('calculates tangent with radians', function () {
                 $result = $this->mathModule->tan([['value' => pi() / 4, 'unit' => 'rad']]);
 
-                expect($result['value'])->toBeCloseTo(1.0, 10)
-                    ->and($result['unit'])->toBe('');
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toBeCloseTo(1.0, 10)
+                    ->and($result->getUnit())->toBeNull();
             });
 
             it('calculates tangent with degrees', function () {
                 $result = $this->mathModule->tan([['value' => 45, 'unit' => 'deg']]);
 
-                expect($result['value'])->toBeCloseTo(1.0, 10)
-                    ->and($result['unit'])->toBe('');
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toBeCloseTo(1.0, 10)
+                    ->and($result->getUnit())->toBeNull();
             });
 
             it('throws exception for wrong argument count', function () {
@@ -653,14 +701,17 @@ describe('MathModule', function () {
             it('calculates arc cosine', function () {
                 $result = $this->mathModule->acos([0]);
 
-                expect($result['value'])->toBeCloseTo(90, 10)
-                    ->and($result['unit'])->toBe('deg');
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toBeCloseTo(90, 10)
+                    ->and($result->getUnit())->toBe('deg');
             });
 
             it('calculates arc cosine of one', function () {
                 $result = $this->mathModule->acos([1]);
 
-                expect($result)->toEqual(['value' => 0.0, 'unit' => 'deg']);
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toEqual(0.0)
+                    ->and($result->getUnit())->toEqual('deg');
             });
 
             it('throws exception for wrong argument count', function () {
@@ -692,14 +743,17 @@ describe('MathModule', function () {
             it('calculates arc sine', function () {
                 $result = $this->mathModule->asin([0]);
 
-                expect($result)->toEqual(['value' => 0.0, 'unit' => 'deg']);
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toEqual(0.0)
+                    ->and($result->getUnit())->toEqual('deg');
             });
 
             it('calculates arc sine of one', function () {
                 $result = $this->mathModule->asin([1]);
 
-                expect($result['value'])->toBeCloseTo(90, 10)
-                    ->and($result['unit'])->toBe('deg');
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toBeCloseTo(90, 10)
+                    ->and($result->getUnit())->toBe('deg');
             });
 
             it('throws exception for wrong argument count', function () {
@@ -731,14 +785,17 @@ describe('MathModule', function () {
             it('calculates arc tangent', function () {
                 $result = $this->mathModule->atan([0]);
 
-                expect($result)->toEqual(['value' => 0.0, 'unit' => 'deg']);
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toEqual(0.0)
+                    ->and($result->getUnit())->toEqual('deg');
             });
 
             it('calculates arc tangent of one', function () {
                 $result = $this->mathModule->atan([1]);
 
-                expect($result['value'])->toBeCloseTo(45, 10)
-                    ->and($result['unit'])->toBe('deg');
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toBeCloseTo(45, 10)
+                    ->and($result->getUnit())->toBe('deg');
             });
 
             it('throws exception for wrong argument count', function () {
@@ -763,14 +820,17 @@ describe('MathModule', function () {
             it('calculates arc tangent of two variables', function () {
                 $result = $this->mathModule->atan2([1, 1]);
 
-                expect($result['value'])->toBeCloseTo(45, 10)
-                    ->and($result['unit'])->toBe('deg');
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toBeCloseTo(45, 10)
+                    ->and($result->getUnit())->toBe('deg');
             });
 
             it('calculates arc tangent with zero y', function () {
                 $result = $this->mathModule->atan2([0, 1]);
 
-                expect($result)->toEqual(['value' => 0.0, 'unit' => 'deg']);
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toEqual(0.0)
+                    ->and($result->getUnit())->toEqual('deg');
             });
 
             it('throws exception for wrong argument count', function () {
@@ -906,7 +966,9 @@ describe('MathModule', function () {
             it('divides two numbers', function () {
                 $result = $this->mathModule->div([10, 2]);
 
-                expect($result)->toEqual(['value' => 5.0, 'unit' => '']);
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toEqual(5.0)
+                    ->and($result->getUnit())->toBeNull();
             });
 
             it('divides numbers with same units', function () {
@@ -915,7 +977,9 @@ describe('MathModule', function () {
                     ['value' => 2, 'unit' => 'px'],
                 ]);
 
-                expect($result)->toEqual(['value' => 5.0, 'unit' => '']);
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toEqual(5.0)
+                    ->and($result->getUnit())->toBeNull();
             });
 
             it('divides numbers with different units', function () {
@@ -924,7 +988,9 @@ describe('MathModule', function () {
                     ['value' => 2, 'unit' => 'em'],
                 ]);
 
-                expect($result)->toEqual(['value' => 5.0, 'unit' => 'px/em']);
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toEqual(5.0)
+                    ->and($result->getUnit())->toEqual('px/em');
             });
 
             it('divides unitless number by number with unit', function () {
@@ -933,7 +999,9 @@ describe('MathModule', function () {
                     ['value' => 2, 'unit' => 'px'],
                 ]);
 
-                expect($result)->toEqual(['value' => 5.0, 'unit' => '/px']);
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toEqual(5.0)
+                    ->and($result->getUnit())->toEqual('/px');
             });
 
             it('divides number with unit by unitless number', function () {
@@ -942,7 +1010,9 @@ describe('MathModule', function () {
                     2,
                 ]);
 
-                expect($result)->toEqual(['value' => 5.0, 'unit' => 'px']);
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toEqual(5.0)
+                    ->and($result->getUnit())->toEqual('px');
             });
 
             it('throws exception for wrong argument count', function () {
@@ -971,19 +1041,25 @@ describe('MathModule', function () {
             it('converts decimal to percentage', function () {
                 $result = $this->mathModule->percentage([0.5]);
 
-                expect($result)->toEqual(['value' => 50.0, 'unit' => '%']);
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toEqual(50.0)
+                    ->and($result->getUnit())->toEqual('%');
             });
 
             it('converts zero to percentage', function () {
                 $result = $this->mathModule->percentage([0]);
 
-                expect($result)->toEqual(['value' => 0.0, 'unit' => '%']);
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toEqual(0.0)
+                    ->and($result->getUnit())->toEqual('%');
             });
 
             it('converts whole number to percentage', function () {
                 $result = $this->mathModule->percentage([2]);
 
-                expect($result)->toEqual(['value' => 200.0, 'unit' => '%']);
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getValue())->toEqual(200.0)
+                    ->and($result->getUnit())->toEqual('%');
             });
 
             it('throws exception for wrong argument count', function () {
@@ -1008,20 +1084,19 @@ describe('MathModule', function () {
             it('generates random number with no arguments', function () {
                 $result = $this->mathModule->random([]);
 
-                expect($result)->toBeArray()
-                    ->and($result['unit'])->toBe('')
-                    ->and($result['value'])->toBeGreaterThanOrEqual(0)
-                    ->and($result['value'])->toBeLessThan(1);
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getUnit())->toBeNull()
+                    ->and($result->getValue())->toBeGreaterThanOrEqual(0)
+                    ->and($result->getValue())->toBeLessThan(1);
             });
 
             it('generates random number with limit', function () {
                 $result = $this->mathModule->random([10]);
 
-                expect($result)->toBeArray()
-                    ->and($result['unit'])->toBe('')
-                    ->and($result['value'])->toBeInt()
-                    ->and($result['value'])->toBeGreaterThanOrEqual(0)
-                    ->and($result['value'])->toBeLessThan(10);
+                expect($result)->toBeInstanceOf(SassNumber::class)
+                    ->and($result->getUnit())->toBeNull()
+                    ->and($result->getValue())->toBeGreaterThanOrEqual(0)
+                    ->and($result->getValue())->toBeLessThan(10);
             });
 
             it('throws exception for too many arguments', function () {

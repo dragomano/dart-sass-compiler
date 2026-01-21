@@ -19,7 +19,7 @@ class FunctionHandler
         private readonly FunctionRouter $router,
         private readonly CustomFunctionHandler $customFunctionHandler,
         private readonly UserFunctionEvaluator $userFunctionEvaluator,
-        private $evaluateExpression,
+        private $expression,
         private array $userDefinedFunctions = []
     ) {}
 
@@ -77,7 +77,7 @@ class FunctionHandler
         if (isset($this->userDefinedFunctions[$originalName])) {
             $func = $this->userDefinedFunctions[$originalName];
 
-            return $this->userFunctionEvaluator->evaluate($func, $args, $this->evaluateExpression);
+            return $this->userFunctionEvaluator->evaluate($func, $args, $this->expression);
         }
 
         return $this->router->route($name, $args);

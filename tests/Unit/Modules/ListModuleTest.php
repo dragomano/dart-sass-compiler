@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 use DartSass\Exceptions\CompilationException;
 use DartSass\Modules\ListModule;
-use DartSass\Modules\SassList;
 use DartSass\Parsers\Nodes\ListNode;
+use DartSass\Values\SassList;
 use Tests\ReflectionAccessor;
 
 beforeEach(function () {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DartSass\Modules;
 
 use DartSass\Exceptions\CompilationException;
+use DartSass\Utils\StringFormatter;
 use Random\RandomException;
 
 use function array_map;
@@ -55,7 +56,7 @@ class StringModule
             return $string;
         }
 
-        return '"' . $unquoted . '"';
+        return StringFormatter::forceQuoteString($unquoted);
     }
 
     public function index(array $args): ?int
@@ -127,7 +128,7 @@ class StringModule
         $before = mb_substr($string, 0, $pos, 'UTF-8');
         $after  = mb_substr($string, $pos, null, 'UTF-8');
 
-        return '"' . $before . $insert . $after . '"';
+        return StringFormatter::forceQuoteString($before . $insert . $after);
     }
 
     public function length(array $args): int
@@ -201,7 +202,7 @@ class StringModule
             $result = mb_substr($string, $start, $end - $start, 'UTF-8');
         }
 
-        return '"' . $result . '"';
+        return StringFormatter::forceQuoteString($result);
     }
 
     public function split(array $args): array
@@ -248,7 +249,7 @@ class StringModule
             }
         }
 
-        return array_map(fn($part): string => '"' . $part . '"', $result);
+        return array_map(StringFormatter::forceQuoteString(...), $result);
     }
 
     public function toUpperCase(array $args): string
@@ -263,7 +264,7 @@ class StringModule
             throw new CompilationException('toUpperCase() argument must be a string');
         }
 
-        return '"' . strtoupper($this->unquoteString($string)) . '"';
+        return StringFormatter::forceQuoteString(strtoupper($this->unquoteString($string)));
     }
 
     public function toLowerCase(array $args): string
@@ -278,7 +279,7 @@ class StringModule
             throw new CompilationException('toLowerCase() argument must be a string');
         }
 
-        return '"' . strtolower($this->unquoteString($string)) . '"';
+        return StringFormatter::forceQuoteString(strtolower($this->unquoteString($string)));
     }
 
     public function uniqueId(array $args): string
@@ -302,7 +303,7 @@ class StringModule
             throw new CompilationException($randomException->getMessage());
         }
 
-        return '"' . $id . '"';
+        return StringFormatter::forceQuoteString($id);
     }
 
     public function unquote(array $args): ?string

@@ -78,7 +78,7 @@ class ModuleHandler
 
     public function forwardModule(
         string $path,
-        callable $evaluateExpression,
+        callable $expression,
         ?string $namespace = null,
         array $config = [],
         array $hide = [],
@@ -92,7 +92,7 @@ class ModuleHandler
 
         $this->registerModule($path, $namespace);
 
-        $result = $this->forwarder->forwardModule($path, $evaluateExpression, $config, $hide, $show);
+        $result = $this->forwarder->forwardModule($path, $expression, $config, $hide, $show);
 
         foreach ($result['variables'] as $name => $value) {
             $this->forwardedProperties[$namespace][$name] = $value;
@@ -109,16 +109,13 @@ class ModuleHandler
         return $result;
     }
 
-    public function getProperty(
-        string $namespace,
-        string $name,
-        ?callable $evaluateExpression = null
-    ): mixed {
+    public function getProperty(string $namespace, string $name, ?callable $expression = null): mixed
+    {
         if (isset($this->forwardedProperties[$namespace][$name])) {
             $property = $this->forwardedProperties[$namespace][$name];
 
-            if ($property instanceof VariableDeclarationNode && $evaluateExpression) {
-                return $evaluateExpression($property->properties['value']);
+            if ($property instanceof VariableDeclarationNode && $expression) {
+                return $expression($property->properties['value']);
             }
 
             return $property;

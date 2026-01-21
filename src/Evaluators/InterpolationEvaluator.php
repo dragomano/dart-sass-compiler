@@ -7,7 +7,7 @@ namespace DartSass\Evaluators;
 use Closure;
 use DartSass\Parsers\ParserFactory;
 use DartSass\Parsers\Syntax;
-use DartSass\Utils\ValueFormatter;
+use DartSass\Utils\ResultFormatterInterface;
 use Exception;
 
 use function is_string;
@@ -18,9 +18,12 @@ use function trim;
 
 readonly class InterpolationEvaluator
 {
-    public function __construct(private ValueFormatter $valueFormatter, private ParserFactory $parserFactory) {}
+    public function __construct(
+        private ResultFormatterInterface $resultFormatter,
+        private ParserFactory $parserFactory
+    ) {}
 
-    public function evaluate(string $string, Closure $evaluateExpression): string
+    public function evaluate(string $string, Closure $expression): string
     {
         if (! str_contains($string, '$') && ! str_contains($string, '#{')) {
             return $string;
@@ -30,31 +33,31 @@ readonly class InterpolationEvaluator
             $old = $string;
 
             // Process #{...} interpolations
-            $string = $this->processHashInterpolations($string, $evaluateExpression);
+            $string = $this->processHashInterpolations($string, $expression);
 
-            $string = $this->processInlineVariables($string, $evaluateExpression);
+            $string = $this->processInlineVariables($string, $expression);
 
         } while ($string !== $old);
 
         return $string;
     }
 
-    private function processHashInterpolations(string $string, Closure $evaluateExpression): string
+    private function processHashInterpolations(string $string, Closure $expression): string
     {
-        return preg_replace_callback('/#\{([^}]+)}/', function ($matches) use ($evaluateExpression) {
+        return preg_replace_callback('/#\{([^}]+)}/', function ($matches) use ($expression) {
             $expr = $matches[1];
             $expr = trim($expr, '"\' ');
 
             // Handle nested interpolations
             if (str_contains($expr, '#{')) {
-                $expr = $this->evaluate($expr, $evaluateExpression);
+                $expr = $this->evaluate($expr, $expression);
             }
 
             // Evaluate expression
             try {
                 $parser = $this->parserFactory->create($expr, Syntax::SCSS);
                 $ast    = $parser->parseExpression();
-                $value  = $evaluateExpression($ast);
+                $value  = $expression($ast);
 
                 return $this->unwrapQuotedValue($value);
             } catch (Exception) {
@@ -63,21 +66,21 @@ readonly class InterpolationEvaluator
         }, $string);
     }
 
-    private function processInlineVariables(string $string, Closure $evaluateExpression): string
+    private function processInlineVariables(string $string, Closure $expression): string
     {
-        return preg_replace_callback('/\$[a-zA-Z_-][a-zA-Z0-9_-]*/', function ($matches) use ($evaluateExpression) {
+        return preg_replace_callback('/\$[a-zA-Z_-][a-zA-Z0-9_-]*/', function ($matches) use ($expression) {
             $varName = $matches[0];
 
             try {
-                $value = $evaluateExpression($varName);
+                $value = $expression($varName);
                 $value = $this->unwrapQuotedValue($value);
 
                 // Handle nested interpolations in the value
                 if (is_string($value) && str_contains($value, '#{')) {
-                    $value = $this->evaluate($value, $evaluateExpression);
+                    $value = $this->evaluate($value, $expression);
                 }
 
-                return $this->valueFormatter->format($value);
+                return $this->resultFormatter->format($value);
             } catch (Exception) {
                 return $varName;
             }

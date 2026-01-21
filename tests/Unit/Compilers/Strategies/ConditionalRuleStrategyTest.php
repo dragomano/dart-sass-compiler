@@ -7,9 +7,15 @@ use DartSass\Compilers\Strategies\MediaRuleStrategy;
 use DartSass\Parsers\Nodes\IdentifierNode;
 use DartSass\Parsers\Nodes\MediaNode;
 use DartSass\Parsers\Nodes\RuleNode;
-use DartSass\Utils\ValueFormatter;
+use DartSass\Utils\ResultFormatterInterface;
 
 describe('ConditionalRuleStrategy', function () {
+    beforeEach(function () {
+        $this->resultFormatter = mock(ResultFormatterInterface::class);
+        $this->context = new CompilerContext([]);
+        $this->context->resultFormatter = $this->resultFormatter;
+    });
+
     it('throws InvalidArgumentException when required parameters are missing', function () {
         $strategy = new MediaRuleStrategy();
 
@@ -18,11 +24,7 @@ describe('ConditionalRuleStrategy', function () {
             'nested'       => [],
         ], 1);
 
-        $valueFormatter = mock(ValueFormatter::class);
-        $context = new CompilerContext([]);
-        $context->valueFormatter = $valueFormatter;
-
-        expect(fn() => $strategy->compile($node, $context, 0, ''))
+        expect(fn() => $strategy->compile($node, $this->context, 0, ''))
             ->toThrow(
                 InvalidArgumentException::class,
                 'Missing required parameters for media rule compilation'
@@ -42,15 +44,11 @@ describe('ConditionalRuleStrategy', function () {
             'nested' => [],
         ], 1);
 
-        $valueFormatter = mock(ValueFormatter::class);
-        $valueFormatter->shouldReceive('format')->andReturn('screen');
-
-        $context = new CompilerContext([]);
-        $context->valueFormatter = $valueFormatter;
+        $this->resultFormatter->shouldReceive('format')->andReturn('screen');
 
         $result = $strategy->compile(
             $node,
-            $context,
+            $this->context,
             0,
             '',
             fn($query) => $query,
@@ -71,15 +69,11 @@ describe('ConditionalRuleStrategy', function () {
             'nested'       => [$nestedRule],
         ], 1);
 
-        $valueFormatter = mock(ValueFormatter::class);
-        $valueFormatter->shouldReceive('format')->andReturn('screen');
-
-        $context = new CompilerContext([]);
-        $context->valueFormatter = $valueFormatter;
+        $this->resultFormatter->shouldReceive('format')->andReturn('screen');
 
         $result = $strategy->compile(
             $node,
-            $context,
+            $this->context,
             0,
             '',
             fn($query) => $query,

@@ -5,16 +5,15 @@ declare(strict_types=1);
 namespace DartSass\Handlers\Builtins;
 
 use DartSass\Handlers\SassModule;
+use DartSass\Utils\ValueComparator;
 
 use function count;
-use function is_string;
-use function strtolower;
 
 class IfFunctionHandler extends BaseModuleHandler implements LazyEvaluationInterface
 {
     protected const GLOBAL_FUNCTIONS = ['if'];
 
-    public function __construct(private $evaluateExpression) {}
+    public function __construct(private $expression) {}
 
     public function requiresRawResult(string $functionName): bool
     {
@@ -35,9 +34,9 @@ class IfFunctionHandler extends BaseModuleHandler implements LazyEvaluationInter
             return null;
         }
 
-        $conditionResult = ($this->evaluateExpression)($condition);
+        $conditionResult = ($this->expression)($condition);
 
-        $isTruthy = $this->isTruthy($conditionResult);
+        $isTruthy = ValueComparator::isTruthy($conditionResult);
 
         return $isTruthy ? $trueValue : $falseValue;
     }
@@ -45,18 +44,5 @@ class IfFunctionHandler extends BaseModuleHandler implements LazyEvaluationInter
     public function getModuleNamespace(): SassModule
     {
         return SassModule::CSS;
-    }
-
-    private function isTruthy(mixed $value): bool
-    {
-        if ($value === null || $value === false) {
-            return false;
-        }
-
-        if (is_string($value) && strtolower($value) === 'null') {
-            return false;
-        }
-
-        return true;
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DartSass\Modules;
 
 use DartSass\Exceptions\CompilationException;
+use DartSass\Values\SassNumber;
 
 use function abs;
 use function acos;
@@ -35,7 +36,7 @@ use const M_PI;
 
 class MathModule
 {
-    public function ceil(array $args): SassMath
+    public function ceil(array $args): SassNumber
     {
         if (count($args) !== 1) {
             throw new CompilationException('ceil() requires exactly one argument');
@@ -47,10 +48,10 @@ class MathModule
             throw new CompilationException('ceil() argument must be a number');
         }
 
-        return new SassMath(ceil($val['value']), $val['unit']);
+        return new SassNumber(ceil($val['value']), $val['unit']);
     }
 
-    public function clamp(array $args): SassMath|array
+    public function clamp(array $args): SassNumber|array
     {
         if (count($args) !== 3) {
             throw new CompilationException('clamp() requires exactly three arguments');
@@ -72,14 +73,14 @@ class MathModule
             if ($v1['unit'] === $v2['unit'] && $v2['unit'] === $v3['unit']) {
                 $clamped = min(max($val1, $val2), $val3);
 
-                return new SassMath($clamped, $v1['unit']);
+                return new SassNumber($clamped, $v1['unit']);
             }
         }
 
         return ['css', $args];
     }
 
-    public function floor(array $args): SassMath
+    public function floor(array $args): SassNumber
     {
         if (count($args) !== 1) {
             throw new CompilationException('floor() requires exactly one argument');
@@ -91,20 +92,20 @@ class MathModule
             throw new CompilationException('floor() argument must be a number');
         }
 
-        return new SassMath(floor($val['value']), $val['unit']);
+        return new SassNumber(floor($val['value']), $val['unit']);
     }
 
-    public function max(array $args): SassMath|array
+    public function max(array $args): SassNumber|array
     {
         return $this->handleMinMax($args, 'max');
     }
 
-    public function min(array $args): SassMath|array
+    public function min(array $args): SassNumber|array
     {
         return $this->handleMinMax($args, 'min');
     }
 
-    public function round(array $args): SassMath
+    public function round(array $args): SassNumber
     {
         if (count($args) < 1 || count($args) > 2) {
             throw new CompilationException('round() requires one or two arguments');
@@ -124,10 +125,10 @@ class MathModule
             }
         }
 
-        return new SassMath(round($val['value'], $precision), $val['unit']);
+        return new SassNumber(round($val['value'], $precision), $val['unit']);
     }
 
-    public function abs(array $args): SassMath
+    public function abs(array $args): SassNumber
     {
         if (count($args) !== 1) {
             throw new CompilationException('abs() requires exactly one argument');
@@ -139,10 +140,10 @@ class MathModule
             throw new CompilationException('abs() argument must be a number');
         }
 
-        return new SassMath(abs($val['value']), $val['unit']);
+        return new SassNumber(abs($val['value']), $val['unit']);
     }
 
-    public function hypot(array $args): SassMath
+    public function hypot(array $args): SassNumber
     {
         if (empty($args)) {
             throw new CompilationException('hypot() requires at least one argument');
@@ -166,10 +167,10 @@ class MathModule
             }
         }
 
-        return new SassMath(sqrt($sumOfSquares), $unit);
+        return new SassNumber(sqrt($sumOfSquares), $unit);
     }
 
-    public function log(array $args): SassMath
+    public function log(array $args): SassNumber
     {
         if (empty($args) || count($args) > 2) {
             throw new CompilationException('log() requires one or two arguments');
@@ -206,10 +207,10 @@ class MathModule
             throw new CompilationException('log() base must be greater than zero and not equal to one');
         }
 
-        return new SassMath(log($number['value'], $base), '');
+        return new SassNumber(log($number['value'], $base), '');
     }
 
-    public function pow(array $args): SassMath
+    public function pow(array $args): SassNumber
     {
         if (count($args) !== 2) {
             throw new CompilationException('pow() requires exactly two arguments');
@@ -230,10 +231,10 @@ class MathModule
             throw new CompilationException('pow() arguments must be unitless');
         }
 
-        return new SassMath($base['value'] ** $exponent['value'], '');
+        return new SassNumber($base['value'] ** $exponent['value'], '');
     }
 
-    public function sqrt(array $args): SassMath
+    public function sqrt(array $args): SassNumber
     {
         if (count($args) !== 1) {
             throw new CompilationException('sqrt() requires exactly one argument');
@@ -252,10 +253,10 @@ class MathModule
             throw new CompilationException('sqrt() argument must be non-negative');
         }
 
-        return new SassMath(sqrt($val['value']), '');
+        return new SassNumber(sqrt($val['value']), '');
     }
 
-    public function cos(array $args): SassMath
+    public function cos(array $args): SassNumber
     {
         if (count($args) !== 1) {
             throw new CompilationException('cos() requires exactly one argument');
@@ -273,10 +274,10 @@ class MathModule
             $value = deg2rad($value);
         }
 
-        return new SassMath(cos($value), '');
+        return new SassNumber(cos($value), null);
     }
 
-    public function sin(array $args): array
+    public function sin(array $args): SassNumber
     {
         if (count($args) !== 1) {
             throw new CompilationException('sin() requires exactly one argument');
@@ -294,10 +295,10 @@ class MathModule
             $value = deg2rad($value);
         }
 
-        return ['value' => sin($value), 'unit' => ''];
+        return new SassNumber(sin($value), null);
     }
 
-    public function tan(array $args): array
+    public function tan(array $args): SassNumber
     {
         if (count($args) !== 1) {
             throw new CompilationException('tan() requires exactly one argument');
@@ -315,10 +316,10 @@ class MathModule
             $value = deg2rad($value);
         }
 
-        return ['value' => tan($value), 'unit' => ''];
+        return new SassNumber(tan($value), null);
     }
 
-    public function acos(array $args): array
+    public function acos(array $args): SassNumber
     {
         if (count($args) !== 1) {
             throw new CompilationException('acos() requires exactly one argument');
@@ -337,10 +338,10 @@ class MathModule
             throw new CompilationException('acos() argument must be between -1 and 1');
         }
 
-        return ['value' => acos($val['value']) * 180 / M_PI, 'unit' => 'deg'];
+        return new SassNumber(acos($val['value']) * 180 / M_PI, 'deg');
     }
 
-    public function asin(array $args): array
+    public function asin(array $args): SassNumber
     {
         if (count($args) !== 1) {
             throw new CompilationException('asin() requires exactly one argument');
@@ -359,10 +360,10 @@ class MathModule
             throw new CompilationException('asin() argument must be between -1 and 1');
         }
 
-        return ['value' => asin($val['value']) * 180 / M_PI, 'unit' => 'deg'];
+        return new SassNumber(asin($val['value']) * 180 / M_PI, 'deg');
     }
 
-    public function atan(array $args): array
+    public function atan(array $args): SassNumber
     {
         if (count($args) !== 1) {
             throw new CompilationException('atan() requires exactly one argument');
@@ -377,10 +378,10 @@ class MathModule
             throw new CompilationException('atan() argument must be unitless');
         }
 
-        return ['value' => atan($val['value']) * 180 / M_PI, 'unit' => 'deg'];
+        return new SassNumber(atan($val['value']) * 180 / M_PI, 'deg');
     }
 
-    public function atan2(array $args): array
+    public function atan2(array $args): SassNumber
     {
         if (count($args) !== 2) {
             throw new CompilationException('atan2() requires exactly two arguments');
@@ -401,7 +402,7 @@ class MathModule
             throw new CompilationException('atan2() arguments must be unitless');
         }
 
-        return ['value' => atan2($y['value'], $x['value']) * 180 / M_PI, 'unit' => 'deg'];
+        return new SassNumber(atan2($y['value'], $x['value']) * 180 / M_PI, 'deg');
     }
 
     public function compatible(array $args): array
@@ -450,7 +451,7 @@ class MathModule
         return ['value' => '"' . $val['unit'] . '"', 'unit' => ''];
     }
 
-    public function div(array $args): array
+    public function div(array $args): SassNumber
     {
         if (count($args) !== 2) {
             throw new CompilationException('div() requires exactly two arguments');
@@ -483,10 +484,10 @@ class MathModule
             $resultUnit = '/' . $divisor['unit'];
         }
 
-        return ['value' => $dividend['value'] / $divisor['value'], 'unit' => $resultUnit];
+        return new SassNumber($dividend['value'] / $divisor['value'], $resultUnit);
     }
 
-    public function percentage(array $args): array
+    public function percentage(array $args): SassNumber
     {
         if (count($args) !== 1) {
             throw new CompilationException('percentage() requires exactly one argument');
@@ -501,10 +502,10 @@ class MathModule
             throw new CompilationException('percentage() argument must be unitless');
         }
 
-        return ['value' => $val['value'] * 100, 'unit' => '%'];
+        return new SassNumber($val['value'] * 100, '%');
     }
 
-    public function random(array $args): array
+    public function random(array $args): SassNumber
     {
         if (count($args) > 1) {
             throw new CompilationException('random() requires zero or one argument');
@@ -512,7 +513,7 @@ class MathModule
 
         // If no arguments, return a decimal between 0 and 1
         if (empty($args)) {
-            return ['value' => mt_rand() / mt_getrandmax(), 'unit' => ''];
+            return new SassNumber(mt_rand() / mt_getrandmax(), null);
         }
 
         $val = $this->normalize($args[0]);
@@ -529,13 +530,17 @@ class MathModule
             throw new CompilationException('random() argument must be greater than zero');
         }
 
-        return ['value' => mt_rand(0, $limit - 1), 'unit' => ''];
+        return new SassNumber(mt_rand(0, $limit - 1), null);
     }
 
     private function normalize(mixed $item): ?array
     {
         if (is_numeric($item)) {
             return ['value' => (float) $item, 'unit' => ''];
+        }
+
+        if ($item instanceof SassNumber) {
+            return ['value' => $item->getValue(), 'unit' => $item->getUnit() ?? ''];
         }
 
         if (is_array($item) && isset($item['value'])) {
@@ -558,7 +563,7 @@ class MathModule
         return false;
     }
 
-    private function handleMinMax(array $args, string $type): SassMath|array
+    private function handleMinMax(array $args, string $type): SassNumber|array
     {
         if (empty($args)) {
             throw new CompilationException("$type() requires at least one argument");
@@ -576,9 +581,10 @@ class MathModule
             $normalized[] = $norm;
         }
 
-        $first      = $normalized[0];
+        $first  = $normalized[0];
+        $values = [];
+
         $resultUnit = $first['unit'];
-        $values     = [];
 
         foreach ($normalized as $norm) {
             if (! $this->areUnitsCompatible($resultUnit, $norm['unit'])) {
@@ -604,7 +610,7 @@ class MathModule
         $unit   = $allHaveUnits ? $resultUnit : '';
         $result = ($type === 'min') ? min($values) : max($values);
 
-        return new SassMath($result, $unit);
+        return new SassNumber($result, $unit);
     }
 
     private function validateAngleUnit(array $val, string $functionName): void

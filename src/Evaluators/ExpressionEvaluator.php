@@ -4,77 +4,154 @@ declare(strict_types=1);
 
 namespace DartSass\Evaluators;
 
-use DartSass\Compilers\CompilerContext;
 use DartSass\Exceptions\CompilationException;
-use DartSass\Modules\SassList;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\ListNode;
 use DartSass\Parsers\Nodes\OperationNode;
 use DartSass\Parsers\Nodes\VariableNode;
+use DartSass\Utils\ArithmeticCalculator;
+use DartSass\Utils\StringFormatter;
+use DartSass\Utils\ValueComparator;
+use DartSass\Values\SassList;
+use DartSass\Values\SassNumber;
 
 use function end;
 use function explode;
 use function is_array;
+use function is_bool;
 use function is_numeric;
 use function is_string;
 use function preg_match;
 use function str_contains;
 use function str_starts_with;
 use function strtolower;
+use function trim;
 
-readonly class ExpressionEvaluator
+class ExpressionEvaluator extends AbstractEvaluator
 {
-    public function __construct(private CompilerContext $context) {}
+    private const DIRECT_VALUE_TYPES = ['color', 'selector', 'hex_color', 'operator'];
 
-    public function evaluate(mixed $expr)
+    private const RECURSIVE_TYPES = ['condition', 'interpolation'];
+
+    public function supports(mixed $expression): bool
     {
-        if ($expr instanceof OperationNode) {
-            return $this->context->engine->evaluateExpression($expr);
+        if ($expression instanceof AstNode) {
+            return true;
         }
 
-        if ($expr instanceof AstNode) {
-            $type  = $expr->type;
-            $props = $expr->properties;
-
-            return match ($type) {
-                'color',
-                'selector',
-                'hex_color',
-                'operator'            => $props['value'],
-                'function'            => $this->evaluateFunctionExpression($expr),
-                'number'              => $this->evaluateNumberExpression($expr),
-                'string'              => $this->evaluateStringExpression($expr),
-                'list'                => $this->evaluateListExpression($props),
-                'map'                 => $this->evaluateMapExpression($props),
-                'identifier'          => $this->evaluateIdentifierExpression($expr),
-                'variable'            => $this->evaluate($this->context->variableHandler->get($props['name'])),
-                'condition',
-                'interpolation'       => $this->evaluate($props['expression']),
-                'css_custom_property' => $props['name'],
-                'property_access'     => $this->evaluatePropertyAccessExpression($expr),
-                'css_property'        => $this->evaluateCssPropertyExpression($expr),
-                'unary'               => $this->evaluateUnaryExpression($expr),
-                default               => throw new CompilationException(
-                    "Unknown expression type: $type at line " . ($props['line'] ?? 0)
-                ),
-            };
+        if (is_string($expression)) {
+            return true;
         }
 
-        if (is_string($expr) && str_starts_with($expr, '$')) {
-            return $this->evaluateVariableString($expr);
+        return is_numeric($expression) || is_array($expression) || $expression === null || is_bool($expression);
+    }
+
+    public function evaluate(mixed $expression): mixed
+    {
+        if ($expression instanceof OperationNode) {
+            return $this->context->engine->evaluateExpression($expression);
         }
 
-        if (is_string($expr) && preg_match('/^(\d+\.?\d*)\s*(px|em|rem|%)?$/', $expr, $matches)) {
+        if ($expression instanceof AstNode) {
+            return $this->evaluateAstNode($expression);
+        }
+
+        if (is_string($expression) && str_starts_with($expression, '$')) {
+            return $this->evaluateVariableString($expression);
+        }
+
+        if (is_string($expression)) {
+            return $this->tryParseNumericString($expression);
+        }
+
+        return $expression;
+    }
+
+    private function evaluateAstNode(AstNode $expr): mixed
+    {
+        $type  = $expr->type;
+        $props = $expr->properties;
+
+        // Direct value types
+        if (in_array($type, self::DIRECT_VALUE_TYPES, true)) {
+            return $props['value'];
+        }
+
+        // Recursive evaluation types
+        if (in_array($type, self::RECURSIVE_TYPES, true)) {
+            return $this->evaluate($props['expression']);
+        }
+
+        $values = ['Unknown expression type: ', $type, ' at line ', $props['line'] ?? 0];
+
+        return match ($type) {
+            'function'            => $this->evaluateFunctionExpression($expr),
+            'number'              => $this->evaluateNumberExpression($expr),
+            'string'              => $this->evaluateStringExpression($expr),
+            'list'                => $this->evaluateListExpression($props),
+            'map'                 => $this->evaluateMapExpression($props),
+            'identifier'          => $this->evaluateIdentifierExpression($expr),
+            'variable'            => $this->evaluate($this->context->variableHandler->get($props['name'])),
+            'css_custom_property' => $props['name'],
+            'property_access'     => $this->evaluatePropertyAccessExpression($expr),
+            'css_property'        => $this->evaluateCssPropertyExpression($expr),
+            'unary'               => $this->evaluateUnaryExpression($expr),
+            default               => throw new CompilationException(StringFormatter::concatMultiple($values)),
+        };
+    }
+
+    private function evaluateVariableString(string $expr): mixed
+    {
+        if (str_contains($expr, '.')) {
+            [$namespace, $name] = explode('.', $expr, 2);
+            $propertyName = '$' . $name;
+
+            try {
+                return $this->context->moduleHandler->getProperty($namespace, $propertyName, $this->evaluate(...));
+            } catch (CompilationException) {
+                try {
+                    return $this->context->variableHandler->get($expr);
+                } catch (CompilationException) {
+                    throw new CompilationException("Undefined property: $propertyName in module $namespace");
+                }
+            }
+        }
+
+        return $this->context->variableHandler->get($expr);
+    }
+
+    private function tryParseNumericString(string $expr): string|array|float
+    {
+        if (preg_match('/^(\d+\.?\d*)\s*(px|em|rem|%)?$/', $expr, $matches)) {
             $value = (float) $matches[1];
             $unit  = $matches[2] ?? '';
 
-            return $unit === '' ? $value : ['value' => $value, 'unit' => $unit];
+            if ($unit === '') {
+                return $value;
+            }
+
+            return SassNumber::tryFrom(['value' => $value, 'unit' => $unit])?->toArray()
+                ?? ['value' => $value, 'unit' => $unit];
         }
 
         return $expr;
     }
 
-    public function evaluateNumberExpression(AstNode $expr): string|array|int|float
+    private function evaluateFunctionExpression(AstNode $expr): mixed
+    {
+        $name = $expr->properties['name'];
+        $args = $expr->properties['args'] ?? [];
+
+        return match (true) {
+            $name === 'if'                  => $this->evaluateIfFunction($args),
+            $name === 'calc'                => $this->context->calcEvaluator->evaluate($args, $this->evaluate(...)),
+            $this->hasSlashSeparator($args) => $this->evaluateFunctionWithSlashSeparator($name, $args),
+            $name === 'url'                 => $this->evaluateUrlFunction($args),
+            default                         => $this->evaluateStandardFunction($name, $args),
+        };
+    }
+
+    private function evaluateNumberExpression(AstNode $expr): string|array|int|float
     {
         $value = $expr->properties['value'];
         $unit  = $expr->properties['unit'] ?? '';
@@ -92,10 +169,17 @@ readonly class ExpressionEvaluator
 
         $numericValue = is_numeric($value) ? $value : (float) $value;
 
-        return $unit === '' ? $numericValue : ['value' => $numericValue, 'unit' => $unit];
+        if ($unit === '') {
+            return $numericValue;
+        }
+
+        // Use SassNumber for consistent handling
+        $sassNumber = new SassNumber((float) $numericValue, $unit);
+
+        return $sassNumber->toArray();
     }
 
-    public function evaluateStringExpression(AstNode $expr): string
+    private function evaluateStringExpression(AstNode $expr): string
     {
         $value = $expr->properties['value'];
         $value = $this->context->interpolationEvaluator->evaluate($value, $this->evaluate(...));
@@ -104,10 +188,10 @@ readonly class ExpressionEvaluator
             return $value;
         }
 
-        return '"' . $value . '"';
+        return StringFormatter::forceQuoteString($value);
     }
 
-    public function evaluateListExpression(array $props): SassList
+    private function evaluateListExpression(array $props): SassList
     {
         return new SassList(
             $this->evaluateArguments($props['values']),
@@ -116,7 +200,7 @@ readonly class ExpressionEvaluator
         );
     }
 
-    public function evaluateMapExpression(array $props): array
+    private function evaluateMapExpression(array $props): array
     {
         $pairs = $props['pairs'] ?? [];
         $map   = [];
@@ -125,7 +209,6 @@ readonly class ExpressionEvaluator
             $evaluatedKey   = $this->evaluate($key);
             $evaluatedValue = $this->evaluate($value);
 
-            // Convert key to string representation
             $keyString = $this->convertKeyToString($evaluatedKey);
 
             if ($keyString !== null) {
@@ -136,31 +219,7 @@ readonly class ExpressionEvaluator
         return $map;
     }
 
-    private function convertKeyToString(mixed $key): ?string
-    {
-        if (is_string($key)) {
-            return trim($key, "'\"");
-        }
-
-        if ($key instanceof AstNode) {
-            switch ($key->type) {
-                case 'identifier':
-                    return $key->properties['value'];
-                case 'string':
-                    return trim($key->properties['value'], "'\"");
-                case 'number':
-                    return (string) $key->properties['value'];
-            }
-        }
-
-        if (is_numeric($key)) {
-            return (string) $key;
-        }
-
-        return null;
-    }
-
-    public function evaluateIdentifierExpression(AstNode $expr): mixed
+    private function evaluateIdentifierExpression(AstNode $expr): mixed
     {
         $value = $expr->properties['value'];
 
@@ -176,33 +235,107 @@ readonly class ExpressionEvaluator
         return $value;
     }
 
-    private function evaluateFunctionExpression(AstNode $expr)
+    private function evaluatePropertyAccessExpression(AstNode $expr): mixed
     {
-        $name = $expr->properties['name'];
-        $args = $expr->properties['args'] ?? [];
+        $namespace = $this->evaluate($expr->properties['namespace']);
 
-        if ($name === 'if') {
-            $result = $this->context->functionHandler->call('if', $args);
-
-            return $this->evaluate($result);
+        $propertyNode = $expr->properties['property'];
+        if ($propertyNode instanceof VariableNode) {
+            $propertyName = $propertyNode->properties['name'];
+        } elseif (is_string($propertyNode)) {
+            $propertyName = $propertyNode;
+        } else {
+            $propertyName = $this->evaluate($propertyNode);
         }
 
-        if ($name === 'calc') {
-            return $this->context->calcEvaluator->evaluate($args, $this->evaluate(...));
+        if (is_string($namespace) && is_string($propertyName) && str_starts_with($propertyName, '$')) {
+            return $this->context->moduleHandler->getProperty($namespace, $propertyName, $this->evaluate(...));
         }
 
-        if ($this->hasSlashSeparator($args)) {
-            $args = $this->evaluateArgumentsWithSlashSeparator($args);
-
-            return $this->context->functionHandler->call($name, $args);
+        if (is_string($namespace) && ! str_starts_with($namespace, '$')) {
+            return $namespace;
         }
 
-        if ($name === 'url') {
-            $args = $this->evaluateUrlArguments($args);
+        throw new CompilationException("Invalid property access: $namespace.$propertyName");
+    }
 
-            return $this->context->functionHandler->call('url', $args);
+    private function evaluateCssPropertyExpression(AstNode $expr): string
+    {
+        $property = $expr->properties['property'];
+        $value    = $this->evaluate($expr->properties['value']);
+
+        return StringFormatter::concatMultiple([$property, ': ', $this->formatValue($value)]);
+    }
+
+    private function evaluateUnaryExpression(AstNode $expr): string|array|bool|float
+    {
+        $operand  = $this->evaluate($expr->properties['operand']);
+        $operator = $expr->properties['operator'];
+
+        // Try to use SassNumber for numeric operations
+        $sassNumber = SassNumber::tryFrom($operand);
+
+        if ($sassNumber !== null) {
+            return match ($operator) {
+                '+'     => $sassNumber->toArray()['unit'] === '' ? $sassNumber->getValue() : $sassNumber->toArray(),
+                '-'     => $this->negateNumber($sassNumber),
+                'not'   => ValueComparator::not($sassNumber->getValue()),
+                default => throw new CompilationException("Unknown unary operator: $operator"),
+            };
         }
 
+        // Handle non-numeric operands
+        return match ($operator) {
+            'not'   => ValueComparator::not($operand),
+            default => StringFormatter::concat($operator, $this->formatValue($operand)),
+        };
+    }
+
+    private function evaluateArguments(array $args): array
+    {
+        foreach ($args as $key => $arg) {
+            $args[$key] = $this->evaluate($arg);
+        }
+
+        return $args;
+    }
+
+    private function convertKeyToString(mixed $key): ?string
+    {
+        if (is_string($key)) {
+            return trim($key, "'\"");
+        }
+
+        if (is_numeric($key)) {
+            return (string) $key;
+        }
+
+        return null;
+    }
+
+    private function evaluateIfFunction(array $args): mixed
+    {
+        $result = $this->context->functionHandler->call('if', $args);
+
+        return $this->evaluate($result);
+    }
+
+    private function evaluateFunctionWithSlashSeparator(string $name, array $args): mixed
+    {
+        $args = $this->evaluateArgumentsWithSlashSeparator($args);
+
+        return $this->context->functionHandler->call($name, $args);
+    }
+
+    private function evaluateUrlFunction(array $args): mixed
+    {
+        $args = $this->evaluateUrlArguments($args);
+
+        return $this->context->functionHandler->call('url', $args);
+    }
+
+    private function evaluateStandardFunction(string $name, array $args): mixed
+    {
         $args = $this->evaluateArguments($args);
 
         if ($this->hasSpreadArguments($args)) {
@@ -212,7 +345,7 @@ readonly class ExpressionEvaluator
         return $this->context->functionHandler->call($name, $args);
     }
 
-    private function isSpreadArgument($arg): bool
+    private function isSpreadArgument(mixed $arg): bool
     {
         return is_array($arg) && isset($arg['type']) && $arg['type'] === 'spread';
     }
@@ -235,27 +368,31 @@ readonly class ExpressionEvaluator
         foreach ($args as $arg) {
             if ($this->isSpreadArgument($arg)) {
                 $spreadValue = $this->evaluate($arg['value']);
-
-                // If value is a SassList, unpack its elements
-                if ($spreadValue instanceof SassList) {
-                    foreach ($spreadValue->value as $item) {
-                        $processedArgs[] = $item;
-                    }
-                } elseif ($spreadValue instanceof ListNode) {
-                    foreach ($spreadValue->values as $item) {
-                        $processedArgs[] = $this->evaluate($item);
-                    }
-                } elseif (is_array($spreadValue)) {
-                    foreach ($spreadValue as $item) {
-                        $processedArgs[] = $this->evaluate($item);
-                    }
-                } else {
-                    // If not a list, add as regular argument
-                    $processedArgs[] = $spreadValue;
-                }
+                $processedArgs = $this->appendSpreadValues($processedArgs, $spreadValue);
             } else {
                 $processedArgs[] = $arg;
             }
+        }
+
+        return $processedArgs;
+    }
+
+    private function appendSpreadValues(array $processedArgs, mixed $spreadValue): array
+    {
+        if ($spreadValue instanceof SassList) {
+            foreach ($spreadValue->value as $item) {
+                $processedArgs[] = $item;
+            }
+        } elseif ($spreadValue instanceof ListNode) {
+            foreach ($spreadValue->values as $item) {
+                $processedArgs[] = $this->evaluate($item);
+            }
+        } elseif (is_array($spreadValue)) {
+            foreach ($spreadValue as $item) {
+                $processedArgs[] = $this->evaluate($item);
+            }
+        } else {
+            $processedArgs[] = $spreadValue;
         }
 
         return $processedArgs;
@@ -316,7 +453,7 @@ readonly class ExpressionEvaluator
         ];
     }
 
-    private function containsDivisionOperation($arg): bool
+    private function containsDivisionOperation(mixed $arg): bool
     {
         if (! $arg instanceof AstNode) {
             return false;
@@ -348,92 +485,10 @@ readonly class ExpressionEvaluator
         return $processedArgs;
     }
 
-    private function evaluatePropertyAccessExpression(AstNode $expr): mixed
+    private function negateNumber(SassNumber $number): float|array
     {
-        $namespace = $this->evaluate($expr->properties['namespace']);
+        $negated = ArithmeticCalculator::negate($number);
 
-        $propertyNode = $expr->properties['property'];
-        if ($propertyNode instanceof VariableNode) {
-            $propertyName = $propertyNode->properties['name'];
-        } elseif (is_string($propertyNode)) {
-            $propertyName = $propertyNode;
-        } else {
-            $propertyName = $this->evaluate($propertyNode);
-        }
-
-        if (is_string($namespace) && is_string($propertyName) && str_starts_with($propertyName, '$')) {
-            return $this->context->moduleHandler->getProperty($namespace, $propertyName, $this->evaluate(...));
-        }
-
-        if (is_string($namespace) && ! str_starts_with($namespace, '$')) {
-            return $namespace;
-        }
-
-        throw new CompilationException("Invalid property access: $namespace.$propertyName");
-    }
-
-    private function evaluateCssPropertyExpression(AstNode $expr): string
-    {
-        $property = $expr->properties['property'];
-        $value    = $this->evaluate($expr->properties['value']);
-
-        return $property . ': ' . $this->context->valueFormatter->format($value);
-    }
-
-    private function evaluateUnaryExpression(AstNode $expr): mixed
-    {
-        $operand  = $this->evaluate($expr->properties['operand']);
-        $operator = $expr->properties['operator'];
-
-        if (is_numeric($operand)) {
-            return match ($operator) {
-                '+'     => +$operand,
-                '-'     => -$operand,
-                default => throw new CompilationException("Unknown unary operator: $operator"),
-            };
-        }
-
-        if (is_array($operand) && isset($operand['value']) && is_numeric($operand['value'])) {
-            return match ($operator) {
-                '+'     => $operand,
-                '-'     => ['value' => -$operand['value'], 'unit' => $operand['unit']],
-                'not'   => ! $operand['value'],
-                default => throw new CompilationException("Unknown unary operator: $operator"),
-            };
-        }
-
-        return match ($operator) {
-            'not'   => ! $operand,
-            default => $operator . $this->context->valueFormatter->format($operand),
-        };
-    }
-
-    private function evaluateVariableString(string $expr): mixed
-    {
-        if (str_contains($expr, '.')) {
-            [$namespace, $name] = explode('.', $expr, 2);
-            $propertyName = '$' . $name;
-
-            try {
-                return $this->context->moduleHandler->getProperty($namespace, $propertyName, $this->evaluate(...));
-            } catch (CompilationException) {
-                try {
-                    return $this->context->variableHandler->get($expr);
-                } catch (CompilationException) {
-                    throw new CompilationException("Undefined property: $propertyName in module $namespace");
-                }
-            }
-        }
-
-        return $this->context->variableHandler->get($expr);
-    }
-
-    private function evaluateArguments(array $args): array
-    {
-        foreach ($args as $key => $arg) {
-            $args[$key] = $this->evaluate($arg);
-        }
-
-        return $args;
+        return $negated->getUnit() === null ? $negated->getValue() : $negated->toArray();
     }
 }

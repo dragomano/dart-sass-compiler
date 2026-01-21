@@ -48,7 +48,7 @@ abstract readonly class ConditionalRuleStrategy implements RuleCompilationStrate
 
         $query = $node->properties['query'];
         $query = $evaluateInterpolations($query);
-        $query = $context->valueFormatter->format($query);
+        $query = $context->resultFormatter->format($query);
 
         $bodyNestingLevel = $currentNestingLevel + 1;
         $bodyDeclarations = $node->properties['body']['declarations'] ?? [];

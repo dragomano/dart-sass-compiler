@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DartSass\Modules;
 
 use DartSass\Exceptions\CompilationException;
+use DartSass\Values\SassList;
 
 use function array_filter;
 use function array_map;

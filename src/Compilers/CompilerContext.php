@@ -18,8 +18,8 @@ use DartSass\Loaders\LoaderInterface;
 use DartSass\Parsers\ParserFactory;
 use DartSass\Utils\OutputOptimizer;
 use DartSass\Utils\PositionTracker;
+use DartSass\Utils\ResultFormatterInterface;
 use DartSass\Utils\SourceMapGenerator;
-use DartSass\Utils\ValueFormatter;
 
 class CompilerContext
 {
@@ -29,7 +29,7 @@ class CompilerContext
 
     public ParserFactory $parserFactory;
 
-    public ValueFormatter $valueFormatter;
+    public ResultFormatterInterface $resultFormatter;
 
     public PositionTracker $positionTracker;
 

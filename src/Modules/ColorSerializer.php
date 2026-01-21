@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DartSass\Modules;
 
+use DartSass\Values\SassColor;
 use InvalidArgumentException;
 
 use function array_flip;

@@ -15,7 +15,7 @@ readonly class AtRuleCompiler
         AstNode $node,
         int $nestingLevel,
         string $parentSelector,
-        Closure $evaluateExpression,
+        Closure $expression,
         Closure $compileDeclarations,
         Closure $compileAst,
         Closure $evaluateInterpolationsInString
@@ -28,7 +28,7 @@ readonly class AtRuleCompiler
             $evaluateInterpolationsInString,
             $compileDeclarations,
             $compileAst,
-            $evaluateExpression
+            $expression
         );
 
         $this->context->positionTracker->updatePosition($css);

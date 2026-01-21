@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace DartSass\Modules;
 
+use DartSass\Values\SassList;
+use DartSass\Values\SassMap;
+
 use function array_key_exists;
 use function array_keys;
 use function array_merge;
@@ -278,7 +281,7 @@ class MapModule
     private function convertSassListToArray(SassList $list): array
     {
         $arrayValue = [];
-        $values     = $list->value;
+        $values = $list->value;
 
         for ($i = 0; $i < count($values); $i += 3) {
             if (isset($values[$i], $values[$i + 1], $values[$i + 2]) && $values[$i + 1] === ':') {

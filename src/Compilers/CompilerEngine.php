@@ -105,11 +105,7 @@ class CompilerEngine implements CompilerEngineInterface
     public function evaluateExpression(mixed $expr): mixed
     {
         if ($expr instanceof OperationNode) {
-            $left     = $this->context->expressionEvaluator->evaluate($expr->properties['left']);
-            $right    = $this->context->expressionEvaluator->evaluate($expr->properties['right']);
-            $operator = $expr->properties['operator'];
-
-            return $this->context->operationEvaluator->evaluate($left, $operator, $right);
+            return $this->context->operationEvaluator->evaluate($expr);
         }
 
         return $this->context->expressionEvaluator->evaluate($expr);

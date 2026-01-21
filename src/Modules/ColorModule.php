@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DartSass\Modules;
 
 use DartSass\Exceptions\CompilationException;
+use DartSass\Values\SassColor;
 use InvalidArgumentException;
 
 use function abs;

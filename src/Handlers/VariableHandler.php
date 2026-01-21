@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DartSass\Handlers;
 
 use DartSass\Exceptions\CompilationException;
+use DartSass\Values\SassNumber;
 
 use function array_key_exists;
 use function array_key_last;
@@ -34,6 +35,11 @@ class VariableHandler
     {
         if ($default && $this->variableExists($name)) {
             return;
+        }
+
+        // Convert SassNumber to primitive value for easier handling in expressions
+        if ($value instanceof SassNumber) {
+            $value = $value->getUnit() === null ? $value->getValue() : $value;
         }
 
         if ($global || empty($this->scopes)) {

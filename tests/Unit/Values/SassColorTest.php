@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use DartSass\Modules\ColorFormat;
-use DartSass\Modules\SassColor;
+use DartSass\Values\SassColor;
 
 describe('SassColor factory methods', function () {
     it('creates from RGB values', function () {

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use DartSass\Modules\SassList;
 use DartSass\Parsers\Nodes\AtRuleNode;
 use DartSass\Parsers\Nodes\IdentifierNode;
 use DartSass\Parsers\Nodes\OperationNode;
@@ -10,6 +9,7 @@ use DartSass\Parsers\Nodes\VariableNode;
 use DartSass\Utils\LazyValue;
 use DartSass\Utils\ResultFormatter;
 use DartSass\Utils\ValueFormatter;
+use DartSass\Values\SassList;
 use Tests\ReflectionAccessor;
 
 beforeEach(function () {

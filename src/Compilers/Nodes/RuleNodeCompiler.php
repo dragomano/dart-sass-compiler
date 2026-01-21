@@ -115,11 +115,10 @@ class RuleNodeCompiler extends AbstractNodeCompiler
             ];
         }
 
-        $evaluateExpressionClosure = $context->engine->evaluateExpression(...);
-
-        $indent    = str_repeat('  ', $nestingLevel);
-        $ruleStart = "$indent$selector {\n";
-        $ruleEnd   = "$indent}\n";
+        $expression = $context->engine->evaluateExpression(...);
+        $indent     = str_repeat('  ', $nestingLevel);
+        $ruleStart  = "$indent$selector {\n";
+        $ruleEnd    = "$indent}\n";
 
         $context->positionTracker->updatePosition($ruleStart);
 
@@ -130,7 +129,7 @@ class RuleNodeCompiler extends AbstractNodeCompiler
             $context->options,
             $context->mappings,
             $compileAstClosure,
-            $evaluateExpressionClosure
+            $expression
         ) . $flowControlCss;
 
         $css = '';
@@ -181,7 +180,7 @@ class RuleNodeCompiler extends AbstractNodeCompiler
     ): string {
         $query = $mediaNode->properties['query'];
         $query = $this->evaluateInterpolationsInString($query, $context);
-        $query = $context->valueFormatter->format($query);
+        $query = $context->resultFormatter->format($query);
 
         $declarations = $mediaNode->properties['body']['declarations'] ?? [];
 

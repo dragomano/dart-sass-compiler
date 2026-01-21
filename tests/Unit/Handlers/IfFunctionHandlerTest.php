@@ -169,46 +169,6 @@ describe('IfFunctionHandler', function () {
         });
     });
 
-    describe('private isTruthy method', function () {
-        it('returns false for null', function () {
-            $result = $this->accessor->callMethod('isTruthy', [null]);
-            expect($result)->toBeFalse();
-        });
-
-        it('returns false for false boolean', function () {
-            $result = $this->accessor->callMethod('isTruthy', [false]);
-            expect($result)->toBeFalse();
-        });
-
-        it('returns false for string "null"', function () {
-            $result = $this->accessor->callMethod('isTruthy', ['null']);
-            expect($result)->toBeFalse();
-
-            $result = $this->accessor->callMethod('isTruthy', ['NULL']);
-            expect($result)->toBeFalse();
-
-            $result = $this->accessor->callMethod('isTruthy', ['Null']);
-            expect($result)->toBeFalse();
-        });
-
-        it('returns true for truthy values', function () {
-            expect($this->accessor->callMethod('isTruthy', [true]))->toBeTrue()
-                ->and($this->accessor->callMethod('isTruthy', [1]))->toBeTrue()
-                ->and($this->accessor->callMethod('isTruthy', [0.1]))->toBeTrue()
-                ->and($this->accessor->callMethod('isTruthy', ['string']))->toBeTrue()
-                ->and($this->accessor->callMethod('isTruthy', ['false']))->toBeTrue()
-                ->and($this->accessor->callMethod('isTruthy', ['0']))->toBeTrue()
-                ->and($this->accessor->callMethod('isTruthy', [['array']]))->toBeTrue()
-                ->and($this->accessor->callMethod('isTruthy', [(object) ['prop' => 'value']]))->toBeTrue();
-        });
-
-        it('returns true for empty string and other edge cases', function () {
-            expect($this->accessor->callMethod('isTruthy', ['']))->toBeTrue()
-                ->and($this->accessor->callMethod('isTruthy', [0]))->toBeTrue()
-                ->and($this->accessor->callMethod('isTruthy', ['0.0']))->toBeTrue();
-        });
-    });
-
     describe('integration scenarios', function () {
         it('handles nested if expressions', function () {
             $evaluateFn = fn($expr) => match($expr) {

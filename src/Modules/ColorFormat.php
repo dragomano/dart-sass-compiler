@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace DartSass\Modules;
 
+use DartSass\Values\SassColor;
+
 use function in_array;
 use function strtolower;
 

@@ -27,9 +27,9 @@ readonly class KeyframesRuleStrategy implements RuleCompilationStrategy
         string $parentSelector,
         ...$params
     ): string {
-        $evaluateExpression = $params[3] ?? $params[0] ?? null;
+        $expression = $params[3] ?? $params[0] ?? null;
 
-        if (! $evaluateExpression) {
+        if (! $expression) {
             throw new InvalidArgumentException('Missing required parameters for keyframes rule compilation');
         }
 
@@ -48,8 +48,8 @@ readonly class KeyframesRuleStrategy implements RuleCompilationStrategy
                 $property = key($declaration);
                 $value    = current($declaration);
 
-                $evaluatedValue = $evaluateExpression($value);
-                $formattedValue = $context->valueFormatter->format($evaluatedValue);
+                $evaluatedValue = $expression($value);
+                $formattedValue = $context->resultFormatter->format($evaluatedValue);
                 $declarationCss = "$indent  $property: " . $formattedValue . ";\n";
 
                 $body .= $declarationCss;
