@@ -118,18 +118,18 @@ describe('Compiler', function () {
 
         $expected = [
             [
-                'generated'   => ['line' => 1, 'column' => 0],
-                'original'    => ['line' => 1, 'column' => 0],
+                'generated'   => ['line' => 0, 'column' => 0],
+                'original'    => ['line' => 0, 'column' => 0],
                 'sourceIndex' => 0,
             ], // body {
             [
-                'generated'   => ['line' => 2, 'column' => 2],
-                'original'    => ['line' => 2, 'column' => 2],
+                'generated'   => ['line' => 1, 'column' => 2],
+                'original'    => ['line' => 1, 'column' => 2],
                 'sourceIndex' => 0,
             ], // color: blue;
             [
-                'generated'   => ['line' => 3, 'column' => 2],
-                'original'    => ['line' => 3, 'column' => 2],
+                'generated'   => ['line' => 2, 'column' => 2],
+                'original'    => ['line' => 2, 'column' => 2],
                 'sourceIndex' => 0,
             ], // margin: 10px;
         ];

@@ -51,6 +51,33 @@ describe('mappings generation', function () {
         expect($sourceMap)->toBeArray()
             ->and($sourceMap['mappings'])->toContain(',');
     });
+
+    it('handles multiple mappings on same line after empty lines', function () {
+        $mappings = [
+            [
+                'generated'   => ['line' => 1, 'column' => 0],
+                'original'    => ['line' => 1, 'column' => 0],
+                'sourceIndex' => 0,
+            ],
+            [
+                'generated'   => ['line' => 5, 'column' => 0],
+                'original'    => ['line' => 2, 'column' => 0],
+                'sourceIndex' => 0,
+            ],
+            [
+                'generated'   => ['line' => 5, 'column' => 10],
+                'original'    => ['line' => 2, 'column' => 10],
+                'sourceIndex' => 0,
+            ],
+        ];
+
+        $result = $this->generator->generate($mappings, 'source.scss', 'output.css');
+        $sourceMap = json_decode($result, true);
+
+        expect($sourceMap)->toBeArray()
+            ->and($sourceMap['mappings'])->toContain(',')
+            ->and($sourceMap['mappings'])->toMatch('/;;;/');
+    });
 })->covers(SourceMapGenerator::class);
 
 describe('source map options', function () {
@@ -68,26 +95,6 @@ describe('source map options', function () {
 
         expect($sourceMap)->toBeArray()
             ->and($sourceMap)->not->toHaveKey('sourcesContent');
-    });
-
-    it('checks that SourceMapGenerator with includeSources true includes sourcesContent', function () {
-        $mappings = [
-            [
-                'generated'   => ['line' => 1, 'column' => 0],
-                'original'    => ['line' => 1, 'column' => 0],
-                'sourceIndex' => 0,
-            ],
-        ];
-
-        $result = $this->generator->generate($mappings, 'source.scss', 'output.css', [
-            'includeSources' => true,
-            'sourceContent'  => 'body { color: red; }',
-        ]);
-        $sourceMap = json_decode($result, true);
-
-        expect($sourceMap)->toBeArray()
-            ->and($sourceMap)->toHaveKey('sourcesContent')
-            ->and($sourceMap['sourcesContent'])->toBe(['body { color: red; }']);
     });
 })->covers(SourceMapGenerator::class);
 

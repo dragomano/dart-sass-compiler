@@ -232,7 +232,7 @@ class Parser implements TokenAwareParserInterface
             $block['declarations'],
             $block['nested'],
             $selector->properties['line'],
-            $selector->column ?? 0
+            $selector->properties['column'] ?? 0
         );
     }
 

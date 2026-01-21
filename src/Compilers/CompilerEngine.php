@@ -24,6 +24,7 @@ use function str_contains;
 use function str_repeat;
 use function str_starts_with;
 use function substr;
+use function substr_count;
 use function trim;
 
 class CompilerEngine implements CompilerEngineInterface
@@ -71,6 +72,8 @@ class CompilerEngine implements CompilerEngineInterface
                 $sourceMapOptions['sourceContent']  = $string;
                 $sourceMapOptions['includeSources'] = true;
             }
+
+            $sourceMapOptions['outputLines'] = substr_count($compiled, "\n") + 1;
 
             $sourceMap = $this->context->sourceMapGenerator->generate(
                 $this->context->mappings,
@@ -208,8 +211,7 @@ class CompilerEngine implements CompilerEngineInterface
             $declarations,
             $nestingLevel,
             $parentSelector,
-            $this->context->options,
-            $this->context->mappings,
+            $this->context,
             $this->compileAst(...),
             $this->evaluateExpression(...)
         );
