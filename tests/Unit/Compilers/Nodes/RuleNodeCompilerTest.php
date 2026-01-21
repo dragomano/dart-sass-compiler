@@ -15,7 +15,7 @@ use DartSass\Parsers\Nodes\RuleNode;
 use DartSass\Parsers\Nodes\StringNode;
 use DartSass\Parsers\ParserFactory;
 use DartSass\Utils\PositionTracker;
-use DartSass\Utils\ValueFormatter;
+use DartSass\Utils\ResultFormatterInterface;
 use Tests\ReflectionAccessor;
 
 describe('RuleNodeCompiler', function () {
@@ -25,7 +25,7 @@ describe('RuleNodeCompiler', function () {
     });
 
     it('returns null when string is null in evaluateInterpolationsInString', function () {
-        $context  = mock(CompilerContext::class);
+        $context = mock(CompilerContext::class);
 
         $result = $this->accessor->callMethod('evaluateInterpolationsInString', [null, $context]);
 
@@ -51,9 +51,9 @@ describe('RuleNodeCompiler', function () {
         $variableHandler->shouldReceive('enterScope')->once();
         $variableHandler->shouldReceive('exitScope')->once();
 
-        $valueFormatter         = mock(ValueFormatter::class);
+        $resultFormatter        = mock(ResultFormatterInterface::class);
         $positionTrackerForDecl = mock(PositionTracker::class);
-        $declarationCompiler    = new DeclarationCompiler($valueFormatter, $positionTrackerForDecl);
+        $declarationCompiler    = new DeclarationCompiler($resultFormatter, $positionTrackerForDecl);
 
         $positionTracker = mock(PositionTracker::class);
         $positionTracker->shouldReceive('updatePosition')->andReturn();
@@ -61,9 +61,9 @@ describe('RuleNodeCompiler', function () {
         $extendHandler = mock(ExtendHandler::class);
         $extendHandler->shouldReceive('addDefinedSelector')->once();
 
-        $valueFormatter         = mock(ValueFormatter::class);
+        $resultFormatter        = mock(ResultFormatterInterface::class);
         $parserFactory          = mock(ParserFactory::class);
-        $interpolationEvaluator = new InterpolationEvaluator($valueFormatter, $parserFactory);
+        $interpolationEvaluator = new InterpolationEvaluator($resultFormatter, $parserFactory);
 
         $context = mock(CompilerContext::class);
         $context->nestingHandler         = $nestingHandler;

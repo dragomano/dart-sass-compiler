@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use DartSass\Modules\ColorFormat;
 use DartSass\Modules\ColorSerializer;
-use DartSass\Modules\SassColor;
+use DartSass\Values\SassColor;
 use Tests\ReflectionAccessor;
 
 describe('ColorSerializer', function () {

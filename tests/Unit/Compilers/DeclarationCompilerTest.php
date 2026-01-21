@@ -6,13 +6,13 @@ use DartSass\Compilers\DeclarationCompiler;
 use DartSass\Parsers\Nodes\IdentifierNode;
 use DartSass\Parsers\Nodes\RuleNode;
 use DartSass\Utils\PositionTracker;
-use DartSass\Utils\ValueFormatter;
+use DartSass\Utils\ResultFormatterInterface;
 
 describe('DeclarationCompiler', function () {
     beforeEach(function () {
-        $this->valueFormatter      = mock(ValueFormatter::class);
+        $this->resultFormatter     = mock(ResultFormatterInterface::class);
         $this->positionTracker     = mock(PositionTracker::class);
-        $this->declarationCompiler = new DeclarationCompiler($this->valueFormatter, $this->positionTracker);
+        $this->declarationCompiler = new DeclarationCompiler($this->resultFormatter, $this->positionTracker);
     });
 
     describe('compile method', function () {
@@ -37,7 +37,7 @@ describe('DeclarationCompiler', function () {
                 return 'compiled css';
             };
 
-            $evaluateExpression = fn() => 'value';
+            $expression = fn() => 'value';
 
             $result = $this->declarationCompiler->compile(
                 $declarations,
@@ -46,7 +46,7 @@ describe('DeclarationCompiler', function () {
                 $options,
                 $mappings,
                 $compileAst,
-                $evaluateExpression
+                $expression
             );
 
             expect($compileAstCalled)->toBeTrue()
@@ -64,8 +64,7 @@ describe('DeclarationCompiler', function () {
             $this->positionTracker->shouldReceive('getCurrentPosition')->once()->andReturn(['line' => 1, 'column' => 0]);
 
             $compileAst = fn() => 'should not be called';
-
-            $evaluateExpression = fn() => null;
+            $expression = fn() => null;
 
             $result = $this->declarationCompiler->compile(
                 $declarations,
@@ -74,7 +73,7 @@ describe('DeclarationCompiler', function () {
                 $options,
                 $mappings,
                 $compileAst,
-                $evaluateExpression
+                $expression
             );
 
             expect($result)->toBe('');
@@ -91,8 +90,7 @@ describe('DeclarationCompiler', function () {
             $this->positionTracker->shouldReceive('getCurrentPosition')->once()->andReturn(['line' => 1, 'column' => 0]);
 
             $compileAst = fn() => 'should not be called';
-
-            $evaluateExpression = fn() => 'null';
+            $expression = fn() => 'null';
 
             $result = $this->declarationCompiler->compile(
                 $declarations,
@@ -101,7 +99,7 @@ describe('DeclarationCompiler', function () {
                 $options,
                 $mappings,
                 $compileAst,
-                $evaluateExpression
+                $expression
             );
 
             expect($result)->toBe('');

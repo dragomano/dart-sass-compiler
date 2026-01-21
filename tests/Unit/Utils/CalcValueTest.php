@@ -5,21 +5,28 @@ declare(strict_types=1);
 use DartSass\Utils\CalcValue;
 
 describe('CalcValue', function () {
-    describe('constructor', function () {
-        it('creates instance with left, operator, right', function () {
+    describe('__toString()', function () {
+        it('formats calc expression', function () {
             $calc = new CalcValue(10, '+', 20);
+            expect((string) $calc)->toBe('calc(10 + 20)');
+        });
 
-            expect($calc->left)->toBe(10)
-                ->and($calc->operator)->toBe('+')
-                ->and($calc->right)->toBe(20);
+        it('handles complex values', function () {
+            $calc = new CalcValue(['value' => 10, 'unit' => 'px'], '*', ['value' => 2, 'unit' => '']);
+            expect((string) $calc)->toBe('calc(10px * 2)');
+        });
+
+        it('formats array with value only', function () {
+            $calc = new CalcValue(['value' => 10], '+', 5);
+            expect((string) $calc)->toBe('calc(10 + 5)');
         });
     });
 
-    describe('evaluate', function () {
+    describe('evaluate()', function () {
         it('computes compatible numbers', function () {
             $calc = new CalcValue(['value' => 10, 'unit' => 'px'], '+', ['value' => 20, 'unit' => 'px']);
             $result = $calc->evaluate();
-            expect($result)->toBe(['value' => 30, 'unit' => 'px']);
+            expect($result)->toBe(['value' => 30.0, 'unit' => 'px']);
         });
 
         it('returns calc string for incompatible numbers', function () {
@@ -61,19 +68,19 @@ describe('CalcValue', function () {
         it('computes subtraction', function () {
             $calc = new CalcValue(['value' => 20, 'unit' => 'px'], '-', ['value' => 5, 'unit' => 'px']);
             $result = $calc->evaluate();
-            expect($result)->toBe(['value' => 15, 'unit' => 'px']);
+            expect($result)->toBe(['value' => 15.0, 'unit' => 'px']);
         });
 
         it('computes multiplication', function () {
             $calc = new CalcValue(['value' => 10, 'unit' => 'px'], '*', ['value' => 2, 'unit' => 'px']);
             $result = $calc->evaluate();
-            expect($result)->toBe(['value' => 20, 'unit' => 'px']);
+            expect($result)->toBe(['value' => 20.0, 'unit' => 'px']);
         });
 
         it('computes division', function () {
             $calc = new CalcValue(['value' => 20, 'unit' => 'px'], '/', ['value' => 4, 'unit' => 'px']);
             $result = $calc->evaluate();
-            expect($result)->toBe(['value' => 5, 'unit' => 'px']);
+            expect($result)->toBe(['value' => 5.0, 'unit' => '']);
         });
 
         it('returns calc string for division by zero', function () {
@@ -88,16 +95,4 @@ describe('CalcValue', function () {
             expect($result)->toBe('calc(10px % 3px)');
         });
     });
-
-    describe('__toString', function () {
-        it('formats calc expression', function () {
-            $calc = new CalcValue(10, '+', 20);
-            expect((string) $calc)->toBe('calc(10 + 20)');
-        });
-
-        it('handles complex values', function () {
-            $calc = new CalcValue(['value' => 10, 'unit' => 'px'], '*', ['value' => 2, 'unit' => '']);
-            expect((string) $calc)->toBe('calc(10px * 2)');
-        });
-    });
-});
+})->covers(CalcValue::class);

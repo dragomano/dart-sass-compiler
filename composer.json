@@ -46,10 +46,10 @@
     "check": "vendor/bin/rector process --dry-run --clear-cache",
     "benchmark": "php benchmark.php",
     "tests": "vendor/bin/pest --colors=always --display-warnings",
-    "tests-coverage": "vendor/bin/pest --colors=always --coverage --min=92",
-    "tests-coverage-clover": "vendor/bin/pest --colors=always --min=92 --coverage-clover coverage.xml",
-    "tests-coverage-html": "vendor/bin/pest --colors=always --min=92 --coverage-html coverage",
-    "tests-mutate": "vendor/bin/pest --colors=always --mutate --covered-only --parallel --path=src/Modules"
+    "tests-coverage": "vendor/bin/pest --colors=always --coverage --min=94",
+    "tests-coverage-clover": "vendor/bin/pest --colors=always --min=94 --coverage-clover coverage.xml",
+    "tests-coverage-html": "vendor/bin/pest --colors=always --min=94 --coverage-html coverage",
+    "tests-mutate": "vendor/bin/pest --colors=always --mutate --covered-only --parallel --path=src/Values/SassNumber.php"
   },
   "config": {
     "optimize-autoloader": true,

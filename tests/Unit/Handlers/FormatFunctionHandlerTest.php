@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 use DartSass\Handlers\Builtins\FormatFunctionHandler;
 use DartSass\Handlers\SassModule;
-use DartSass\Utils\ValueFormatter;
+use DartSass\Utils\ResultFormatterInterface;
 use Tests\ReflectionAccessor;
 
 beforeEach(function () {
-    $this->valueFormatter = mock(ValueFormatter::class);
-    $this->handler  = new FormatFunctionHandler($this->valueFormatter);
+    $this->resultFormatter = mock(ResultFormatterInterface::class);
+    $this->handler  = new FormatFunctionHandler($this->resultFormatter);
     $this->accessor = new ReflectionAccessor($this->handler);
 });
 
@@ -28,7 +28,7 @@ describe('FormatFunctionHandler', function () {
 
     describe('handle method', function () {
         it('formats single argument correctly', function () {
-            $this->valueFormatter->shouldReceive('format')
+            $this->resultFormatter->shouldReceive('format')
                 ->with('test')
                 ->andReturn('test');
 
@@ -37,13 +37,13 @@ describe('FormatFunctionHandler', function () {
         });
 
         it('formats multiple arguments correctly', function () {
-            $this->valueFormatter->shouldReceive('format')
+            $this->resultFormatter->shouldReceive('format')
                 ->with('first')
                 ->andReturn('first');
-            $this->valueFormatter->shouldReceive('format')
+            $this->resultFormatter->shouldReceive('format')
                 ->with('second')
                 ->andReturn('second');
-            $this->valueFormatter->shouldReceive('format')
+            $this->resultFormatter->shouldReceive('format')
                 ->with('third')
                 ->andReturn('third');
 
@@ -52,7 +52,7 @@ describe('FormatFunctionHandler', function () {
         });
 
         it('wraps non-quoted values with double quotes', function () {
-            $this->valueFormatter->shouldReceive('format')
+            $this->resultFormatter->shouldReceive('format')
                 ->with('unquoted')
                 ->andReturn('unquoted');
 
@@ -61,16 +61,16 @@ describe('FormatFunctionHandler', function () {
         });
 
         it('converts single quotes to double quotes', function () {
-            $this->valueFormatter->shouldReceive('format')
+            $this->resultFormatter->shouldReceive('format')
                 ->with('single-quoted')
                 ->andReturn("'single-quoted'");
 
             $result = $this->handler->handle('format', ['single-quoted']);
-            expect($result)->toBe('format(""single-quoted"")');
+            expect($result)->toBe('format("single-quoted")');
         });
 
         it('preserves already double-quoted values', function () {
-            $this->valueFormatter->shouldReceive('format')
+            $this->resultFormatter->shouldReceive('format')
                 ->with('already-quoted')
                 ->andReturn('"already-quoted"');
 
@@ -84,10 +84,10 @@ describe('FormatFunctionHandler', function () {
         });
 
         it('handles numeric values', function () {
-            $this->valueFormatter->shouldReceive('format')
+            $this->resultFormatter->shouldReceive('format')
                 ->with(42)
                 ->andReturn('42');
-            $this->valueFormatter->shouldReceive('format')
+            $this->resultFormatter->shouldReceive('format')
                 ->with(3.14)
                 ->andReturn('3.14');
 
@@ -96,10 +96,10 @@ describe('FormatFunctionHandler', function () {
         });
 
         it('handles boolean values', function () {
-            $this->valueFormatter->shouldReceive('format')
+            $this->resultFormatter->shouldReceive('format')
                 ->with(true)
                 ->andReturn('true');
-            $this->valueFormatter->shouldReceive('format')
+            $this->resultFormatter->shouldReceive('format')
                 ->with(false)
                 ->andReturn('false');
 
@@ -108,7 +108,7 @@ describe('FormatFunctionHandler', function () {
         });
 
         it('handles null value', function () {
-            $this->valueFormatter->shouldReceive('format')
+            $this->resultFormatter->shouldReceive('format')
                 ->with(null)
                 ->andReturn('null');
 
@@ -117,7 +117,7 @@ describe('FormatFunctionHandler', function () {
         });
 
         it('handles complex nested values', function () {
-            $this->valueFormatter->shouldReceive('format')
+            $this->resultFormatter->shouldReceive('format')
                 ->with(['nested' => 'value'])
                 ->andReturn('[object Object]');
 

@@ -25,10 +25,10 @@ beforeEach(function () {
 });
 
 it('compiles a simple mixin include', function () {
-    $includeNode        = new IncludeNode('testMixin', [], null, 0);
-    $parentSelector     = '.parent';
-    $nestingLevel       = 0;
-    $evaluateExpression = fn($expr) => $expr;
+    $includeNode    = new IncludeNode('testMixin', [], null, 0);
+    $parentSelector = '.parent';
+    $nestingLevel   = 0;
+    $expression     = fn($expr) => $expr;
 
     $this->mixinHandler
         ->shouldReceive('include')
@@ -40,17 +40,17 @@ it('compiles a simple mixin include', function () {
         $includeNode,
         $parentSelector,
         $nestingLevel,
-        $evaluateExpression
+        $expression
     );
 
     expect($result)->toBe('.testMixin { color: red; }');
 });
 
 it('compiles a mixin include with arguments', function () {
-    $includeNode        = new IncludeNode('testMixin', ['arg1', 'arg2'], null, 0);
-    $parentSelector     = '.parent';
-    $nestingLevel       = 0;
-    $evaluateExpression = fn($expr) => 'evaluated_' . $expr;
+    $includeNode    = new IncludeNode('testMixin', ['arg1', 'arg2'], null, 0);
+    $parentSelector = '.parent';
+    $nestingLevel   = 0;
+    $expression     = fn($expr) => 'evaluated_' . $expr;
 
     $this->mixinHandler
         ->shouldReceive('include')
@@ -62,18 +62,18 @@ it('compiles a mixin include with arguments', function () {
         $includeNode,
         $parentSelector,
         $nestingLevel,
-        $evaluateExpression
+        $expression
     );
 
     expect($result)->toBe('.testMixin { color: blue; }');
 });
 
 it('compiles a mixin include with content', function () {
-    $contentNode        = new IdentifierNode('content', 0);
-    $includeNode        = new IncludeNode('testMixin', [], [$contentNode], 0);
-    $parentSelector     = '.parent';
-    $nestingLevel       = 0;
-    $evaluateExpression = fn($expr) => $expr;
+    $contentNode    = new IdentifierNode('content', 0);
+    $includeNode    = new IncludeNode('testMixin', [], [$contentNode], 0);
+    $parentSelector = '.parent';
+    $nestingLevel   = 0;
+    $expression     = fn($expr) => $expr;
 
     $this->mixinHandler
         ->shouldReceive('include')
@@ -85,17 +85,17 @@ it('compiles a mixin include with content', function () {
         $includeNode,
         $parentSelector,
         $nestingLevel,
-        $evaluateExpression
+        $expression
     );
 
     expect($result)->toBe('.testMixin { @content; }');
 });
 
 it('compiles a module mixin include with dot in name', function () {
-    $includeNode        = new IncludeNode('module.mixin', [], null, 0);
-    $parentSelector     = '.parent';
-    $nestingLevel       = 0;
-    $evaluateExpression = fn($expr) => $expr;
+    $includeNode    = new IncludeNode('module.mixin', [], null, 0);
+    $parentSelector = '.parent';
+    $nestingLevel   = 0;
+    $expression     = fn($expr) => $expr;
 
     $mixinData = [
         'type' => 'mixin',
@@ -106,7 +106,7 @@ it('compiles a module mixin include with dot in name', function () {
     $this->moduleHandler
         ->shouldReceive('getProperty')
         ->once()
-        ->with('module', 'mixin', $evaluateExpression)
+        ->with('module', 'mixin', $expression)
         ->andReturn($mixinData);
 
     $this->mixinHandler
@@ -129,17 +129,17 @@ it('compiles a module mixin include with dot in name', function () {
         $includeNode,
         $parentSelector,
         $nestingLevel,
-        $evaluateExpression
+        $expression
     );
 
     expect($result)->toBe('.module-mixin { color: green; }');
 });
 
 it('searches for module mixin without dot when local search throws exception', function () {
-    $includeNode        = new IncludeNode('mixinWithoutDot', [], null, 0);
-    $parentSelector     = '.parent';
-    $nestingLevel       = 0;
-    $evaluateExpression = fn($expr) => $expr;
+    $includeNode    = new IncludeNode('mixinWithoutDot', [], null, 0);
+    $parentSelector = '.parent';
+    $nestingLevel   = 0;
+    $expression     = fn($expr) => $expr;
 
     $mixinData = [
         'type' => 'mixin',
@@ -164,14 +164,14 @@ it('searches for module mixin without dot when local search throws exception', f
     $this->moduleHandler
         ->shouldReceive('getProperty')
         ->once()
-        ->with('module1', 'mixinWithoutDot', $evaluateExpression)
+        ->with('module1', 'mixinWithoutDot', $expression)
         ->andThrow(new CompilationException('Not in module1'));
 
     // Second module returns mixin data
     $this->moduleHandler
         ->shouldReceive('getProperty')
         ->once()
-        ->with('module2', 'mixinWithoutDot', $evaluateExpression)
+        ->with('module2', 'mixinWithoutDot', $expression)
         ->andReturn($mixinData);
 
     $this->mixinHandler
@@ -194,17 +194,17 @@ it('searches for module mixin without dot when local search throws exception', f
         $includeNode,
         $parentSelector,
         $nestingLevel,
-        $evaluateExpression
+        $expression
     );
 
     expect($result)->toBe('.mixin-without-dot { color: yellow; }');
 });
 
 it('throws original exception when mixin not found locally or in modules', function () {
-    $includeNode        = new IncludeNode('nonExistentMixin', [], null, 0);
-    $parentSelector     = '.parent';
-    $nestingLevel       = 0;
-    $evaluateExpression = fn($expr) => $expr;
+    $includeNode    = new IncludeNode('nonExistentMixin', [], null, 0);
+    $parentSelector = '.parent';
+    $nestingLevel   = 0;
+    $expression     = fn($expr) => $expr;
 
     $originalException = new CompilationException('Mixin not found locally');
 
@@ -225,13 +225,13 @@ it('throws original exception when mixin not found locally or in modules', funct
     $this->moduleHandler
         ->shouldReceive('getProperty')
         ->once()
-        ->with('module1', 'nonExistentMixin', $evaluateExpression)
+        ->with('module1', 'nonExistentMixin', $expression)
         ->andThrow(new CompilationException('Not in module1'));
 
     $this->moduleHandler
         ->shouldReceive('getProperty')
         ->once()
-        ->with('module2', 'nonExistentMixin', $evaluateExpression)
+        ->with('module2', 'nonExistentMixin', $expression)
         ->andThrow(new CompilationException('Not in module2'));
 
     // Expect the original exception to be thrown
@@ -239,37 +239,37 @@ it('throws original exception when mixin not found locally or in modules', funct
         $includeNode,
         $parentSelector,
         $nestingLevel,
-        $evaluateExpression
+        $expression
     ))->toThrow(CompilationException::class)
         ->and(fn($exception) => $exception === $originalException);
 });
 
 it('throws exception when property in module is not a mixin', function () {
-    $includeNode        = new IncludeNode('module.variable', [], null, 0);
-    $parentSelector     = '.parent';
-    $nestingLevel       = 0;
-    $evaluateExpression = fn($expr) => $expr;
+    $includeNode    = new IncludeNode('module.variable', [], null, 0);
+    $parentSelector = '.parent';
+    $nestingLevel   = 0;
+    $expression     = fn($expr) => $expr;
 
     $this->moduleHandler
         ->shouldReceive('getProperty')
         ->once()
-        ->with('module', 'variable', $evaluateExpression)
+        ->with('module', 'variable', $expression)
         ->andReturn(['type' => 'variable', 'value' => 'some value']);
 
     expect(fn() => $this->mixinCompiler->compile(
         $includeNode,
         $parentSelector,
         $nestingLevel,
-        $evaluateExpression
+        $expression
     ))->toThrow(CompilationException::class)
         ->and(fn($exception) => $exception->getMessage() === 'Property variable is not a mixin in module module');
 });
 
 it('ensures correct sequence of define, include, removeMixin for temporary mixin in module call', function () {
-    $includeNode        = new IncludeNode('module.tempMixin', [], null, 0);
-    $parentSelector     = '.parent';
-    $nestingLevel       = 0;
-    $evaluateExpression = fn($expr) => $expr;
+    $includeNode    = new IncludeNode('module.tempMixin', [], null, 0);
+    $parentSelector = '.parent';
+    $nestingLevel   = 0;
+    $expression     = fn($expr) => $expr;
 
     $mixinData = [
         'type' => 'mixin',
@@ -280,7 +280,7 @@ it('ensures correct sequence of define, include, removeMixin for temporary mixin
     $this->moduleHandler
         ->shouldReceive('getProperty')
         ->once()
-        ->with('module', 'tempMixin', $evaluateExpression)
+        ->with('module', 'tempMixin', $expression)
         ->andReturn($mixinData);
 
     // Ensure the sequence: define, include, removeMixin
@@ -307,17 +307,17 @@ it('ensures correct sequence of define, include, removeMixin for temporary mixin
         $includeNode,
         $parentSelector,
         $nestingLevel,
-        $evaluateExpression
+        $expression
     );
 
     expect($result)->toBe('.temp-mixin { color: purple; }');
 });
 
 it('passes parentSelector and nestingLevel correctly to MixinHandler::include', function () {
-    $includeNode        = new IncludeNode('testMixin', [], null, 0);
-    $parentSelector     = '.nested .parent';
-    $nestingLevel       = 2;
-    $evaluateExpression = fn($expr) => $expr;
+    $includeNode    = new IncludeNode('testMixin', [], null, 0);
+    $parentSelector = '.nested .parent';
+    $nestingLevel   = 2;
+    $expression     = fn($expr) => $expr;
 
     $this->mixinHandler
         ->shouldReceive('include')
@@ -329,7 +329,7 @@ it('passes parentSelector and nestingLevel correctly to MixinHandler::include', 
         $includeNode,
         $parentSelector,
         $nestingLevel,
-        $evaluateExpression
+        $expression
     );
 
     expect($result)->toBe('.testMixin { color: red; }');

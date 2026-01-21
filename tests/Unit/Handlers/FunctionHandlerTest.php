@@ -11,6 +11,9 @@ use DartSass\Handlers\FunctionRouter;
 use DartSass\Handlers\ModuleHandler;
 use DartSass\Handlers\ModuleRegistry;
 use DartSass\Handlers\VariableHandler;
+use DartSass\Parsers\Nodes\NumberNode;
+use DartSass\Parsers\Nodes\OperationNode;
+use DartSass\Parsers\Nodes\VariableNode;
 use DartSass\Utils\ResultFormatterInterface;
 use Tests\ReflectionAccessor;
 
@@ -177,14 +180,12 @@ describe('FunctionHandler', function () {
                 [(object) [
                     'type' => 'return',
                     'properties' => [
-                        'value' => (object) [
-                            'type' => 'operation',
-                            'properties' => [
-                                'left' => (object) ['type' => 'variable', 'properties' => ['name' => 'value']],
-                                'operator' => '*',
-                                'right' => (object) ['type' => 'number', 'properties' => ['value' => 2]],
-                            ],
-                        ],
+                        'value' => new OperationNode(
+                            new VariableNode('value', 1),
+                            '*',
+                            new NumberNode(2, 1),
+                            1
+                        ),
                     ],
                 ]],
                 $variableHandler
@@ -199,7 +200,7 @@ describe('FunctionHandler', function () {
 
             $result = $this->functionHandler->call('double', [5]);
 
-            expect($result)->toBe(10);
+            expect($result)->toEqual(10);
         });
 
         it('returns null for user function without return', function () {

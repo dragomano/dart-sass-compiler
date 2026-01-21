@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use DartSass\Exceptions\CompilationException;
-use DartSass\Modules\SassList;
 use DartSass\Modules\SelectorModule;
+use DartSass\Values\SassList;
 
 beforeEach(function () {
     $this->selectorModule = new SelectorModule();
