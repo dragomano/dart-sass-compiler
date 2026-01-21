@@ -7,6 +7,7 @@ namespace DartSass\Handlers;
 use DartSass\Exceptions\CompilationException;
 use DartSass\Parsers\Nodes\VariableDeclarationNode;
 
+use function is_array;
 use function str_starts_with;
 use function substr;
 
@@ -39,9 +40,15 @@ class ModuleHandler
             return ['cssAst' => [], 'namespace' => $ns];
         }
 
-        $ast       = $this->loader->loadAst($path);
+        $ast = $this->loader->loadAst($path);
+
+        if (empty($namespace)) {
+            $namespace = $this->loader->getNamespaceFromPath($path);
+        }
+
         $namespace = $this->registerModule($path, $namespace, $ast);
-        $cssAst    = [];
+
+        $cssAst = [];
 
         $this->forwarder->processAst(
             $ast,
@@ -161,12 +168,51 @@ class ModuleHandler
 
     public function getVariables(string $namespace): array
     {
-        return $this->forwardedProperties[$namespace] ?? [];
+        $variables  = [];
+        $properties = $this->forwardedProperties[$namespace] ?? [];
+
+        foreach ($properties as $name => $property) {
+            if (! is_array($property) || ! isset($property['type'])) {
+                $variables[$name] = $property;
+            }
+        }
+
+        return $variables;
+    }
+
+    public function getMixins(string $namespace): array
+    {
+        $mixins = [];
+
+        $properties = $this->forwardedProperties[$namespace] ?? [];
+
+        foreach ($properties as $name => $property) {
+            if (is_array($property) && $property['type'] === 'mixin') {
+                $mixins[$name] = $property;
+            }
+        }
+
+        return $mixins;
+    }
+
+    public function getFunctions(string $namespace): array
+    {
+        $functions  = [];
+        $properties = $this->forwardedProperties[$namespace] ?? [];
+
+        foreach ($properties as $name => $property) {
+            if (is_array($property) && $property['type'] === 'function') {
+                $functions[$name] = $property;
+            }
+        }
+
+        return $functions;
     }
 
     private function registerBuiltInModuleProperties(string $path): void
     {
         $actualNamespace = substr($path, 5); // Remove 'sass:' prefix
+
         $properties = $this->builtInProvider->provideProperties($path);
 
         foreach ($properties as $name => $value) {

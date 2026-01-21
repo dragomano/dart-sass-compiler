@@ -10,6 +10,7 @@ use DartSass\Parsers\Syntax;
 use DartSass\Utils\ResultFormatterInterface;
 use Exception;
 
+use function is_array;
 use function is_string;
 use function preg_match;
 use function preg_replace_callback;
@@ -76,7 +77,7 @@ readonly class InterpolationEvaluator
                 $value = $this->unwrapQuotedValue($value);
 
                 // Handle nested interpolations in the value
-                if (is_string($value) && str_contains($value, '#{')) {
+                if (str_contains($value, '#{')) {
                     $value = $this->evaluate($value, $expression);
                 }
 
@@ -87,12 +88,16 @@ readonly class InterpolationEvaluator
         }, $string);
     }
 
-    private function unwrapQuotedValue(mixed $value): mixed
+    private function unwrapQuotedValue(mixed $value): string
     {
+        if (is_array($value) && isset($value['value'])) {
+            return isset($value['unit']) ? $value['value'] . $value['unit'] : (string) $value['value'];
+        }
+
         if (is_string($value) && preg_match('/^(["\']).*\1$/', $value)) {
             return trim($value, '"\'');
         }
 
-        return $value;
+        return (string) $value;
     }
 }

@@ -11,7 +11,6 @@ use DartSass\Utils\ResultFormatterInterface;
 use DartSass\Utils\StringFormatter;
 
 use function current;
-use function in_array;
 use function key;
 use function max;
 use function str_repeat;
@@ -55,7 +54,7 @@ readonly class DeclarationCompiler
                 $generatedPosition = $this->positionTracker->getCurrentPosition();
 
                 $evaluatedValue = $expression($value);
-                if (in_array($evaluatedValue, [null, 'null', ''], true)) {
+                if ($evaluatedValue === null || $evaluatedValue === '') {
                     continue;
                 }
 

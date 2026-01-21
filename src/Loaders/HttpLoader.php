@@ -17,7 +17,7 @@ class HttpLoader implements LoaderInterface
 {
     protected array $baseUrls;
 
-    public function __construct(array $baseUrls)
+    public function __construct(array $baseUrls = [])
     {
         $this->baseUrls = array_map(
             fn(string $url): string => rtrim($url, '/'),
@@ -51,10 +51,7 @@ class HttpLoader implements LoaderInterface
     protected function fetch(string $url): ?string
     {
         $context = stream_context_create([
-            'http' => [
-                'timeout' => 5,
-                'ignore_errors' => true,
-            ],
+            'http' => ['timeout' => 5, 'ignore_errors' => true],
         ]);
 
         $content = @file_get_contents($url, false, $context);

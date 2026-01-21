@@ -42,6 +42,10 @@ readonly class ResultFormatter implements ResultFormatterInterface
             return $node->value;
         }
 
+        if ($node->type === 'color') {
+            return (string) $node;
+        }
+
         return '[' . $node->type . ']';
     }
 }

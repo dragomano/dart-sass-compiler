@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DartSass\Handlers;
 
+use Closure;
 use DartSass\Evaluators\UserFunctionEvaluator;
 use DartSass\Handlers\Builtins\CustomFunctionHandler;
 
@@ -15,12 +16,12 @@ use function str_contains;
 class FunctionHandler
 {
     public function __construct(
-        private readonly ModuleHandler $moduleHandler,
-        private readonly FunctionRouter $router,
+        private readonly ModuleHandler         $moduleHandler,
+        private readonly FunctionRouter        $router,
         private readonly CustomFunctionHandler $customFunctionHandler,
         private readonly UserFunctionEvaluator $userFunctionEvaluator,
-        private $expression,
-        private array $userDefinedFunctions = []
+        private readonly Closure               $expression,
+        private array                          $userDefinedFunctions = []
     ) {}
 
     public function addCustom(string $name, callable $callback): void

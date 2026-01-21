@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DartSass\Compilers;
 
+use DartSass\Compilers\Nodes\ColorNodeCompiler;
 use DartSass\Compilers\Nodes\ForwardNodeCompiler;
 use DartSass\Compilers\Nodes\FunctionNodeCompiler;
 use DartSass\Compilers\Nodes\MixinNodeCompiler;
@@ -30,6 +31,7 @@ use function trim;
 class CompilerEngine implements CompilerEngineInterface
 {
     private const NODE_COMPILER_CLASSES = [
+        ColorNodeCompiler::class,
         ForwardNodeCompiler::class,
         FunctionNodeCompiler::class,
         MixinNodeCompiler::class,
@@ -57,35 +59,11 @@ class CompilerEngine implements CompilerEngineInterface
 
         $ast = $parser->parse();
 
-        $this->context->variableHandler->enterScope();
-
         $compiled = $this->compileAst($ast);
-
-        $this->context->variableHandler->exitScope();
 
         $compiled = $this->context->extendHandler->applyExtends($compiled);
 
-        if ($this->context->options['sourceMap'] && $this->context->options['sourceMapFile']) {
-            $sourceMapOptions = [];
-
-            if ($this->context->options['includeSources']) {
-                $sourceMapOptions['sourceContent']  = $string;
-                $sourceMapOptions['includeSources'] = true;
-            }
-
-            $sourceMapOptions['outputLines'] = substr_count($compiled, "\n") + 1;
-
-            $sourceMap = $this->context->sourceMapGenerator->generate(
-                $this->context->mappings,
-                $this->context->options['sourceFile'],
-                $this->context->options['outputFile'],
-                $sourceMapOptions
-            );
-
-            file_put_contents($this->context->options['sourceMapFile'], $sourceMap);
-
-            $compiled .= "\n/*# sourceMappingURL=" . $this->context->options['sourceMapFile'] . ' */';
-        }
+        $compiled = $this->generateSourceMapIfNeeded($compiled, $string);
 
         return $this->context->outputOptimizer->optimize($compiled);
     }
@@ -228,6 +206,35 @@ class CompilerEngine implements CompilerEngineInterface
     public function getIndent(int $level): string
     {
         return str_repeat('  ', $level);
+    }
+
+    private function generateSourceMapIfNeeded(string $compiled, string $content): string
+    {
+        if (! $this->context->options['sourceMap'] || ! $this->context->options['sourceMapFile']) {
+            return $compiled;
+        }
+
+        $sourceMapOptions = [];
+
+        if ($this->context->options['includeSources']) {
+            $sourceMapOptions['sourceContent']  = $content;
+            $sourceMapOptions['includeSources'] = true;
+        }
+
+        $sourceMapOptions['outputLines'] = substr_count($compiled, "\n") + 1;
+
+        $sourceMap = $this->context->sourceMapGenerator->generate(
+            $this->context->mappings,
+            $this->context->options['sourceFile'],
+            $this->context->options['outputFile'],
+            $sourceMapOptions
+        );
+
+        file_put_contents($this->context->options['sourceMapFile'], $sourceMap);
+
+        $compiled .= "\n/*# sourceMappingURL=" . $this->context->options['sourceMapFile'] . ' */';
+
+        return $compiled;
     }
 
     private function compileSpecialNode($node, string $parentSelector, int $nestingLevel): string

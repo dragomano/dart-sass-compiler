@@ -28,6 +28,16 @@ readonly class CalcValue implements LazyEvaluatable, Stringable
         return "calc({$this->format($this->left)} $this->operator {$this->format($this->right)})";
     }
 
+    public function getOperator(): string
+    {
+        return $this->operator;
+    }
+
+    public function getArgs(): array
+    {
+        return [$this->left, $this->right];
+    }
+
     public function evaluate(): string|array
     {
         if ($this->normalizedLeft === null || $this->normalizedRight === null) {

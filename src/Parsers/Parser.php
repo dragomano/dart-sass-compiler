@@ -7,6 +7,7 @@ namespace DartSass\Parsers;
 use DartSass\Exceptions\SyntaxException;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\AtRuleNode;
+use DartSass\Parsers\Nodes\ColorNode;
 use DartSass\Parsers\Nodes\CommentNode;
 use DartSass\Parsers\Nodes\CssCustomPropertyNode;
 use DartSass\Parsers\Nodes\CssPropertyNode;
@@ -64,6 +65,14 @@ class Parser implements TokenAwareParserInterface
         'not' => true,
     ];
 
+    protected const COLOR_FUNCTIONS = [
+        'lch'   => true,
+        'oklch' => true,
+        'hsl'   => true,
+        'hwb'   => true,
+        'lab'   => true,
+    ];
+
     protected const NESTED_SELECTOR_OPERATORS = [
         '&' => true,
         '.' => true,
@@ -73,7 +82,7 @@ class Parser implements TokenAwareParserInterface
         '~' => true,
     ];
 
-    private static ?string $attributeRegex1 = '/\[([^\]=]+)([~*^|$!]?=)(["\'"]?)([^"\'\s]+)(\3)\]/';
+    private static ?string $attributeRegex1 = '/\[([^\]=]+)([~*^|$!]?=)(["\']?)([^"\'\s]+)(\3)\]/';
 
     private static ?string $attributeRegex2 = '/^[a-zA-Z0-9_-]+$/';
 
@@ -153,6 +162,11 @@ class Parser implements TokenAwareParserInterface
                 case 'comment':
                     $rules[] = new CommentNode($token->value, $token->line, $token->column);
 
+                    $this->advanceToken();
+
+                    break;
+
+                case 'whitespace':
                     $this->advanceToken();
 
                     break;
@@ -572,6 +586,7 @@ class Parser implements TokenAwareParserInterface
             $this->consume('operator');
 
             $nextToken = $this->stream->expectAny('identifier', 'function');
+
             $name = StringFormatter::concat($name, StringFormatter::concat('.', $nextToken->value));
         }
 
@@ -587,25 +602,7 @@ class Parser implements TokenAwareParserInterface
             if ($this->peek('paren_open')) {
                 $this->consume('paren_open');
 
-                while (! $this->peek('paren_close')) {
-                    $this->skipWhitespace();
-
-                    if ($this->peek('paren_close')) {
-                        break;
-                    }
-
-                    $argValue = $this->parseExpression();
-                    $args[] = $argValue;
-
-                    if (! $this->peek('paren_close')) {
-                        $this->skipWhitespace();
-
-                        $commaToken = $this->stream->current();
-                        if ($commaToken && $commaToken->type === 'operator' && $commaToken->value === ',') {
-                            $this->advanceToken();
-                        }
-                    }
-                }
+                $args = $this->parseArgumentList();
 
                 $this->consume('paren_close');
 
@@ -614,6 +611,8 @@ class Parser implements TokenAwareParserInterface
 
             $this->advanceToken();
         }
+
+        $this->skipWhitespace();
 
         $content = null;
         if ($this->peek('brace_open')) {
@@ -790,6 +789,11 @@ class Parser implements TokenAwareParserInterface
         }
 
         $this->consume('paren_close');
+
+        $this->skipWhitespace();
+
+        $this->skipWhitespace();
+
         $this->consume('brace_open');
 
         $content = $this->parseBody();
@@ -840,6 +844,11 @@ class Parser implements TokenAwareParserInterface
 
                         $argName = $varToken->value;
 
+                        if ($this->peek('spread_operator')) {
+                            $this->consume('spread_operator');
+                            $argName .= '...';
+                        }
+
                         if ($this->peek('colon')) {
                             $this->consume('colon');
 
@@ -870,6 +879,8 @@ class Parser implements TokenAwareParserInterface
 
             $this->advanceToken();
         }
+
+        $this->skipWhitespace();
 
         $this->consume('brace_open');
 
@@ -1113,6 +1124,11 @@ class Parser implements TokenAwareParserInterface
             }
 
             if (isset(self::SELECTOR_TOKENS[$token->type])) {
+                // Add space between certain token combinations in selectors
+                if ($value !== '' && $this->needsSpaceBeforeToken($value, $token)) {
+                    $value .= ' ';
+                }
+
                 $value .= $token->value;
 
                 $this->advanceToken();
@@ -1157,7 +1173,30 @@ class Parser implements TokenAwareParserInterface
             }
         }
 
-        return new SelectorNode($value, $line);
+        return new SelectorNode(trim($value), $line);
+    }
+
+    private function needsSpaceBeforeToken(string $currentValue, Token $nextToken): bool
+    {
+        // Get the last character of current value
+        $lastChar = substr($currentValue, -1);
+
+        // Don't add space if current value ends with selector operators
+        if (in_array($lastChar, ['.', '#', '>', '+', '~', '&', ':'], true)) {
+            return false;
+        }
+
+        // Don't add space before selector operators
+        if (in_array($nextToken->value, ['.', '#', '>', '+', '~', '&', ':'], true)) {
+            return false;
+        }
+
+        // Add space between identifiers (e.g., 'pre span')
+        if ($nextToken->type === 'identifier') {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -1290,12 +1329,28 @@ class Parser implements TokenAwareParserInterface
     /**
      * @throws SyntaxException
      */
-    private function parseFunctionCall(object $token): FunctionNode
+    private function parseFunctionCall(object $token): FunctionNode|ColorNode
     {
         $funcName = $token->value;
 
         $this->consume('paren_open');
 
+        $args = $this->parseArgumentList(includeSpreads: true);
+
+        $this->consume('paren_close');
+
+        if (isset(self::COLOR_FUNCTIONS[$funcName])) {
+            return $this->createColorNode($funcName, $args, $token->line);
+        }
+
+        return new FunctionNode($funcName, $args, line: $token->line);
+    }
+
+    /**
+     * @throws SyntaxException
+     */
+    private function parseArgumentList(bool $includeSpreads = false): array
+    {
         $args = [];
 
         while (! $this->peek('paren_close')) {
@@ -1305,52 +1360,107 @@ class Parser implements TokenAwareParserInterface
                 break;
             }
 
-            // Handle named arguments ($var: value)
-            if ($this->peek('variable')) {
-                $varToken = $this->consume('variable');
-                $argName  = $varToken->value;
+            $namedArg = $this->tryParseNamedArgument();
 
-                if ($this->peek('colon')) {
-                    $this->consume('colon');
-                    $this->skipWhitespace();
+            if ($namedArg !== null) {
+                [$argName, $argValue] = $namedArg;
 
-                    $argValue = $this->parseBinaryExpression(0);
-                    $args[$argName] = $argValue;
+                $args[$argName] = $argValue;
 
-                    // Skip to next iteration for comma handling
-                    if (! $this->peek('paren_close')) {
-                        $this->skipWhitespace();
+                $this->consumeCommaIfPresent();
 
-                        $commaToken = $this->stream->current();
-                        if ($commaToken && $commaToken->type === 'operator' && $commaToken->value === ',') {
-                            $this->advanceToken();
-                        }
-                    }
-
-                    continue;
-                }
-
-                // Not a named argument, rollback and parse as regular expression
-                $this->setTokenIndex($this->getTokenIndex() - 1);
+                continue;
             }
 
-            // Parse regular positional argument
             $arg = $this->parseBinaryExpression(0);
+
+            if ($includeSpreads) {
+                $arg = $this->maybeExpandListArgument($arg);
+            }
+
             $args[] = $this->maybeWrapWithSpread($arg);
 
-            if (! $this->peek('paren_close')) {
-                $this->skipWhitespace();
-
-                $commaToken = $this->stream->current();
-                if ($commaToken && $commaToken->type === 'operator' && $commaToken->value === ',') {
-                    $this->advanceToken();
-                }
-            }
+            $this->consumeCommaIfPresent();
         }
 
-        $this->consume('paren_close');
+        return $args;
+    }
 
-        return new FunctionNode($funcName, $args, line: $token->line);
+    /**
+     * @throws SyntaxException
+     */
+    private function tryParseNamedArgument(): ?array
+    {
+        if (! $this->peek('variable')) {
+            return null;
+        }
+
+        $varToken = $this->consume('variable');
+        $argName  = $varToken->value;
+
+        $this->skipWhitespace();
+
+        if (! $this->peek('colon')) {
+            $this->setTokenIndex($this->getTokenIndex() - 1);
+
+            return null;
+        }
+
+        $this->consume('colon');
+        $this->skipWhitespace();
+
+        $argValue = $this->parseBinaryExpression(0);
+
+        return [$argName, $argValue];
+    }
+
+    private function consumeCommaIfPresent(): void
+    {
+        if ($this->peek('paren_close')) {
+            return;
+        }
+
+        $this->skipWhitespace();
+
+        $commaToken = $this->stream->current();
+        if ($commaToken && $commaToken->type === 'operator' && $commaToken->value === ',') {
+            $this->advanceToken();
+        }
+    }
+
+    /**
+     * @throws SyntaxException
+     */
+    private function maybeExpandListArgument(AstNode $arg): AstNode
+    {
+        $this->skipWhitespace();
+
+        $next = $this->stream->current();
+
+        if ($next
+            && ! $this->peek('paren_close')
+            && ! ($next->type === 'operator' && $next->value === ',')
+            && ! ($next->type === 'spread_operator')
+            && ! isset(self::BLOCK_END_TYPES[$next->type])
+        ) {
+            $values = [$arg];
+
+            while (
+                $this->stream->current()
+                && ! $this->peek('paren_close')
+                && ! ($this->stream->current()->type === 'operator' && $this->stream->current()->value === ',')
+                && ! ($this->stream->current()->type === 'spread_operator')
+                && ! isset(self::BLOCK_END_TYPES[$this->stream->current()->type])
+            ) {
+                $values[] = $this->parseBinaryExpression(0);
+
+                $this->skipWhitespace();
+            }
+
+            return new ListNode($values, $arg->properties['line'] ?? 0, 'space');
+        }
+
+        return $arg;
     }
 
     /**
@@ -1362,8 +1472,8 @@ class Parser implements TokenAwareParserInterface
 
         if ($this->peek('spread_operator')) {
             $this->consume('spread_operator');
-
             $this->skipWhitespace();
+
             if (! $this->peek('paren_close')) {
                 throw new SyntaxException(
                     'Spread operator (...) must be the last argument',
@@ -1376,6 +1486,56 @@ class Parser implements TokenAwareParserInterface
         }
 
         return $arg;
+    }
+
+    private function createColorNode(string $funcName, array $args, int $line): ColorNode
+    {
+        $alpha = null;
+
+        $components = [];
+        foreach ($args as $arg) {
+            if ($arg instanceof ListNode) {
+                foreach ($arg->properties['values'] as $value) {
+                    $components[] = $this->extractColorComponent($value);
+                }
+            } else {
+                $components[] = $this->extractColorComponent($arg);
+            }
+        }
+
+        if (count($components) > 0) {
+            $lastComponent = $components[count($components) - 1];
+            if (is_string($lastComponent) && str_contains($lastComponent, '/')) {
+                [$colorPart, $alphaPart] = explode('/', $lastComponent, 2);
+                $components[count($components) - 1] = trim($colorPart);
+                $alpha = (float) trim($alphaPart);
+            }
+        }
+
+        return new ColorNode($funcName, $components, $alpha, $line);
+    }
+
+    private function extractColorComponent(AstNode $node): string|int|float
+    {
+        return match ($node->type) {
+            'number',
+            'identifier',
+            'string'    => $node->properties['value'],
+            'operation' => $this->extractOperationComponent($node),
+            default     => (string) $node,
+        };
+    }
+
+    private function extractOperationComponent(AstNode $node): string
+    {
+        if ($node->properties['operator'] === '/') {
+            $left = $this->extractColorComponent($node->properties['left']);
+            $right = $this->extractColorComponent($node->properties['right']);
+
+            return "$left/$right";
+        }
+
+        return (string) $node;
     }
 
     private function parseNameAndInit(): array
@@ -1434,7 +1594,7 @@ class Parser implements TokenAwareParserInterface
 
         $this->consume('brace_close');
 
-        return StringFormatter::concatMultiple(['#{', $this->formatExpressionForSelector($expression), '}']);
+        return $this->formatExpressionForSelector($expression);
     }
 
     private function formatExpressionForSelector(AstNode $expr): string

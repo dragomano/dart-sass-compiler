@@ -31,7 +31,7 @@ class Lexer implements LexerInterface
 
     private bool $inBlock = false;
 
-    private bool $expectingPropertyValue = false;
+    private bool $expectingValue = false;
 
     public function tokenize(string $input): TokenStreamInterface
     {
@@ -40,6 +40,7 @@ class Lexer implements LexerInterface
         [$regex, $patterns] = $this->getTokenizerData();
 
         $tokens = [];
+
         $inputLength = strlen($input);
 
         while ($this->position < $inputLength) {
@@ -51,19 +52,19 @@ class Lexer implements LexerInterface
                         continue;
                     }
 
-                    $matchValue = $matches[$type];
+                    $matchValue  = $matches[$type];
                     $matchLength = strlen($matchValue);
 
                     $this->updateBlockState($type);
                     $this->updatePropertyValueState($type);
 
-                    if (in_array($type, ['whitespace', 'newline'], true)) {
+                    if ($type === 'whitespace') {
                         $this->updatePosition($matchValue, $matchLength);
 
                         continue 2;
                     }
 
-                    if ($this->expectingPropertyValue && $type === 'operator' && $matchValue === '#') {
+                    if ($this->expectingValue && $type === 'operator' && $matchValue === '#') {
                         $this->validatePotentialHexColor($input, $this->position);
                     }
 
@@ -81,11 +82,11 @@ class Lexer implements LexerInterface
 
     private function resetState(): void
     {
-        $this->line = 1;
-        $this->column = 1;
-        $this->position = 0;
-        $this->inBlock = false;
-        $this->expectingPropertyValue = false;
+        $this->line           = 1;
+        $this->column         = 1;
+        $this->position       = 0;
+        $this->inBlock        = false;
+        $this->expectingValue = false;
     }
 
     private function updateBlockState(string $type): void
@@ -94,16 +95,16 @@ class Lexer implements LexerInterface
             $this->inBlock = true;
         } elseif ($type === 'brace_close') {
             $this->inBlock = false;
-            $this->expectingPropertyValue = false;
+            $this->expectingValue = false;
         }
     }
 
     private function updatePropertyValueState(string $type): void
     {
         if ($type === 'colon') {
-            $this->expectingPropertyValue = true;
+            $this->expectingValue = true;
         } elseif (in_array($type, ['semicolon', 'brace_close'], true)) {
-            $this->expectingPropertyValue = false;
+            $this->expectingValue = false;
         }
     }
 
@@ -172,7 +173,7 @@ class Lexer implements LexerInterface
         $length   = strlen($hexPart);
         $nextChar = substr($remaining, $length, 1);
 
-        $validLength = in_array($length, [3, 4, 6, 8], true);
+        $validLength     = in_array($length, [3, 4, 6, 8], true);
         $validTerminator = $nextChar === '' || in_array($nextChar, [' ', ';', '}', ')'], true);
 
         if ($validLength && ! ctype_xdigit($hexPart) && $validTerminator) {
