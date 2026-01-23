@@ -20,34 +20,44 @@ use function is_string;
 use function json_decode;
 use function key;
 
-class MapModule
+class MapModule extends AbstractModule
 {
     public function deepMerge(array $args)
     {
-        $map1 = $args[0] ?? null;
-        $map2 = $args[1] ?? null;
+        [$map1, $map2] = $this->validateArgs($args, 2, 'deep-merge');
 
         if (! $this->isMap($map1) || ! $this->isMap($map2)) {
             return $map1 ?: null;
         }
 
-        return new SassMap($this->deepMergeMaps($map1, $map2));
+        $normalizedMap1 = $this->normalizeMap($map1);
+        $normalizedMap2 = $this->normalizeMap($map2);
+
+        return new SassMap($this->deepMergeMaps($normalizedMap1, $normalizedMap2));
     }
 
     public function deepRemove(array $args)
     {
-        $map  = $this->normalizeMap($args[0] ?? null);
+        $this->validateArgs($args, 1, 'deep-remove', true);
+
+        $originalMap = $args[0];
+
+        $map  = $this->normalizeMap($originalMap);
         $keys = array_slice($args, 1);
 
         if (! $this->isMap($map)) {
-            return $args[0] ?? null;
+            return $originalMap;
         }
 
-        return new SassMap($this->deepRemoveKeys($map, $keys));
+        $result = $this->deepRemoveKeys($map, $keys);
+
+        return $this->wrapResultIfNeeded($result);
     }
 
     public function get(array $args)
     {
+        $this->validateArgs($args, 2, 'get', true);
+
         [$map, $keys] = $this->parseMapAndKeys($args);
 
         if (! $this->isMap($map)) {
@@ -62,6 +72,8 @@ class MapModule
 
     public function hasKey(array $args): bool
     {
+        $this->validateArgs($args, 2, 'has-key', true);
+
         [$map, $keys] = $this->parseMapAndKeys($args);
 
         if (! $this->isMap($map)) {
@@ -75,7 +87,13 @@ class MapModule
 
     public function keys(array $args): ?SassList
     {
-        $map = $this->extractMapFromArgs($args);
+        if (count($args) > 1 || $this->isDirectMap($args)) {
+            $map = $this->extractMapFromArgs($args);
+        } else {
+            [$map] = $this->validateArgs($args, 1, 'keys');
+
+            $map = $this->extractMapFromArgs([$map]);
+        }
 
         if (! $this->isMap($map)) {
             return null;
@@ -89,6 +107,8 @@ class MapModule
 
     public function merge(array $args)
     {
+        $this->validateArgs($args, 2, 'merge', true);
+
         if ($this->isNestedMerge($args)) {
             return $this->handleNestedMerge($args);
         }
@@ -99,8 +119,9 @@ class MapModule
             return $map1 ?: null;
         }
 
-        $map1   = $this->normalizeMap($map1);
-        $map2   = $this->normalizeMap($map2);
+        $map1 = $this->normalizeMap($map1);
+        $map2 = $this->normalizeMap($map2);
+
         $result = array_merge($map1, $map2);
 
         return new SassMap($result);
@@ -108,9 +129,12 @@ class MapModule
 
     public function remove(array $args)
     {
-        $originalMap = $args[0] ?? null;
-        $map         = $this->normalizeMap($originalMap);
-        $keys        = array_slice($args, 1);
+        $this->validateArgs($args, 2, 'remove', true);
+
+        $originalMap = $args[0];
+
+        $map  = $this->normalizeMap($originalMap);
+        $keys = array_slice($args, 1);
 
         if (! $this->isMap($map)) {
             return $originalMap;
@@ -125,7 +149,9 @@ class MapModule
 
     public function set(array $args): SassMap
     {
-        $map   = $this->normalizeMap($args[0] ?? null);
+        $this->validateArgs($args, 2, 'set', true);
+
+        $map   = $this->normalizeMap($args[0]);
         $value = array_pop($args);
         $keys  = array_slice($args, 1);
 
@@ -144,7 +170,13 @@ class MapModule
 
     public function values(array $args): ?SassList
     {
-        $map = $this->extractMapFromArgs($args);
+        if (count($args) > 1 || $this->isDirectMap($args)) {
+            $map = $this->extractMapFromArgs($args);
+        } else {
+            [$map] = $this->validateArgs($args, 1, 'values');
+
+            $map = $this->extractMapFromArgs([$map]);
+        }
 
         if (! $this->isMap($map)) {
             return null;
@@ -210,7 +242,8 @@ class MapModule
             return false;
         }
 
-        $lastArg       = end($args);
+        $lastArg = end($args);
+
         $secondLastArg = $args[count($args) - 2];
 
         return $this->isMap($lastArg) && ! $this->isMap($secondLastArg);
@@ -281,6 +314,7 @@ class MapModule
     private function convertSassListToArray(SassList $list): array
     {
         $arrayValue = [];
+
         $values = $list->value;
 
         for ($i = 0; $i < count($values); $i += 3) {
@@ -358,15 +392,19 @@ class MapModule
 
     private function deepMergeMaps(array $map1, array $map2): array
     {
-        $map1   = $this->normalizeMap($map1);
-        $map2   = $this->normalizeMap($map2);
+        $map1 = $this->normalizeMap($map1);
+        $map2 = $this->normalizeMap($map2);
+
         $result = $map1;
 
         foreach ($map2 as $key => $value) {
             $value = $this->normalizeMap($value);
 
-            if (isset($result[$key]) && is_array($result[$key]) && is_array($value)) {
-                $result[$key] = $this->deepMergeMaps($result[$key], $value);
+            if (isset($result[$key]) && $this->isMap($result[$key]) && $this->isMap($value)) {
+                $result[$key] = $this->deepMergeMaps(
+                    $this->normalizeMap($result[$key]),
+                    $this->normalizeMap($value)
+                );
             } else {
                 $result[$key] = $value;
             }
@@ -391,6 +429,10 @@ class MapModule
 
         $current = &$map;
         foreach ($keys as $key) {
+            if (isset($current[$key]) && $current[$key] instanceof SassMap) {
+                $current[$key] = $current[$key]->value;
+            }
+
             if (! isset($current[$key]) || ! is_array($current[$key])) {
                 return $map;
             }

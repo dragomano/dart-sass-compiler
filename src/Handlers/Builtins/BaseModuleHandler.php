@@ -8,6 +8,11 @@ use function array_map;
 use function array_merge;
 use function in_array;
 use function is_array;
+use function is_string;
+use function lcfirst;
+use function str_replace;
+use function trim;
+use function ucwords;
 
 abstract class BaseModuleHandler implements ModuleHandlerInterface
 {
@@ -33,6 +38,11 @@ abstract class BaseModuleHandler implements ModuleHandlerInterface
     public function getGlobalFunctions(): array
     {
         return static::GLOBAL_FUNCTIONS;
+    }
+
+    protected function kebabToCamel(string $name): string
+    {
+        return lcfirst(str_replace(' ', '', ucwords(str_replace('-', ' ', $name))));
     }
 
     protected function normalizeArgs(array $args): array

@@ -323,4 +323,4 @@ describe('SassColor edge cases', function () {
             ->and($color->getLabA())->toBe(0.0)
             ->and($color->getLabB())->toBe(0.0);
     });
-});
+})->covers(SassColor::class);

@@ -26,7 +26,7 @@ class ColorModule
 {
     use LegacyColorFunctions;
 
-    private const COLOR_ADJUST_PARAMS = [
+    private const ADJUST_PARAMS = [
         '$red'        => true,
         '$green'      => true,
         '$blue'       => true,
@@ -503,7 +503,7 @@ class ColorModule
 
         foreach ($adjustments as $key => $value) {
             $valueNumber = match (true) {
-                isset(self::COLOR_ADJUST_PARAMS[$key]) => (float) $value,
+                isset(self::ADJUST_PARAMS[$key]) => (float) $value,
                 default => $value,
             };
 

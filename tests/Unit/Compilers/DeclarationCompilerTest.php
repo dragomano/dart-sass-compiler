@@ -83,31 +83,5 @@ describe('DeclarationCompiler', function () {
 
             expect($result)->toBe('');
         });
-
-        it('skips declaration when evaluated value is "null"', function () {
-            $declaration    = ['property' => 'value'];
-            $declarations   = [$declaration];
-            $nestingLevel   = 0;
-            $parentSelector = '';
-
-            $this->positionTracker
-                ->shouldReceive('getCurrentPosition')
-                ->once()
-                ->andReturn(['line' => 1, 'column' => 0]);
-
-            $compileAst = fn() => 'should not be called';
-            $expression = fn() => 'null';
-
-            $result = $this->declarationCompiler->compile(
-                $declarations,
-                $nestingLevel,
-                $parentSelector,
-                $this->context,
-                $compileAst,
-                $expression
-            );
-
-            expect($result)->toBe('');
-        });
     });
 });

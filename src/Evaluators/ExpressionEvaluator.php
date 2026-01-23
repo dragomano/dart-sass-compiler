@@ -13,6 +13,7 @@ use DartSass\Utils\ArithmeticCalculator;
 use DartSass\Utils\StringFormatter;
 use DartSass\Utils\ValueComparator;
 use DartSass\Values\SassList;
+use DartSass\Values\SassMap;
 use DartSass\Values\SassNumber;
 
 use function end;
@@ -29,7 +30,7 @@ use function trim;
 
 class ExpressionEvaluator extends AbstractEvaluator
 {
-    private const DIRECT_VALUE_TYPES = ['color', 'selector', 'hex_color', 'operator'];
+    private const DIRECT_VALUE_TYPES = ['selector', 'hex_color', 'operator'];
 
     private const RECURSIVE_TYPES = ['condition', 'interpolation'];
 
@@ -72,12 +73,10 @@ class ExpressionEvaluator extends AbstractEvaluator
         $type  = $expr->type;
         $props = $expr->properties;
 
-        // Direct value types
         if (in_array($type, self::DIRECT_VALUE_TYPES, true)) {
             return $props['value'];
         }
 
-        // Recursive evaluation types
         if (in_array($type, self::RECURSIVE_TYPES, true)) {
             return $this->evaluate($props['expression']);
         }
@@ -96,6 +95,7 @@ class ExpressionEvaluator extends AbstractEvaluator
             'property_access'     => $this->evaluatePropertyAccessExpression($expr),
             'css_property'        => $this->evaluateCssPropertyExpression($expr),
             'unary'               => $this->evaluateUnaryExpression($expr),
+            'color'               => $this->evaluateColorExpression($expr),
             default               => throw new CompilationException(StringFormatter::concatMultiple($values)),
         };
     }
@@ -173,7 +173,6 @@ class ExpressionEvaluator extends AbstractEvaluator
             return $numericValue;
         }
 
-        // Use SassNumber for consistent handling
         $sassNumber = new SassNumber((float) $numericValue, $unit);
 
         return $sassNumber->toArray();
@@ -200,7 +199,7 @@ class ExpressionEvaluator extends AbstractEvaluator
         );
     }
 
-    private function evaluateMapExpression(array $props): array
+    private function evaluateMapExpression(array $props): SassMap
     {
         $pairs = $props['pairs'] ?? [];
         $map   = [];
@@ -216,7 +215,7 @@ class ExpressionEvaluator extends AbstractEvaluator
             }
         }
 
-        return $map;
+        return new SassMap($map);
     }
 
     private function evaluateIdentifierExpression(AstNode $expr): mixed
@@ -265,6 +264,11 @@ class ExpressionEvaluator extends AbstractEvaluator
         $value    = $this->evaluate($expr->properties['value']);
 
         return StringFormatter::concatMultiple([$property, ': ', $this->formatValue($value)]);
+    }
+
+    private function evaluateColorExpression(AstNode $expr): AstNode
+    {
+        return $expr;
     }
 
     private function evaluateUnaryExpression(AstNode $expr): string|array|bool|float

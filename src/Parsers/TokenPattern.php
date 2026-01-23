@@ -14,7 +14,7 @@ enum TokenPattern: string
     case WHITESPACE                = '(?P<whitespace>\s+)';
     case STRING                    = '(?P<string>"[^"\\\\]*(?:\\\\.[^"\\\\]*)*"|\'[^\'\\\\]*(?:\\\\.[^\'\\\\]*)*\')';
     case COMMENT                   = '(?P<comment>\/\/.*?$|\/\*.*?\*\/)';
-    case NUMBER                    = '(?P<number>-?(\d*\.\d+|\d+(\.\d+)?)(?:%|em|px|rem|vw|vh|s|ms|deg|fr)?)';
+    case NUMBER                    = '(?P<number>-?(\d*\.\d+|\d+(\.\d+)?)(?:%|em|px|rem|vw|vh|s|ms|deg|rad|turn|grad|fr)?)';
     case VARIABLE                  = '(?P<variable>\$[a-zA-Z_-][a-zA-Z0-9_-]*)';
     case AT_RULE                   = '(?P<at_rule>@[a-zA-Z_-]+)';
     case FUNCTION                  = '(?P<function>[a-zA-Z_-][a-zA-Z0-9_.-]*(?=\())';

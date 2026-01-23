@@ -54,7 +54,7 @@ class RuleNodeCompiler extends AbstractNodeCompiler
         $flowControlCss = '';
         $otherNestedCss = '';
 
-        foreach ($node->properties['nested'] ?? [] as $nestedItem) {
+        foreach ($node->nested ?? [] as $nestedItem) {
             $itemCss = match ($nestedItem->type) {
                 'include' => $this->compileIncludeNode($nestedItem, $context, $selector, $nestingLevel + 1),
                 'media'   => $this->bubbleMediaQuery($nestedItem, $selector, $nestingLevel, $context),

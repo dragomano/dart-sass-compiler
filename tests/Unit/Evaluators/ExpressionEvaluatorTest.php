@@ -5,6 +5,7 @@ declare(strict_types=1);
 use DartSass\Compilers\CompilerContext;
 use DartSass\Evaluators\ExpressionEvaluator;
 use DartSass\Exceptions\CompilationException;
+use DartSass\Handlers\FunctionHandler;
 use DartSass\Handlers\ModuleHandler;
 use DartSass\Handlers\VariableHandler;
 use DartSass\Parsers\Nodes\AstNode;
@@ -17,8 +18,9 @@ describe('ExpressionEvaluator', function () {
     beforeEach(function () {
         $this->context   = mock(CompilerContext::class);
         $this->evaluator = new ExpressionEvaluator($this->context);
-        $this->context->expressionEvaluator = $this->evaluator;
         $this->accessor  = new ReflectionAccessor($this->evaluator);
+
+        $this->context->expressionEvaluator = $this->evaluator;
     });
 
     describe('supports()', function () {
@@ -589,6 +591,31 @@ describe('ExpressionEvaluator', function () {
             $result = $this->accessor->callMethod('convertKeyToString', [null]);
 
             expect($result)->toBeNull();
+        });
+    });
+
+    describe('evaluateFunctionWithSlashSeparator()', function () {
+        it('evaluates function with slash separator correctly', function () {
+            $functionHandler = mock(FunctionHandler::class);
+            $functionHandler->shouldReceive('call')
+                ->with('hsl', [120, ['value' => 50.0, 'unit' => '%'], ['value' => 50.0, 'unit' => '%'], 0.5])
+                ->andReturn('hsl(120 50% 50% / 0.5)');
+
+            $this->context->functionHandler = $functionHandler;
+
+            $operationNode = mock(AstNode::class);
+            $operationNode->type = 'operation';
+            $operationNode->properties = [
+                'operator' => '/',
+                'left' => '50%',
+                'right' => 0.5,
+            ];
+
+            $args = [120, '50%', $operationNode];
+
+            $result = $this->accessor->callMethod('evaluateFunctionWithSlashSeparator', ['hsl', $args]);
+
+            expect($result)->toBe('hsl(120 50% 50% / 0.5)');
         });
     });
 });

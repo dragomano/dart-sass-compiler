@@ -69,6 +69,24 @@ describe('MixinHandler', function () {
             expect($result)->toContain('color: red;');
         });
 
+        it('includes mixin with named arguments', function () {
+            $this->mixinHandler->define(
+                'namedMixin',
+                ['$color' => null],
+                [['property' => 'color', 'value' => '$color']]
+            );
+
+            $this->compilerEngine->shouldReceive('getContext')->andReturn($this->context);
+            $this->compilerEngine->shouldReceive('compileDeclarations')->andReturn('color: blue;');
+            $this->variableHandler->shouldReceive('enterScope');
+            $this->variableHandler->shouldReceive('define');
+            $this->variableHandler->shouldReceive('exitScope');
+
+            $result = $this->mixinHandler->include('namedMixin', ['$color' => 'blue']);
+
+            expect($result)->toContain('color: blue;');
+        });
+
         it('handles default arguments', function () {
             $identifierNode = new IdentifierNode('blue', 0);
             $this->mixinHandler->define(
@@ -259,6 +277,24 @@ describe('MixinHandler', function () {
                 ->and($result)->toContain('height: 20px');
         });
 
+        it('handles spread arguments with used keys', function () {
+            $this->mixinHandler->define(
+                'spreadMixin',
+                ['$a' => null, '$rest...' => null],
+                [['property' => 'content', 'value' => '"$a and $rest"']]
+            );
+
+            $this->compilerEngine->shouldReceive('getContext')->andReturn($this->context);
+            $this->compilerEngine->shouldReceive('compileDeclarations')->andReturn('content: "val1 and val2,val3";');
+            $this->variableHandler->shouldReceive('enterScope');
+            $this->variableHandler->shouldReceive('define');
+            $this->variableHandler->shouldReceive('exitScope');
+
+            $result = $this->mixinHandler->include('spreadMixin', ['val1', 'val2', 'val3']);
+
+            expect($result)->toContain('content: "val1 and val2,val3";');
+        });
+
         it('creates fallback compiler when no parent compiler provided', function () {
             $this->mixinHandler->define('fallbackMixin', [], [['color' => 'red']]);
 
@@ -293,6 +329,39 @@ describe('MixinHandler', function () {
 
             $mixins = $this->mixinHandler->getMixins();
             expect($mixins['mixins'])->not->toHaveKey('testMixin');
+        });
+
+        it('defines mixin in scope when scopes are not empty', function () {
+            $this->mixinHandler->enterScope();
+            $this->mixinHandler->define('scopedMixin', [], [['property' => 'color', 'value' => 'green']]);
+
+            $this->compilerEngine->shouldReceive('getContext')->andReturn($this->context);
+            $this->compilerEngine->shouldReceive('compileDeclarations')->andReturn('color: green;');
+            $this->variableHandler->shouldReceive('enterScope');
+            $this->variableHandler->shouldReceive('exitScope');
+
+            $result = $this->mixinHandler->include('scopedMixin', []);
+            expect($result)->toContain('color: green;');
+        });
+    });
+
+    describe('enterScope and exitScope methods', function () {
+        it('enters and exits scope', function () {
+            $this->mixinHandler->enterScope();
+            $this->mixinHandler->define('scopedMixin', [], [['property' => 'color', 'value' => 'yellow']]);
+
+            $this->compilerEngine->shouldReceive('getContext')->andReturn($this->context);
+            $this->compilerEngine->shouldReceive('compileDeclarations')->andReturn('color: green;');
+            $this->variableHandler->shouldReceive('enterScope');
+            $this->variableHandler->shouldReceive('exitScope');
+
+            $result = $this->mixinHandler->include('scopedMixin', []);
+            expect($result)->toContain('color: green;');
+
+            $this->mixinHandler->exitScope();
+
+            expect(fn() => $this->mixinHandler->include('scopedMixin', []))
+                ->toThrow(CompilationException::class);
         });
     });
 

@@ -9,6 +9,7 @@ use DartSass\Parsers\Nodes\CommentNode;
 use DartSass\Parsers\Nodes\IdentifierNode;
 use DartSass\Parsers\Nodes\OperationNode;
 use DartSass\Parsers\Nodes\VariableNode;
+use DartSass\Values\CalcValue;
 
 readonly class ResultFormatter implements ResultFormatterInterface
 {
@@ -40,6 +41,10 @@ readonly class ResultFormatter implements ResultFormatterInterface
 
         if ($node instanceof IdentifierNode || $node instanceof CommentNode) {
             return $node->value;
+        }
+
+        if ($node->type === 'color') {
+            return (string) $node;
         }
 
         return '[' . $node->type . ']';

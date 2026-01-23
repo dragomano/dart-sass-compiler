@@ -25,6 +25,7 @@ describe('ListModule', function () {
 
         it('appends value to list with comma separator', function () {
             $list = new SassList(['a', 'b'], 'comma');
+
             $result = $this->listModule->append([$list, 'c']);
 
             expect($result)->toBeInstanceOf(SassList::class)
@@ -33,20 +34,16 @@ describe('ListModule', function () {
 
         it('appends value to list preserving existing separator', function () {
             $list = new SassList(['a', 'b'], 'comma');
+
             $result = $this->listModule->append([$list, 'c']);
 
             expect($result)->toBeInstanceOf(SassList::class)
                 ->and($result->separator)->toBe('comma');
         });
 
-        it('throws exception when missing list for append', function () {
+        it('throws exception when missing arguments for append', function () {
             expect(fn() => $this->listModule->append([]))
-                ->toThrow(CompilationException::class, 'Missing list for append');
-        });
-
-        it('throws exception when missing value for append', function () {
-            expect(fn() => $this->listModule->append([['a', 'b']]))
-                ->toThrow(CompilationException::class, 'Missing value for append');
+                ->toThrow(CompilationException::class, 'append() requires at least two arguments');
         });
     });
 
@@ -65,19 +62,15 @@ describe('ListModule', function () {
 
         it('finds index in comma-separated list', function () {
             $list = new SassList(['a', 'b', 'c'], 'comma');
+
             $result = $this->listModule->index([$list, 'b']);
 
             expect($result)->toBe(2);
         });
 
-        it('throws exception when missing list for index', function () {
+        it('throws exception when missing arguments for index', function () {
             expect(fn() => $this->listModule->index([]))
-                ->toThrow(CompilationException::class, 'Missing list for index');
-        });
-
-        it('throws exception when missing value for index', function () {
-            expect(fn() => $this->listModule->index([['a', 'b']]))
-                ->toThrow(CompilationException::class, 'Missing value for index');
+                ->toThrow(CompilationException::class, 'index() requires exactly two arguments');
         });
     });
 
@@ -94,9 +87,12 @@ describe('ListModule', function () {
             expect($result)->toBeFalse();
         });
 
-        it('throws exception when missing list for is-bracketed', function () {
+        it('throws exception when missing argument for is-bracketed', function () {
             expect(fn() => $this->listModule->isBracketed([]))
-                ->toThrow(CompilationException::class, 'Missing list for is-bracketed');
+                ->toThrow(
+                    CompilationException::class,
+                    'is-bracketed() requires exactly one argument'
+                );
         });
     });
 
@@ -112,6 +108,7 @@ describe('ListModule', function () {
         it('joins lists with comma separator', function () {
             $list1 = new SassList(['a', 'b'], 'comma');
             $list2 = new SassList(['c', 'd'], 'comma');
+
             $result = $this->listModule->join([$list1, $list2]);
 
             expect($result)->toBeInstanceOf(SassList::class)
@@ -125,14 +122,9 @@ describe('ListModule', function () {
                 ->and($result->bracketed)->toBeTrue();
         });
 
-        it('throws exception when missing list1 for join', function () {
+        it('throws exception when missing arguments for join', function () {
             expect(fn() => $this->listModule->join([]))
-                ->toThrow(CompilationException::class, 'Missing list1 for join');
-        });
-
-        it('throws exception when missing list2 for join', function () {
-            expect(fn() => $this->listModule->join([['a', 'b']]))
-                ->toThrow(CompilationException::class, 'Missing list2 for join');
+                ->toThrow(CompilationException::class, 'join() requires at least two arguments');
         });
     });
 
@@ -161,9 +153,20 @@ describe('ListModule', function () {
             expect($result)->toBe(1);
         });
 
-        it('throws exception when missing list for length', function () {
+        it('gets length of ListNode', function () {
+            $listNode = new ListNode(['x', 'y', 'z'], 0, 'space', false);
+
+            $result = $this->listModule->length([$listNode]);
+
+            expect($result)->toBe(3);
+        });
+
+        it('throws exception when missing argument for length', function () {
             expect(fn() => $this->listModule->length([]))
-                ->toThrow(CompilationException::class, 'Missing list for length');
+                ->toThrow(
+                    CompilationException::class,
+                    'length() requires exactly one argument'
+                );
         });
     });
 
@@ -198,6 +201,12 @@ describe('ListModule', function () {
             expect($result)->toEqual(['a', 'b']);
         });
 
+        it('handles nth with list as separate arguments', function () {
+            $result = $this->listModule->nth(['a', 'b', 'c', 2]);
+
+            expect($result)->toBe('b');
+        });
+
         it('throws exception when index out of bounds for nth', function () {
             expect(fn() => $this->listModule->nth([['a', 'b'], 3]))
                 ->toThrow(CompilationException::class, 'Index 3 out of bounds for list');
@@ -217,6 +226,7 @@ describe('ListModule', function () {
     describe('separator()', function () {
         it('gets separator from comma list', function () {
             $list = new SassList(['a', 'b', 'c'], 'comma');
+
             $result = $this->listModule->separator([$list]);
 
             expect($result)->toBe('comma');
@@ -228,9 +238,20 @@ describe('ListModule', function () {
             expect($result)->toBe('space');
         });
 
-        it('throws exception when missing list for separator', function () {
+        it('gets separator from ListNode', function () {
+            $listNode = new ListNode(['a', 'b', 'c'], 0, 'comma', true);
+
+            $result = $this->listModule->separator([$listNode]);
+
+            expect($result)->toBe('comma');
+        });
+
+        it('throws exception when missing argument for separator', function () {
             expect(fn() => $this->listModule->separator([]))
-                ->toThrow(CompilationException::class, 'Missing list for separator');
+                ->toThrow(
+                    CompilationException::class,
+                    'separator() requires exactly one argument'
+                );
         });
     });
 
@@ -281,6 +302,13 @@ describe('ListModule', function () {
             expect(fn() => $this->listModule->setNth([['a', 'b'], 1]))
                 ->toThrow(CompilationException::class, 'Missing value for set-nth');
         });
+
+        it('handles setNth with list as separate arguments', function () {
+            $result = $this->listModule->setNth(['a', 'b', 'c', 2, 'x']);
+
+            expect($result)->toBeInstanceOf(SassList::class)
+                ->and($result->value)->toEqual(['a', 'x', 'c']);
+        });
     });
 
     describe('slash()', function () {
@@ -303,7 +331,7 @@ describe('ListModule', function () {
 
         it('throws exception for slash with less than two elements', function () {
             expect(fn() => $this->listModule->slash(['a']))
-                ->toThrow(CompilationException::class, 'slash requires at least two elements');
+                ->toThrow(CompilationException::class, 'slash() requires at least two arguments');
         });
     });
 
@@ -311,33 +339,37 @@ describe('ListModule', function () {
         it('zips multiple lists', function () {
             $result = $this->listModule->zip([['a', 'b'], ['1', '2'], ['x', 'y']]);
 
-            expect($result)->toHaveLength(2)
-                ->and($result[0])->toBeInstanceOf(SassList::class)
-                ->and($result[0]->value)->toEqual(['a', '1', 'x'])
-                ->and($result[1]->value)->toEqual(['b', '2', 'y']);
+            expect($result)->toBeInstanceOf(SassList::class)
+                ->and($result->value)->toHaveLength(2)
+                ->and($result->value[0])->toBeInstanceOf(SassList::class)
+                ->and($result->value[0]->value)->toEqual(['a', '1', 'x'])
+                ->and($result->value[1]->value)->toEqual(['b', '2', 'y']);
         });
 
         it('zips lists with different lengths', function () {
             $result = $this->listModule->zip([['a', 'b', 'c'], ['1', '2']]);
 
-            expect($result)->toHaveLength(2)
-                ->and($result[0]->value)->toEqual(['a', '1'])
-                ->and($result[1]->value)->toEqual(['b', '2']);
+            expect($result)->toBeInstanceOf(SassList::class)
+                ->and($result->value)->toHaveLength(2)
+                ->and($result->value[0]->value)->toEqual(['a', '1'])
+                ->and($result->value[1]->value)->toEqual(['b', '2']);
         });
 
         it('zips single list', function () {
             $result = $this->listModule->zip([['a', 'b', 'c']]);
 
-            expect($result)->toHaveLength(3)
-                ->and($result[0]->value)->toEqual(['a'])
-                ->and($result[1]->value)->toEqual(['b'])
-                ->and($result[2]->value)->toEqual(['c']);
+            expect($result)->toBeInstanceOf(SassList::class)
+                ->and($result->value)->toHaveLength(3)
+                ->and($result->value[0]->value)->toEqual(['a'])
+                ->and($result->value[1]->value)->toEqual(['b'])
+                ->and($result->value[2]->value)->toEqual(['c']);
         });
 
         it('zips empty lists', function () {
             $result = $this->listModule->zip([]);
 
-            expect($result)->toBe([]);
+            expect($result)->toBeInstanceOf(SassList::class)
+                ->and($result->value)->toBeEmpty();
         });
     });
 
@@ -356,6 +388,7 @@ describe('ListModule', function () {
 
         it('parses list argument with SassList object', function () {
             $sassList = new SassList(['a', 'b', 'c'], 'space');
+
             $result = $this->accessor->callMethod('parseListArg', [$sassList]);
 
             expect($result)->toEqual(['a', 'b', 'c']);
@@ -363,6 +396,7 @@ describe('ListModule', function () {
 
         it('parses list argument with ListNode object', function () {
             $listNode = new ListNode(['x', 'y', 'z'], 0, 'space', false);
+
             $result = $this->accessor->callMethod('parseListArg', [$listNode]);
 
             expect($result)->toEqual(['x', 'y', 'z']);
@@ -396,6 +430,7 @@ describe('ListModule', function () {
     describe('parseWrappedValue()', function () {
         it('parses wrapped value with SassList object', function () {
             $sassList = new SassList(['a', 'b'], 'space');
+
             $result = $this->accessor->callMethod('parseWrappedValue', [$sassList]);
 
             expect($result)->toEqual(['a', 'b']);
@@ -403,6 +438,7 @@ describe('ListModule', function () {
 
         it('parses wrapped value with ListNode object', function () {
             $listNode = new ListNode(['x', 'y'], 0, 'comma', false);
+
             $result = $this->accessor->callMethod('parseWrappedValue', [$listNode]);
 
             expect($result)->toEqual(['x', 'y']);

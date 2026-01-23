@@ -737,7 +737,7 @@ describe('sass:string', function () {
             SCSS;
 
             expect(fn() => $this->compiler->compileString($scss))
-                ->toThrow(CompilationException::class, 'toUpperCase() argument must be a string');
+                ->toThrow(CompilationException::class, 'to-upper-case() argument must be a string');
         });
     });
 
@@ -843,7 +843,7 @@ describe('sass:string', function () {
             SCSS;
 
             expect(fn() => $this->compiler->compileString($scss))
-                ->toThrow(CompilationException::class, 'toLowerCase() argument must be a string');
+                ->toThrow(CompilationException::class, 'to-lower-case() argument must be a string');
         });
     });
 
@@ -1297,7 +1297,7 @@ describe('global string functions', function () {
             SCSS;
 
             expect(fn() => $this->compiler->compileString($scss))
-                ->toThrow(CompilationException::class, 'toUpperCase() argument must be a string');
+                ->toThrow(CompilationException::class, 'to-upper-case() argument must be a string');
         });
     });
 
@@ -1391,7 +1391,7 @@ describe('global string functions', function () {
             SCSS;
 
             expect(fn() => $this->compiler->compileString($scss))
-                ->toThrow(CompilationException::class, 'toLowerCase() argument must be a string');
+                ->toThrow(CompilationException::class, 'to-lower-case() argument must be a string');
         });
     });
 

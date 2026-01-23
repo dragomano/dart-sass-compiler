@@ -7,28 +7,20 @@ namespace DartSass\Handlers\Builtins;
 use DartSass\Handlers\SassModule;
 use DartSass\Modules\SelectorModule;
 
+use function str_replace;
+
 class SelectorModuleHandler extends BaseModuleHandler
 {
     protected const MODULE_FUNCTIONS = [
-        'is-superselector',
-        'append',
-        'extend',
-        'nest',
-        'parse',
-        'replace',
-        'unify',
+        'is-superselector', 'append', 'extend',
+        'nest', 'parse', 'replace', 'unify',
         'simple-selectors',
     ];
 
     protected const GLOBAL_FUNCTIONS = [
-        'is-superselector',
-        'selector-append',
-        'selector-extend',
-        'selector-nest',
-        'selector-parse',
-        'selector-replace',
-        'selector-unify',
-        'simple-selectors',
+        'is-superselector', 'selector-append', 'selector-extend',
+        'selector-nest', 'selector-parse', 'selector-replace',
+        'selector-unify', 'simple-selectors',
     ];
 
     public function __construct(private readonly SelectorModule $selectorModule) {}
@@ -37,18 +29,10 @@ class SelectorModuleHandler extends BaseModuleHandler
     {
         $processedArgs = $this->normalizeArgs($args);
 
-        $functionMapping = [
-            'is-superselector' => 'isSuperSelector',
-            'selector-append'  => 'append',
-            'selector-extend'  => 'extend',
-            'selector-nest'    => 'nest',
-            'selector-parse'   => 'parse',
-            'selector-replace' => 'replace',
-            'selector-unify'   => 'unify',
-            'simple-selectors' => 'simpleSelectors',
-        ];
+        $functionMapping = ['is-superselector' => 'isSuperSelector'];
 
-        $methodName = $functionMapping[$functionName] ?? $functionName;
+        $methodName = $functionMapping[$functionName]
+            ?? $this->kebabToCamel(str_replace('selector-', '', $functionName));
 
         return $this->selectorModule->$methodName($processedArgs);
     }

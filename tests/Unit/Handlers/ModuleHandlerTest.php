@@ -104,7 +104,8 @@ describe('ModuleHandler', function () {
             $result = $this->handler->forwardModule('test.scss', fn() => null, 'test');
 
             expect($result)->toHaveKey('variables')
-                ->and($this->handler->getVariables('test'))->toHaveKey('$var');
+                ->and($this->handler->getVariables('test'))->toHaveKey('$var')
+                ->and($this->handler->getFunctions('test'))->toHaveKey('func');
         });
     });
 

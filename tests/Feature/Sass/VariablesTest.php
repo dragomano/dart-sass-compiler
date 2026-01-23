@@ -119,6 +119,22 @@ dataset('scss interpolation', [
     }
     CSS,
   ],
+
+  'nested expression interpolation' => [
+    <<<'SCSS'
+    $size: 10px;
+    .element {
+        width: calc(#{$size} + #{5px});
+        margin: #{"top-" + #{"left"}};
+    }
+    SCSS,
+    /** @lang text */ <<<'CSS'
+    .element {
+      width: 15px;
+      margin: top-left;
+    }
+    CSS,
+  ],
 ]);
 
 dataset('sass variables', [

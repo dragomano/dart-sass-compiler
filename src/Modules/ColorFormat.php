@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace DartSass\Modules;
 
 use DartSass\Values\SassColor;
+use InvalidArgumentException;
 
+use function array_combine;
+use function array_map;
 use function in_array;
+use function is_string;
 use function strtolower;
 
 enum ColorFormat: string
@@ -140,5 +144,33 @@ enum ColorFormat: string
             self::XYZA => self::XYZ,
             default    => $this,
         };
+    }
+
+    public static function formatFromFunction(string $functionName, array $components, ?float $alpha = null): string
+    {
+        $format = self::tryFrom($functionName);
+
+        if ($format === null) {
+            throw new InvalidArgumentException("Unsupported color function: $functionName");
+        }
+
+        $components = array_map(fn($c) => is_string($c) ? (float) $c : $c, $components);
+
+        $keys = match ($format) {
+            self::LCH,
+            self::OKLCH => ['l', 'c', 'h'],
+            self::HSL,
+            self::HSLA  => ['h', 's', 'l'],
+            self::HWB   => ['h', 'w', 'bl'],
+            self::LAB,
+            self::LABA  => ['lab_l', 'lab_a', 'lab_b'],
+            default     => throw new InvalidArgumentException("Unsupported format for components: $functionName"),
+        };
+
+        $data = array_combine($keys, $components);
+        $data['a'] = $alpha ?? 1.0;
+        $data['format'] = $format->value;
+
+        return $format->format($data);
     }
 }

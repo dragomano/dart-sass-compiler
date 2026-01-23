@@ -19,6 +19,7 @@ use DartSass\Handlers\Builtins\LinearGradientFunctionHandler;
 use DartSass\Handlers\Builtins\ListModuleHandler;
 use DartSass\Handlers\Builtins\MapModuleHandler;
 use DartSass\Handlers\Builtins\MathModuleHandler;
+use DartSass\Handlers\Builtins\MetaModuleHandler;
 use DartSass\Handlers\Builtins\SelectorModuleHandler;
 use DartSass\Handlers\Builtins\StringModuleHandler;
 use DartSass\Handlers\Builtins\UrlFunctionHandler;
@@ -37,6 +38,7 @@ use DartSass\Modules\ColorModule;
 use DartSass\Modules\ListModule;
 use DartSass\Modules\MapModule;
 use DartSass\Modules\MathModule;
+use DartSass\Modules\MetaModule;
 use DartSass\Modules\SelectorModule;
 use DartSass\Modules\StringModule;
 use DartSass\Parsers\ParserFactory;
@@ -116,6 +118,14 @@ readonly class CompilerBuilder
             $userFunctionEvaluator,
             fn($expr): mixed => $context->engine->evaluateExpression($expr)
         );
+
+        $metaModule = new MetaModule(
+            $moduleRegistry,
+            $context,
+            fn($expr): mixed => $context->engine->evaluateExpression($expr)
+        );
+
+        $moduleRegistry->register(new MetaModuleHandler($metaModule));
     }
 
     private function createModuleRegistry(
@@ -127,6 +137,7 @@ readonly class CompilerBuilder
         $moduleRegistry->register(new IfFunctionHandler(
             fn($expr): mixed => $context->engine->evaluateExpression($expr)
         ));
+
         $moduleRegistry->register(new UrlFunctionHandler());
         $moduleRegistry->register(new FormatFunctionHandler($context->resultFormatter));
         $moduleRegistry->register($cssColorFunctionHandler = new CssColorFunctionHandler());
@@ -152,20 +163,10 @@ readonly class CompilerBuilder
 
     private function initializeEvaluators(CompilerContext $context): void
     {
-        $this->initializeSimpleEvaluators($context);
-        $this->initializeExpressionEvaluator($context);
-    }
-
-    private function initializeSimpleEvaluators(CompilerContext $context): void
-    {
         $context->interpolationEvaluator = new InterpolationEvaluator($context->resultFormatter, $context->parserFactory);
         $context->operationEvaluator     = new OperationEvaluator($context);
         $context->calcEvaluator          = new CalcFunctionEvaluator($context->resultFormatter);
-    }
-
-    private function initializeExpressionEvaluator(CompilerContext $context): void
-    {
-        $context->expressionEvaluator = new ExpressionEvaluator($context);
+        $context->expressionEvaluator    = new ExpressionEvaluator($context);
     }
 
     private function initializeCompilers(CompilerContext $context): void

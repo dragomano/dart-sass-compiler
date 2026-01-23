@@ -15,10 +15,11 @@ describe('ColorSerializer', function () {
                 'g'      => 0,
                 'b'      => 0,
                 'a'      => 1.0,
-                'format' =>  ColorFormat::RGB->value,
+                'format' => ColorFormat::RGB->value,
             ];
 
             $result = ColorSerializer::ensureRgbFormat($colorData);
+
             expect($result['format'])->toBe(ColorFormat::RGB->value);
         });
 
@@ -28,10 +29,11 @@ describe('ColorSerializer', function () {
                 'g'      => 0,
                 'b'      => 0,
                 'a'      => 0.5,
-                'format' =>  ColorFormat::RGBA->value,
+                'format' => ColorFormat::RGBA->value,
             ];
 
             $result = ColorSerializer::ensureRgbFormat($colorData);
+
             expect($result['format'])->toBe(ColorFormat::RGBA->value);
         });
 
@@ -45,6 +47,7 @@ describe('ColorSerializer', function () {
             ];
 
             $result = ColorSerializer::ensureRgbFormat($colorData);
+
             expect($result['format'])->toBe(ColorFormat::RGB->value)
                 ->and($result['r'])->toBeCloseTo(255, 0)
                 ->and($result['g'])->toBeCloseTo(0, 0)
@@ -61,6 +64,7 @@ describe('ColorSerializer', function () {
             ];
 
             $result = ColorSerializer::ensureRgbFormat($colorData);
+
             expect($result['format'])->toBe(ColorFormat::RGB->value)
                 ->and($result['a'])->toBe(0.5);
         });
@@ -75,6 +79,7 @@ describe('ColorSerializer', function () {
             ];
 
             $result = ColorSerializer::ensureRgbFormat($colorData);
+
             expect($result['format'])->toBe(ColorFormat::RGB->value)
                 ->and($result['a'])->toBe(1.0);
         });
@@ -89,6 +94,7 @@ describe('ColorSerializer', function () {
             ];
 
             $result = ColorSerializer::ensureRgbFormat($colorData);
+
             expect($result['format'])->toBe(ColorFormat::RGB->value)
                 ->and($result)->toHaveKeys(['r', 'g', 'b']);
         });
@@ -103,6 +109,7 @@ describe('ColorSerializer', function () {
             ];
 
             $result = ColorSerializer::ensureRgbFormat($colorData);
+
             expect($result['format'])->toBe(ColorFormat::RGB->value)
                 ->and($result['a'])->toBe(1.0)
                 ->and($result)->toHaveKeys(['r', 'g', 'b']);
@@ -118,6 +125,7 @@ describe('ColorSerializer', function () {
             ];
 
             $result = ColorSerializer::ensureRgbFormat($colorData);
+
             expect($result['format'])->toBe(ColorFormat::RGB->value)
                 ->and($result['a'])->toBe(0.7)
                 ->and($result)->toHaveKeys(['r', 'g', 'b']);
@@ -148,6 +156,7 @@ describe('ColorSerializer', function () {
             ];
 
             $result = ColorSerializer::ensureRgbFormat($colorData);
+
             expect($result['format'])->toBe(ColorFormat::RGB->value);
         });
 
@@ -161,6 +170,7 @@ describe('ColorSerializer', function () {
             ];
 
             $result = ColorSerializer::ensureRgbFormat($colorData);
+
             expect($result['format'])->toBe(ColorFormat::RGB->value);
         });
 
@@ -174,6 +184,7 @@ describe('ColorSerializer', function () {
             ];
 
             $result = ColorSerializer::ensureRgbFormat($colorData);
+
             expect($result['format'])->toBe(ColorFormat::RGB->value);
         });
     });
@@ -193,6 +204,7 @@ describe('ColorSerializer', function () {
             ];
 
             $result = $this->accessor->callMethod('resolveRgbFormat', [$colorDataLowAlpha]);
+
             expect($result)->toBe(ColorFormat::RGBA->value);
 
             $colorDataHighAlpha = [
@@ -204,6 +216,7 @@ describe('ColorSerializer', function () {
             ];
 
             $result = $this->accessor->callMethod('resolveRgbFormat', [$colorDataHighAlpha]);
+
             expect($result)->toBe(ColorFormat::RGB->value);
 
             $colorDataMaxAlpha = [
@@ -215,6 +228,7 @@ describe('ColorSerializer', function () {
             ];
 
             $result = $this->accessor->callMethod('resolveRgbFormat', [$colorDataMaxAlpha]);
+
             expect($result)->toBe(ColorFormat::RGB->value);
 
             $colorDataNotRgba = [
@@ -226,6 +240,7 @@ describe('ColorSerializer', function () {
             ];
 
             $result = $this->accessor->callMethod('resolveRgbFormat', [$colorDataNotRgba]);
+
             expect($result)->toBe(ColorFormat::RGB->value);
         });
     });
@@ -243,13 +258,17 @@ describe('ColorSerializer', function () {
     describe('format() method', function () {
         it('formats color to RGB when no alpha', function () {
             $sassColor = SassColor::rgb(255, 0, 0, 1.0);
+
             $result = ColorSerializer::format(ColorFormat::RGB, $sassColor);
+
             expect($result)->toBe('red');
         });
 
         it('formats color to RGBA when has alpha', function () {
             $sassColor = SassColor::rgb(255, 0, 0, 0.5);
+
             $result = ColorSerializer::format(ColorFormat::RGBA, $sassColor);
+
             expect($result)->toBe('#ff000080');
         });
     });
@@ -257,25 +276,33 @@ describe('ColorSerializer', function () {
     describe('formatLch() edge cases', function () {
         it('handles lightness value less than or equal to 1 by multiplying by PERCENT_MAX', function () {
             $sassColor = SassColor::lch(0.6, 40, 30);
+
             $result = ColorSerializer::format(ColorFormat::LCH, $sassColor);
+
             expect($result)->toBe('lch(60% 40 30)');
         });
 
         it('handles lightness value greater than 1 without conversion', function () {
             $sassColor = SassColor::lch(60, 40, 30);
+
             $result = ColorSerializer::format(ColorFormat::LCH, $sassColor);
+
             expect($result)->toBe('lch(60% 40 30)');
         });
 
         it('handles lightness value exactly equal to 1', function () {
             $sassColor = SassColor::lch(1, 40, 30);
+
             $result = ColorSerializer::format(ColorFormat::LCH, $sassColor);
+
             expect($result)->toBe('lch(100% 40 30)');
         });
 
         it('handles lightness value slightly above 1', function () {
             $sassColor = SassColor::lch(1.1, 40, 30);
+
             $result = ColorSerializer::format(ColorFormat::LCH, $sassColor);
+
             expect($result)->toBe('lch(1.1% 40 30)');
         });
     });
@@ -283,19 +310,25 @@ describe('ColorSerializer', function () {
     describe('formatHwb() edge cases', function () {
         it('handles HWB format with alpha channel', function () {
             $sassColor = SassColor::hwb(120, 25, 40, 0.8);
+
             $result = ColorSerializer::format(ColorFormat::HWB, $sassColor);
+
             expect($result)->toBe('hwb(120 25% 40% / 0.8)');
         });
 
         it('handles HWB format without alpha channel', function () {
             $sassColor = SassColor::hwb(120, 25, 40);
+
             $result = ColorSerializer::format(ColorFormat::HWB, $sassColor);
+
             expect($result)->toBe('hwb(120 25% 40%)');
         });
 
         it('handles HWB rounding of values', function () {
             $sassColor = SassColor::hwb(120.7, 25.3, 40.9, 0.75);
+
             $result = ColorSerializer::format(ColorFormat::HWB, $sassColor);
+
             expect($result)->toBe('hwb(121 25% 41% / 0.75)');
         });
     });
@@ -303,19 +336,25 @@ describe('ColorSerializer', function () {
     describe('formatHex() method', function () {
         it('formats color to named color when available', function () {
             $sassColor = SassColor::rgb(255, 0, 0, 1.0);
+
             $result = ColorSerializer::format(ColorFormat::HEX, $sassColor);
+
             expect($result)->toBe('red');
         });
 
         it('formats named color to color name', function () {
             $sassColor = SassColor::rgb(0, 0, 255, 1.0);
+
             $result = ColorSerializer::format(ColorFormat::HEX, $sassColor);
+
             expect($result)->toBe('blue');
         });
 
         it('formats non-named RGB values to HEX', function () {
             $sassColor = SassColor::rgb(128, 64, 32, 1.0);
+
             $result = ColorSerializer::format(ColorFormat::HEX, $sassColor);
+
             expect($result)->toBe('#804020');
         });
     });
@@ -323,7 +362,9 @@ describe('ColorSerializer', function () {
     describe('formatHexa() method', function () {
         it('formats color to HEXA format', function () {
             $sassColor = SassColor::rgb(210.5, 0.0, 0.0, 0.5);
+
             $result = ColorSerializer::format(ColorFormat::HEXA, $sassColor);
+
             expect($result)->toBe('#d3000080');
         });
 
@@ -357,22 +398,36 @@ describe('ColorSerializer', function () {
     describe('formatXyz() method', function () {
         it('formats XYZ color with alpha (line 302)', function () {
             $sassColor = SassColor::xyz(0.5, 0.3, 0.2, 0.8);
+
             $result = ColorSerializer::format(ColorFormat::XYZA, $sassColor);
+
             expect($result)->toBe('color(xyz 0.5 0.3 0.2 / 0.8)');
         });
     });
 
-    describe('formatHsl hue normalization coverage', function () {
+    describe('formatHsl() hue normalization coverage', function () {
         it('covers while ($h < 0) loop in formatHsl method', function () {
             $sassColor = SassColor::hsl(-90, 100, 50, 1.0);
+
             $result = ColorSerializer::format(ColorFormat::HSL, $sassColor);
+
             expect($result)->toBe('hsl(270, 100%, 50%)');
         });
 
         it('covers while ($h >= self::HUE_MAX) loop in formatHsl method', function () {
             $sassColor = SassColor::hsl(450, 100, 50, 1.0);
+
             $result = ColorSerializer::format(ColorFormat::HSL, $sassColor);
+
             expect($result)->toBe('hsl(90, 100%, 50%)');
+        });
+
+        it('covers hsla format string in formatHsl method', function () {
+            $sassColor = SassColor::hsl(120, 50, 75, 0.8);
+
+            $result = ColorSerializer::format(ColorFormat::HSLA, $sassColor);
+
+            expect($result)->toBe('hsla(120, 50%, 75%, 0.8)');
         });
     });
 })->covers(ColorSerializer::class);

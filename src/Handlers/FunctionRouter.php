@@ -72,13 +72,12 @@ readonly class FunctionRouter
 
     private function getHandler(string $shortName, string $functionName): ?ModuleHandlerInterface
     {
-        // Try full function name first
         $handler = $this->registry->getHandler($functionName);
+
         if ($handler !== null) {
             return $handler;
         }
 
-        // Handle namespaced functions
         if (str_contains($functionName, '.')) {
             $namespace = explode('.', $functionName, 2)[0];
 
@@ -89,7 +88,6 @@ readonly class FunctionRouter
             }
         }
 
-        // Fallback to short name
         return $this->registry->getHandler($shortName);
     }
 

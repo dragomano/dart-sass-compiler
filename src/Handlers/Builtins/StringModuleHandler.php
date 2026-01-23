@@ -8,32 +8,21 @@ use DartSass\Handlers\SassModule;
 use DartSass\Modules\StringModule;
 
 use function in_array;
+use function str_replace;
 
 class StringModuleHandler extends BaseModuleHandler implements ConditionalPreservationInterface
 {
     protected const MODULE_FUNCTIONS = [
-        'quote',
-        'index',
-        'insert',
-        'length',
-        'slice',
-        'split',
-        'to-upper-case',
-        'to-lower-case',
-        'unique-id',
-        'unquote',
+        'quote', 'index', 'insert',
+        'length', 'slice', 'split',
+        'to-upper-case', 'to-lower-case',
+        'unique-id', 'unquote',
     ];
 
     protected const GLOBAL_FUNCTIONS = [
-        'quote',
-        'str-index',
-        'str-insert',
-        'str-length',
-        'str-slice',
-        'to-upper-case',
-        'to-lower-case',
-        'unique-id',
-        'unquote',
+        'quote', 'str-index', 'str-insert',
+        'str-length', 'str-slice', 'to-upper-case',
+        'to-lower-case', 'unique-id', 'unquote',
     ];
 
     public function __construct(private readonly StringModule $stringModule) {}
@@ -42,17 +31,7 @@ class StringModuleHandler extends BaseModuleHandler implements ConditionalPreser
     {
         $processedArgs = $this->normalizeArgs($args);
 
-        $functionMapping = [
-            'str-index'     => 'index',
-            'str-insert'    => 'insert',
-            'str-length'    => 'length',
-            'str-slice'     => 'slice',
-            'to-upper-case' => 'toUpperCase',
-            'to-lower-case' => 'toLowerCase',
-            'unique-id'     => 'uniqueId',
-        ];
-
-        $methodName = $functionMapping[$functionName] ?? $functionName;
+        $methodName = $this->kebabToCamel(str_replace('str-', '', $functionName));
 
         return $this->stringModule->$methodName($processedArgs);
     }

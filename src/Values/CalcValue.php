@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Utils;
+namespace DartSass\Values;
 
-use DartSass\Values\SassNumber;
+use DartSass\Utils\LazyEvaluatable;
 use Exception;
 use Stringable;
 
@@ -26,6 +26,16 @@ readonly class CalcValue implements LazyEvaluatable, Stringable
     public function __toString(): string
     {
         return "calc({$this->format($this->left)} $this->operator {$this->format($this->right)})";
+    }
+
+    public function getOperator(): string
+    {
+        return $this->operator;
+    }
+
+    public function getArgs(): array
+    {
+        return [$this->left, $this->right];
     }
 
     public function evaluate(): string|array

@@ -9,21 +9,30 @@ use DartSass\Exceptions\CompilationException;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\IdentifierNode;
 use DartSass\Values\SassList;
+use DartSass\Values\SassMap;
 use Throwable;
 
 use function array_key_exists;
 use function array_key_first;
+use function array_pop;
 use function count;
+use function in_array;
 use function is_array;
+use function is_int;
 use function md5;
 use function preg_replace;
 use function serialize;
+use function str_ends_with;
 use function str_replace;
+use function str_starts_with;
+use function substr;
 use function trim;
 
 class MixinHandler
 {
     private array $mixins = [];
+
+    private array $scopes = [];
 
     private array $contentStack = [];
 
@@ -35,24 +44,34 @@ class MixinHandler
 
     private const CACHE_LIMIT = 100;
 
-    public function define(string $name, array $args, array $body): void
+    public function setCompilerEngine(CompilerEngineInterface $engine): void
     {
-        $this->mixins[$name] = [
+        $this->compilerEngine = $engine;
+    }
+
+    public function define(string $name, array $args, array $body, bool $global = false): void
+    {
+        $mixinData = [
             'args' => $args,
             'body' => $body,
         ];
+
+        if ($global || empty($this->scopes)) {
+            $this->mixins[$name] = $mixinData;
+        } else {
+            $this->scopes[array_key_last($this->scopes)][$name] = $mixinData;
+        }
     }
 
-    private static function generateCacheKey(string $name, array $args, ?array $content): string
+    public function enterScope(): void
     {
-        try {
-            $serializedArgs    = serialize($args);
-            $serializedContent = serialize($content);
+        $this->scopes[] = [];
+    }
 
-            return $name . '|' . md5($serializedArgs . $serializedContent);
-        } catch (Throwable) {
-            // If serialization fails, don't cache
-            return '';
+    public function exitScope(): void
+    {
+        if (! empty($this->scopes)) {
+            array_pop($this->scopes);
         }
     }
 
@@ -63,7 +82,9 @@ class MixinHandler
         string $parentSelector = '',
         int $nestingLevel = 0
     ): string {
-        if (! isset($this->mixins[$name])) {
+        $mixin = $this->findMixin($name);
+
+        if (! isset($mixin)) {
             throw new CompilationException("Undefined mixin: $name");
         }
 
@@ -72,99 +93,29 @@ class MixinHandler
             return self::$mixinCache[$cacheKey];
         }
 
-        $mixin = $this->mixins[$name];
-
         $compilerEngine = $this->compilerEngine;
         $compilerEngine->getContext()->variableHandler->enterScope();
 
-        $argIndex = 0;
+        $arguments = $this->normalizeArguments($args);
+        $this->bindArguments($mixin['args'], $arguments);
 
-        // Check if we have a SassList that needs to be unpacked
-        if (count($args) === 1 && $args[0] instanceof SassList) {
-            $sassList  = $args[0];
-            $arguments = $sassList->value;
-        } elseif (count($args) === 1 && is_array($args[0]) && ! isset($args[0]['value'])) {
-            $arguments = $args[0];
-        } else {
-            $arguments = $args;
-        }
+        $compiledContent = $this->compileContent($content, $parentSelector, $nestingLevel);
 
-        foreach ($mixin['args'] as $argName => $defaultValue) {
-            if (array_key_exists($argIndex, $arguments)) {
-                $value = $arguments[$argIndex];
-            } else {
-                if ($defaultValue instanceof IdentifierNode) {
-                    if ($defaultValue->properties['value'] === 'null') {
-                        $value = null;
-                    } else {
-                        $value = $defaultValue;
-                    }
-                } else {
-                    $value = $defaultValue;
-                }
-            }
+        $css = $this->compileMixinBody($mixin['body'], $parentSelector);
+        $css = $this->injectContent($css, $compiledContent);
 
-            $compilerEngine->getContext()->variableHandler->define($argName, $value);
-            $argIndex++;
-        }
-
-        $compiledContent = null;
-
-        if ($content) {
-            $compiledContent = '';
-            if (! empty($parentSelector) && count($content) > 0 && is_array($content[0])) {
-                $declarationCss = '';
-                foreach ($content as $item) {
-                    if (is_array($item)) {
-                        $result = $compilerEngine->compileDeclarations([$item], $nestingLevel + 2);
-                        $declarationCss .= $result;
-                    }
-                }
-
-                $compiledContent = $compilerEngine->formatRule($parentSelector, $declarationCss, $nestingLevel);
-                $compiledContent = preg_replace('/^}$/m', '  }', $compiledContent);
-            } else {
-                foreach ($content as $item) {
-                    if (is_array($item)) {
-                        $result = $compilerEngine->compileDeclarations([$item], 1);
-                        $compiledContent .= $result;
-                    }
-                }
-            }
-
-            $this->currentContent = $compiledContent;
-        }
-
-        $css = '';
-        foreach ($mixin['body'] as $item) {
-            if (is_array($item)) {
-                $result = $compilerEngine->compileDeclarations([$item], 1);
-                $css .= $result;
-            } elseif ($item instanceof AstNode) {
-                $result = $compilerEngine->compileAst([$item], $parentSelector);
-                $css .= $result;
-            }
-        }
-
-        $compiledContent ??= '';
-        if (trim($compiledContent) === '') {
-            $css = str_replace('@content', '', $css);
-        } else {
-            $css = preg_replace('/@content\s*;?\s*{[^}]*}\s*/', $compiledContent, $css);
-        }
-
-        $this->currentContent = null;
         $compilerEngine->getContext()->variableHandler->exitScope();
 
-        if ($cacheKey !== '') {
-            self::$mixinCache[$cacheKey] = $css;
-            if (count(self::$mixinCache) > self::CACHE_LIMIT) {
-                $firstKey = array_key_first(self::$mixinCache);
-                unset(self::$mixinCache[$firstKey]);
-            }
-        }
+        self::storeCacheResult($cacheKey, $css);
 
         return $css;
+    }
+
+    public function setMixins(array $state): void
+    {
+        $this->mixins         = $state['mixins'] ?? [];
+        $this->contentStack   = $state['contentStack'] ?? [];
+        $this->currentContent = $state['currentContent'] ?? null;
     }
 
     public function getMixins(): array
@@ -176,20 +127,202 @@ class MixinHandler
         ];
     }
 
-    public function setMixins(array $state): void
-    {
-        $this->mixins         = $state['mixins'] ?? [];
-        $this->contentStack   = $state['contentStack'] ?? [];
-        $this->currentContent = $state['currentContent'] ?? null;
-    }
-
     public function removeMixin(string $name): void
     {
         unset($this->mixins[$name]);
     }
 
-    public function setCompilerEngine(CompilerEngineInterface $engine): void
+    private function findMixin(string $name): ?array
     {
-        $this->compilerEngine = $engine;
+        for ($i = count($this->scopes) - 1; $i >= 0; $i--) {
+            if (isset($this->scopes[$i][$name])) {
+                return $this->scopes[$i][$name];
+            }
+        }
+
+        return $this->mixins[$name] ?? null;
+    }
+
+    private static function generateCacheKey(string $name, array $args, ?array $content): string
+    {
+        try {
+            $serializedArgs    = serialize($args);
+            $serializedContent = serialize($content);
+
+            return $name . '|' . md5($serializedArgs . $serializedContent);
+        } catch (Throwable) {
+            return '';
+        }
+    }
+
+    private function normalizeArguments(array $args): array
+    {
+        if (count($args) !== 1 || ! isset($args[0])) {
+            return $args;
+        }
+
+        return match (true) {
+            $args[0] instanceof SassList => $args[0]->value,
+            is_array($args[0]) && ! isset($args[0]['value']) => $args[0],
+            default => $args
+        };
+    }
+
+    private function bindArguments(array $mixinArgs, array $arguments): void
+    {
+        $argIndex = 0;
+        $usedKeys = [];
+
+        foreach ($mixinArgs as $argName => $defaultValue) {
+            if (str_ends_with($argName, '...')) {
+                $this->bindSpreadArgument($argName, $arguments, $usedKeys);
+
+                break;
+            }
+
+            $value = $this->resolveArgumentValue($argName, $argIndex, $arguments, $defaultValue, $usedKeys);
+            $this->compilerEngine->getContext()->variableHandler->define($argName, $value);
+            $argIndex++;
+        }
+    }
+
+    private function bindSpreadArgument(string $argName, array $arguments, array $usedKeys): void
+    {
+        $varName = substr($argName, 0, -3);
+
+        $remainingKeywords   = [];
+        $remainingPositional = [];
+
+        foreach ($arguments as $key => $val) {
+            if (in_array($key, $usedKeys, true)) {
+                continue;
+            }
+
+            if (is_int($key)) {
+                $remainingPositional[] = $val;
+            } else {
+                $keyStr = $key;
+
+                if (str_starts_with($keyStr, '$')) {
+                    $keyStr = substr($keyStr, 1);
+                }
+
+                $remainingKeywords[$keyStr] = $val;
+            }
+        }
+
+        $value = empty($remainingKeywords) ? new SassList($remainingPositional) : new SassMap($remainingKeywords);
+
+        $this->compilerEngine->getContext()->variableHandler->define($varName, $value);
+    }
+
+    private function resolveArgumentValue(
+        string $argName,
+        int $argIndex,
+        array $arguments,
+        $defaultValue,
+        array &$usedKeys
+    ) {
+        if (array_key_exists($argName, $arguments)) {
+            $usedKeys[] = $argName;
+
+            return $arguments[$argName];
+        }
+
+        if (array_key_exists($argIndex, $arguments)) {
+            $usedKeys[] = $argIndex;
+
+            return $arguments[$argIndex];
+        }
+
+        if ($defaultValue instanceof IdentifierNode && $defaultValue->properties['value'] === 'null') {
+            return null;
+        }
+
+        return $defaultValue;
+    }
+
+    private function compileContent(?array $content, string $parentSelector, int $nestingLevel): ?string
+    {
+        if (! $content) {
+            return null;
+        }
+
+        if (! empty($parentSelector) && count($content) > 0 && is_array($content[0])) {
+            return $this->compileContentWithSelector($content, $parentSelector, $nestingLevel);
+        }
+
+        return $this->compileContentDeclarations($content);
+    }
+
+    private function compileContentWithSelector(array $content, string $parentSelector, int $nestingLevel): string
+    {
+        $declarationCss = '';
+
+        foreach ($content as $item) {
+            if (is_array($item)) {
+                $declarationCss .= $this->compilerEngine->compileDeclarations([$item], $nestingLevel + 2);
+            }
+        }
+
+        $compiledContent = $this->compilerEngine->formatRule($parentSelector, $declarationCss, $nestingLevel);
+
+        return preg_replace('/^}$/m', '  }', $compiledContent);
+    }
+
+    private function compileContentDeclarations(array $content): string
+    {
+        $compiledContent = '';
+
+        foreach ($content as $item) {
+            if (is_array($item)) {
+                $result = $this->compilerEngine->compileDeclarations([$item], 1);
+                $compiledContent .= $result;
+            }
+        }
+
+        return $compiledContent;
+    }
+
+    private function compileMixinBody(array $body, string $parentSelector): string
+    {
+        $css = '';
+
+        foreach ($body as $item) {
+            if (is_array($item)) {
+                $result = $this->compilerEngine->compileDeclarations([$item], 1);
+                $css .= $result;
+            } elseif ($item instanceof AstNode) {
+                $result = $this->compilerEngine->compileAst([$item], $parentSelector);
+                $css .= $result;
+            }
+        }
+
+        return $css;
+    }
+
+    private function injectContent(string $css, ?string $compiledContent): string
+    {
+        $compiledContent ??= '';
+
+        if (trim($compiledContent) === '') {
+            return str_replace('@content', '', $css);
+        }
+
+        return preg_replace('/@content\s*;?\s*{[^}]*}\s*/', $compiledContent, $css);
+    }
+
+    private static function storeCacheResult(string $cacheKey, string $css): void
+    {
+        if ($cacheKey === '') {
+            return;
+        }
+
+        self::$mixinCache[$cacheKey] = $css;
+
+        if (count(self::$mixinCache) > self::CACHE_LIMIT) {
+            $firstKey = array_key_first(self::$mixinCache);
+            unset(self::$mixinCache[$firstKey]);
+        }
     }
 }

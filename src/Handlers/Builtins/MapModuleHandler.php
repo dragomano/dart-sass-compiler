@@ -7,27 +7,19 @@ namespace DartSass\Handlers\Builtins;
 use DartSass\Handlers\SassModule;
 use DartSass\Modules\MapModule;
 
+use function str_replace;
+
 class MapModuleHandler extends BaseModuleHandler implements LazyEvaluationInterface
 {
     protected const MODULE_FUNCTIONS = [
-        'deep-merge',
-        'deep-remove',
-        'get',
-        'has-key',
-        'keys',
-        'merge',
-        'remove',
-        'set',
-        'values',
+        'deep-merge', 'deep-remove', 'get',
+        'has-key', 'keys', 'merge',
+        'remove', 'set', 'values',
     ];
 
     protected const GLOBAL_FUNCTIONS = [
-        'map-get',
-        'map-has-key',
-        'map-keys',
-        'map-merge',
-        'map-remove',
-        'map-values',
+        'map-get', 'map-has-key', 'map-keys',
+        'map-merge', 'map-remove', 'map-values',
     ];
 
     public function __construct(private readonly MapModule $mapModule) {}
@@ -36,19 +28,7 @@ class MapModuleHandler extends BaseModuleHandler implements LazyEvaluationInterf
     {
         $processedArgs = $this->normalizeArgs($args);
 
-        $functionMapping = [
-            'deep-merge'  => 'deepMerge',
-            'deep-remove' => 'deepRemove',
-            'has-key'     => 'hasKey',
-            'map-get'     => 'get',
-            'map-has-key' => 'hasKey',
-            'map-keys'    => 'keys',
-            'map-merge'   => 'merge',
-            'map-remove'  => 'remove',
-            'map-values'  => 'values',
-        ];
-
-        $methodName = $functionMapping[$functionName] ?? $functionName;
+        $methodName = $this->kebabToCamel(str_replace('map-', '', $functionName));
 
         return $this->mapModule->$methodName($processedArgs);
     }

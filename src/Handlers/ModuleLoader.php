@@ -8,8 +8,9 @@ use DartSass\Loaders\LoaderInterface;
 use DartSass\Parsers\ParserFactory;
 
 use function basename;
-use function ltrim;
 use function pathinfo;
+use function str_starts_with;
+use function substr;
 
 use const PATHINFO_EXTENSION;
 
@@ -33,6 +34,10 @@ readonly class ModuleLoader
         $extension = pathinfo($path, PATHINFO_EXTENSION);
         $basename  = basename($path, '.' . $extension);
 
-        return ltrim($basename, '_');
+        if (str_starts_with($basename, '_')) {
+            return substr($basename, 1);
+        }
+
+        return $basename;
     }
 }
