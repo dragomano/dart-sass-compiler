@@ -477,40 +477,40 @@ describe('Lexer', function () {
             expect($this->accessor->getProperty('inBlock'))->toBeFalse();
         });
 
-        it('tracks expectingPropertyValue state correctly', function () {
+        it('tracks expectingValue state correctly', function () {
             // Initially not expecting property value
-            expect($this->accessor->getProperty('expectingPropertyValue'))->toBeFalse();
+            expect($this->accessor->getProperty('expectingValue'))->toBeFalse();
 
             // After colon
             $this->lexer->tokenize(':');
-            expect($this->accessor->getProperty('expectingPropertyValue'))->toBeTrue();
+            expect($this->accessor->getProperty('expectingValue'))->toBeTrue();
 
             // After semicolon
             $this->lexer->tokenize(';');
-            expect($this->accessor->getProperty('expectingPropertyValue'))->toBeFalse();
+            expect($this->accessor->getProperty('expectingValue'))->toBeFalse();
 
             // After brace_close
             $this->lexer->tokenize('}');
-            expect($this->accessor->getProperty('expectingPropertyValue'))->toBeFalse();
+            expect($this->accessor->getProperty('expectingValue'))->toBeFalse();
         });
 
         it('resets state properly between tokenize calls', function () {
             // First call sets state
             $this->lexer->tokenize('.class { color: red; }');
             expect($this->accessor->getProperty('inBlock'))->toBeFalse()
-                ->and($this->accessor->getProperty('expectingPropertyValue'))->toBeFalse();
+                ->and($this->accessor->getProperty('expectingValue'))->toBeFalse();
 
             // Second call should start with clean state
             $this->lexer->tokenize('div { margin: 10px; }');
             expect($this->accessor->getProperty('inBlock'))->toBeFalse()
-                ->and($this->accessor->getProperty('expectingPropertyValue'))->toBeFalse();
+                ->and($this->accessor->getProperty('expectingValue'))->toBeFalse();
         });
 
         it('handles nested block state correctly', function () {
             $this->lexer->tokenize('.outer { .inner { color: red; } }');
 
             expect($this->accessor->getProperty('inBlock'))->toBeFalse()
-                ->and($this->accessor->getProperty('expectingPropertyValue'))->toBeFalse();
+                ->and($this->accessor->getProperty('expectingValue'))->toBeFalse();
         });
     });
 

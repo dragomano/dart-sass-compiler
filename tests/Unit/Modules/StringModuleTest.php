@@ -233,12 +233,12 @@ describe('StringModule', function () {
 
         it('throws exception when missing arguments for slice', function () {
             expect(fn() => $this->stringModule->slice([]))
-                ->toThrow(CompilationException::class, 'slice() requires 2 or 3 arguments');
+                ->toThrow(CompilationException::class, 'slice() requires two or three arguments');
         });
 
         it('throws exception when too many arguments for slice', function () {
             expect(fn() => $this->stringModule->slice(['string', 1, 2, 'extra']))
-                ->toThrow(CompilationException::class, 'slice() requires 2 or 3 arguments');
+                ->toThrow(CompilationException::class, 'slice() requires two or three arguments');
         });
 
         it('throws exception when first argument is not string for slice', function () {
@@ -302,12 +302,12 @@ describe('StringModule', function () {
 
         it('throws exception when missing arguments for split', function () {
             expect(fn() => $this->stringModule->split([]))
-                ->toThrow(CompilationException::class, 'split() requires 2 or 3 arguments');
+                ->toThrow(CompilationException::class, 'split() requires two or three arguments');
         });
 
         it('throws exception when too many arguments for split', function () {
             expect(fn() => $this->stringModule->split(['string', ',', 1, 'extra']))
-                ->toThrow(CompilationException::class, 'split() requires 2 or 3 arguments');
+                ->toThrow(CompilationException::class, 'split() requires two or three arguments');
         });
 
         it('throws exception when first argument is not string for split', function () {
@@ -353,17 +353,17 @@ describe('StringModule', function () {
 
         it('throws exception when missing argument for toUpperCase', function () {
             expect(fn() => $this->stringModule->toUpperCase([]))
-                ->toThrow(CompilationException::class, 'toUpperCase() requires exactly one argument');
+                ->toThrow(CompilationException::class, 'to-upper-case() requires exactly one argument');
         });
 
         it('throws exception when too many arguments for toUpperCase', function () {
             expect(fn() => $this->stringModule->toUpperCase(['string', 'extra']))
-                ->toThrow(CompilationException::class, 'toUpperCase() requires exactly one argument');
+                ->toThrow(CompilationException::class, 'to-upper-case() requires exactly one argument');
         });
 
         it('throws exception when argument is not string for toUpperCase', function () {
             expect(fn() => $this->stringModule->toUpperCase([123]))
-                ->toThrow(CompilationException::class, 'toUpperCase() argument must be a string');
+                ->toThrow(CompilationException::class, 'to-upper-case() argument must be a string');
         });
     });
 
@@ -394,17 +394,17 @@ describe('StringModule', function () {
 
         it('throws exception when missing argument for toLowerCase', function () {
             expect(fn() => $this->stringModule->toLowerCase([]))
-                ->toThrow(CompilationException::class, 'toLowerCase() requires exactly one argument');
+                ->toThrow(CompilationException::class, 'to-lower-case() requires exactly one argument');
         });
 
         it('throws exception when too many arguments for toLowerCase', function () {
             expect(fn() => $this->stringModule->toLowerCase(['string', 'extra']))
-                ->toThrow(CompilationException::class, 'toLowerCase() requires exactly one argument');
+                ->toThrow(CompilationException::class, 'to-lower-case() requires exactly one argument');
         });
 
         it('throws exception when argument is not string for toLowerCase', function () {
             expect(fn() => $this->stringModule->toLowerCase([123]))
-                ->toThrow(CompilationException::class, 'toLowerCase() argument must be a string');
+                ->toThrow(CompilationException::class, 'to-lower-case() argument must be a string');
         });
     });
 

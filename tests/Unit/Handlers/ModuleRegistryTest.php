@@ -127,4 +127,23 @@ describe('ModuleRegistry', function () {
             expect($this->registry->getHandler('unknown'))->toBeNull();
         });
     });
+
+    describe('getFunctionsForModule method', function () {
+        it('returns functions for registered module', function () {
+            $handler = createTestModuleHandler();
+
+            $this->registry->register($handler);
+
+            $functions = $this->registry->getFunctionsForModule('custom');
+
+            expect($functions)->toContain('func1')
+                ->and($functions)->toContain('func2');
+        });
+
+        it('returns empty array for unregistered module', function () {
+            $functions = $this->registry->getFunctionsForModule('unknown');
+
+            expect($functions)->toBeEmpty();
+        });
+    });
 })->covers(ModuleRegistry::class);

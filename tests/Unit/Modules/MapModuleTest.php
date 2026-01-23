@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use DartSass\Exceptions\CompilationException;
 use DartSass\Modules\MapModule;
 use DartSass\Values\SassList;
 use DartSass\Values\SassMap;
@@ -13,8 +14,9 @@ beforeEach(function () {
 describe('MapModule', function () {
     describe('deepMerge()', function () {
         it('can deep merge maps', function () {
-            $map1   = ['outer' => ['inner1' => 'value1']];
-            $map2   = ['outer' => ['inner2' => 'value2']];
+            $map1 = ['outer' => ['inner1' => 'value1']];
+            $map2 = ['outer' => ['inner2' => 'value2']];
+
             $result = $this->mapModule->deepMerge([$map1, $map2]);
 
             expect($result)->toBeInstanceOf(SassMap::class)
@@ -22,21 +24,24 @@ describe('MapModule', function () {
         });
 
         it('returns first arg when first arg is not a map', function () {
-            $map2   = ['b' => 2];
+            $map2 = ['b' => 2];
+
             $result = $this->mapModule->deepMerge(['string', $map2]);
 
             expect($result)->toBe('string');
         });
 
         it('returns first arg when second arg is not a map', function () {
-            $map1   = ['a' => 1];
+            $map1 = ['a' => 1];
+
             $result = $this->mapModule->deepMerge([$map1, 'string']);
 
             expect($result)->toEqual(['a' => 1]);
         });
 
         it('returns null when first arg is null and second is map', function () {
-            $map2   = ['b' => 2];
+            $map2 = ['b' => 2];
+
             $result = $this->mapModule->deepMerge([null, $map2]);
 
             expect($result)->toBeNull();
@@ -57,7 +62,8 @@ describe('MapModule', function () {
 
     describe('deepRemove()', function () {
         it('can deep remove keys from map', function () {
-            $map    = ['outer' => ['inner' => 'value', 'other' => 'data']];
+            $map = ['outer' => ['inner' => 'value', 'other' => 'data']];
+
             $result = $this->mapModule->deepRemove([$map, 'outer', 'inner']);
 
             expect($result)->toBeInstanceOf(SassMap::class)
@@ -65,7 +71,8 @@ describe('MapModule', function () {
         });
 
         it('returns map when no keys provided for deep remove', function () {
-            $map    = ['a' => 1, 'b' => 2];
+            $map = ['a' => 1, 'b' => 2];
+
             $result = $this->mapModule->deepRemove([$map]);
 
             expect($result)->toBeInstanceOf(SassMap::class)
@@ -73,7 +80,8 @@ describe('MapModule', function () {
         });
 
         it('can deep remove top level key', function () {
-            $map    = ['a' => 1, 'b' => 2];
+            $map = ['a' => 1, 'b' => 2];
+
             $result = $this->mapModule->deepRemove([$map, 'a']);
 
             expect($result)->toBeInstanceOf(SassMap::class)
@@ -81,7 +89,8 @@ describe('MapModule', function () {
         });
 
         it('returns unchanged map when trying to deep remove from non-array value', function () {
-            $map    = ['a' => 1, 'b' => 2];
+            $map = ['a' => 1, 'b' => 2];
+
             $result = $this->mapModule->deepRemove([$map, 'a', 'b']);
 
             expect($result)->toBeInstanceOf(SassMap::class)
@@ -105,32 +114,56 @@ describe('MapModule', function () {
 
             expect($result)->toBe(123);
         });
+
+        it('handles deep remove with SassMap value', function () {
+            $nestedMap = new SassMap(['inner' => 'value']);
+            $map       = ['outer' => $nestedMap];
+
+            $result = $this->mapModule->deepRemove([$map, 'outer']);
+
+            expect($result)->toBeInstanceOf(SassMap::class)
+                ->and($result->value)->toEqual([]);
+        });
+
+        it('handles deep remove nested key from SassMap value', function () {
+            $nestedMap = new SassMap(['inner' => 'value', 'keep' => 'data']);
+            $map       = ['outer' => $nestedMap];
+
+            $result = $this->mapModule->deepRemove([$map, 'outer', 'inner']);
+
+            expect($result)->toBeInstanceOf(SassMap::class)
+                ->and($result->value['outer'])->toEqual(['keep' => 'data']);
+        });
     });
 
     describe('get()', function () {
         it('can get value from map', function () {
-            $map    = ['a' => 1, 'b' => 2, 'c' => 3];
+            $map = ['a' => 1, 'b' => 2, 'c' => 3];
+
             $result = $this->mapModule->get([$map, 'b']);
 
             expect($result)->toBe(2);
         });
 
         it('can get nested value from map', function () {
-            $map    = ['outer' => ['inner' => 'value']];
+            $map = ['outer' => ['inner' => 'value']];
+
             $result = $this->mapModule->get([$map, 'outer', 'inner']);
 
             expect($result)->toBe('value');
         });
 
         it('can get value with array key', function () {
-            $map    = ['outer' => ['nested' => 'value']];
+            $map = ['outer' => ['nested' => 'value']];
+
             $result = $this->mapModule->get([$map, ['outer', 'nested']]);
 
             expect($result)->toBe('value');
         });
 
         it('can get value from SassList map', function () {
-            $list   = new SassList(['a', ':', 1, 'b', ':', 2], 'comma');
+            $list = new SassList(['a', ':', 1, 'b', ':', 2], 'comma');
+
             $result = $this->mapModule->get([$list, 'a']);
 
             expect($result)->toBe(1);
@@ -139,13 +172,15 @@ describe('MapModule', function () {
         it('can get nested value from SassList map with nested SassList', function () {
             $nested = new SassList(['inner', ':', 'value'], 'comma');
             $list   = new SassList(['a', ':', 1, 'b', ':', $nested], 'comma');
+
             $result = $this->mapModule->get([$list, 'b', 'inner']);
 
             expect($result)->toBe('value');
         });
 
         it('returns null for non-existent key', function () {
-            $map    = ['a' => 1, 'b' => 2];
+            $map = ['a' => 1, 'b' => 2];
+
             $result = $this->mapModule->get([$map, 'nonexistent']);
 
             expect($result)->toBeNull();
@@ -164,14 +199,16 @@ describe('MapModule', function () {
         });
 
         it('returns null when map is a unit array', function () {
-            $map    = ['value' => 10, 'unit' => 'px'];
+            $map = ['value' => 10, 'unit' => 'px'];
+
             $result = $this->mapModule->get([$map, 'key']);
 
             expect($result)->toBeNull();
         });
 
         it('returns map when direct map passed', function () {
-            $map    = ['a' => 1, 'b' => 2];
+            $map = ['a' => 1, 'b' => 2];
+
             $result = $this->mapModule->get($map);
 
             expect($result)->toBeInstanceOf(SassMap::class)
@@ -179,7 +216,8 @@ describe('MapModule', function () {
         });
 
         it('wraps json string result into SassMap', function () {
-            $map    = ['data' => '{"a":1,"b":2}'];
+            $map = ['data' => '{"a":1,"b":2}'];
+
             $result = $this->mapModule->get([$map, 'data']);
 
             expect($result)->toBeInstanceOf(SassMap::class)
@@ -189,21 +227,24 @@ describe('MapModule', function () {
 
     describe('hasKey()', function () {
         it('can check if key exists', function () {
-            $map    = ['a' => 1, 'b' => 2];
+            $map = ['a' => 1, 'b' => 2];
+
             $result = $this->mapModule->hasKey([$map, 'b']);
 
             expect($result)->toBeTrue();
         });
 
         it('can check if nested key exists', function () {
-            $map    = ['outer' => ['inner' => 'value']];
+            $map = ['outer' => ['inner' => 'value']];
+
             $result = $this->mapModule->hasKey([$map, 'outer', 'inner']);
 
             expect($result)->toBeTrue();
         });
 
         it('returns false for non-existent key check', function () {
-            $map    = ['a' => 1, 'b' => 2];
+            $map = ['a' => 1, 'b' => 2];
+
             $result = $this->mapModule->hasKey([$map, 'nonexistent']);
 
             expect($result)->toBeFalse();
@@ -222,7 +263,8 @@ describe('MapModule', function () {
         });
 
         it('returns false when array key has non-existent nested key', function () {
-            $map    = ['outer' => ['inner' => 'value']];
+            $map = ['outer' => ['inner' => 'value']];
+
             $result = $this->mapModule->hasKey([$map, ['outer', 'nonexistent']]);
 
             expect($result)->toBeFalse();
@@ -231,7 +273,8 @@ describe('MapModule', function () {
 
     describe('keys()', function () {
         it('can get keys from map', function () {
-            $map    = ['a' => 1, 'b' => 2, 'c' => 3];
+            $map = ['a' => 1, 'b' => 2, 'c' => 3];
+
             $result = $this->mapModule->keys([$map]);
 
             expect($result)->toBeInstanceOf(SassList::class)
@@ -249,12 +292,36 @@ describe('MapModule', function () {
 
             expect($result)->toBeNull();
         });
+
+        it('throws exception when missing argument for keys', function () {
+            expect(fn() => $this->mapModule->keys([]))
+                ->toThrow(CompilationException::class, 'keys() requires exactly one argument');
+        });
+
+        it('handles keys with direct map', function () {
+            $map = ['a' => 1, 'b' => 2];
+
+            $result = $this->mapModule->keys($map);
+
+            expect($result)->toBeInstanceOf(SassList::class)
+                ->and($result->value)->toEqual(['a', 'b']);
+        });
+
+        it('handles keys with map as separate arguments', function () {
+            $map = ['a' => 1, 'b' => 2];
+
+            $result = $this->mapModule->keys([$map, 'extra']);
+
+            expect($result)->toBeInstanceOf(SassList::class)
+                ->and($result->value)->toEqual(['a', 'b']);
+        });
     });
 
     describe('merge()', function () {
         it('can merge maps', function () {
-            $map1   = ['a' => 1, 'b' => 2];
-            $map2   = ['b' => 20, 'c' => 3];
+            $map1 = ['a' => 1, 'b' => 2];
+            $map2 = ['b' => 20, 'c' => 3];
+
             $result = $this->mapModule->merge([$map1, $map2]);
 
             expect($result)->toBeInstanceOf(SassMap::class)
@@ -262,21 +329,24 @@ describe('MapModule', function () {
         });
 
         it('returns first arg when first arg is not a map', function () {
-            $map2   = ['b' => 2];
+            $map2 = ['b' => 2];
+
             $result = $this->mapModule->merge(['string', $map2]);
 
             expect($result)->toBe('string');
         });
 
         it('returns first arg when second arg is not a map', function () {
-            $map1   = ['a' => 1];
+            $map1 = ['a' => 1];
+
             $result = $this->mapModule->merge([$map1, 'string']);
 
             expect($result)->toEqual(['a' => 1]);
         });
 
         it('returns null when first arg is null and second is map', function () {
-            $map2   = ['b' => 2];
+            $map2 = ['b' => 2];
+
             $result = $this->mapModule->merge([null, $map2]);
 
             expect($result)->toBeNull();
@@ -295,7 +365,8 @@ describe('MapModule', function () {
         });
 
         it('merges direct map with empty map', function () {
-            $map    = ['a' => 1, 'b' => 2];
+            $map = ['a' => 1, 'b' => 2];
+
             $result = $this->mapModule->merge($map);
 
             expect($result)->toBeInstanceOf(SassMap::class)
@@ -309,7 +380,8 @@ describe('MapModule', function () {
         });
 
         it('sets map value in nested merge when current is not a map', function () {
-            $map    = ['a' => 1];
+            $map = ['a' => 1];
+
             $result = $this->mapModule->merge([$map, 'a', ['b' => 2]]);
 
             expect($result)->toBeInstanceOf(SassMap::class)
@@ -319,7 +391,8 @@ describe('MapModule', function () {
 
     describe('remove()', function () {
         it('can remove keys from map', function () {
-            $map    = ['a' => 1, 'b' => 2, 'c' => 3];
+            $map = ['a' => 1, 'b' => 2, 'c' => 3];
+
             $result = $this->mapModule->remove([$map, 'b']);
 
             expect($result)->toBeInstanceOf(SassMap::class)
@@ -341,7 +414,8 @@ describe('MapModule', function () {
 
     describe('set()', function () {
         it('can set value in map', function () {
-            $map    = ['a' => 1, 'b' => 2];
+            $map = ['a' => 1, 'b' => 2];
+
             $result = $this->mapModule->set([$map, 'c', 3]);
 
             expect($result)->toBeInstanceOf(SassMap::class)
@@ -349,7 +423,8 @@ describe('MapModule', function () {
         });
 
         it('can set nested value in map', function () {
-            $map    = ['outer' => ['inner' => 'old']];
+            $map = ['outer' => ['inner' => 'old']];
+
             $result = $this->mapModule->set([$map, 'outer', 'inner', 'new']);
 
             expect($result)->toBeInstanceOf(SassMap::class)
@@ -373,7 +448,8 @@ describe('MapModule', function () {
 
     describe('values()', function () {
         it('can get values from map', function () {
-            $map    = ['a' => 1, 'b' => 2, 'c' => 3];
+            $map = ['a' => 1, 'b' => 2, 'c' => 3];
+
             $result = $this->mapModule->values([$map]);
 
             expect($result)->toBeInstanceOf(SassList::class)
@@ -390,6 +466,29 @@ describe('MapModule', function () {
             $result = $this->mapModule->values([null]);
 
             expect($result)->toBeNull();
+        });
+
+        it('throws exception when missing argument for values', function () {
+            expect(fn() => $this->mapModule->values([]))
+                ->toThrow(CompilationException::class, 'values() requires exactly one argument');
+        });
+
+        it('handles values with direct map', function () {
+            $map = ['a' => 1, 'b' => 2];
+
+            $result = $this->mapModule->values($map);
+
+            expect($result)->toBeInstanceOf(SassList::class)
+                ->and($result->value)->toEqual([1, 2]);
+        });
+
+        it('handles values with map as separate arguments', function () {
+            $map = ['a' => 1, 'b' => 2];
+
+            $result = $this->mapModule->values([$map, 'extra']);
+
+            expect($result)->toBeInstanceOf(SassList::class)
+                ->and($result->value)->toEqual([1, 2]);
         });
     });
 })->covers(MapModule::class);

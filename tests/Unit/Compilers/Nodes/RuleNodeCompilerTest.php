@@ -75,7 +75,6 @@ describe('RuleNodeCompiler', function () {
         $context->options                = ['sourceMap' => false];
         $context->mappings               = [];
 
-        // Mock engine with necessary methods
         $context->engine = mock(CompilerEngineInterface::class);
         $context->engine->shouldReceive('getIndent')->andReturn('');
 

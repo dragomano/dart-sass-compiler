@@ -1101,7 +1101,7 @@ describe('MathModule', function () {
 
             it('throws exception for too many arguments', function () {
                 expect(fn() => $this->mathModule->random([1, 2]))
-                    ->toThrow(CompilationException::class, 'requires zero or one argument');
+                    ->toThrow(CompilationException::class, 'random() requires zero or one arguments');
             });
 
             it('throws exception for non-numeric argument', function () {
