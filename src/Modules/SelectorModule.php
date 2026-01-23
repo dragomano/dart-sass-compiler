@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DartSass\Modules;
 
-use DartSass\Exceptions\CompilationException;
 use DartSass\Values\SassList;
 
 use function array_filter;
@@ -16,8 +15,8 @@ use function array_values;
 use function count;
 use function explode;
 use function implode;
-use function is_string;
 use function preg_match;
+use function preg_match_all;
 use function preg_quote;
 use function preg_split;
 use function str_replace;
@@ -25,7 +24,7 @@ use function str_starts_with;
 use function substr;
 use function trim;
 
-class SelectorModule
+class SelectorModule extends AbstractModule
 {
     public function isSuperSelector(array $args): bool
     {
@@ -152,32 +151,6 @@ class SelectorModule
         );
 
         return new SassList($parts, 'space', false);
-    }
-
-    private function validateArgs(array $args, int $expected, string $function, bool $minimum = false): array
-    {
-        $count = count($args);
-        $valid = $minimum ? $count >= $expected : $count === $expected;
-
-        if (! $valid) {
-            $numbers = [1 => 'one', 2 => 'two', 3 => 'three'];
-            $word    = $numbers[$expected] ?? (string) $expected;
-            $plural  = $expected === 1 ? '' : 's';
-            $type    = $minimum ? 'at least' : 'exactly';
-
-            throw new CompilationException("$function() requires $type $word argument$plural");
-        }
-
-        return $args;
-    }
-
-    private function validateStringArgs(array $args, string $function): void
-    {
-        foreach ($args as $arg) {
-            if (! is_string($arg)) {
-                throw new CompilationException("$function() arguments must be strings");
-            }
-        }
     }
 
     private function normalizeSelector(string $selector): string

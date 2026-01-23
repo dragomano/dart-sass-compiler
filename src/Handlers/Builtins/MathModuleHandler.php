@@ -16,44 +16,18 @@ use function is_array;
 class MathModuleHandler extends BaseModuleHandler
 {
     protected const MODULE_FUNCTIONS = [
-        'ceil',
-        'clamp',
-        'floor',
-        'max',
-        'min',
-        'round',
-        'abs',
-        'hypot',
-        'log',
-        'pow',
-        'sqrt',
-        'cos',
-        'sin',
-        'tan',
-        'acos',
-        'asin',
-        'atan',
-        'atan2',
-        'compatible',
-        'is-unitless',
-        'unit',
-        'div',
-        'percentage',
-        'random',
+        'ceil', 'clamp', 'floor', 'max', 'min',
+        'round', 'abs', 'hypot', 'log', 'pow',
+        'sqrt', 'cos', 'sin', 'tan', 'acos',
+        'asin', 'atan', 'atan2', 'compatible',
+        'is-unitless', 'unit', 'div',
+        'percentage', 'random',
     ];
 
     protected const GLOBAL_FUNCTIONS = [
-        'ceil',
-        'floor',
-        'max',
-        'min',
-        'round',
-        'abs',
-        'comparable',
-        'unitless',
-        'unit',
-        'percentage',
-        'random',
+        'ceil', 'floor', 'max', 'min', 'round',
+        'abs', 'comparable', 'unitless',
+        'unit', 'percentage', 'random',
     ];
 
     public function __construct(
@@ -66,12 +40,11 @@ class MathModuleHandler extends BaseModuleHandler
         $processedArgs = $this->normalizeArgs($args);
 
         $functionMapping = [
-            'comparable'  => 'compatible',
-            'is-unitless' => 'isUnitless',
-            'unitless'    => 'isUnitless',
+            'comparable' => 'compatible',
+            'unitless'   => 'isUnitless',
         ];
 
-        $methodName = $functionMapping[$functionName] ?? $functionName;
+        $methodName = $functionMapping[$functionName] ?? $this->kebabToCamel($functionName);
 
         $result = $this->mathModule->$methodName($processedArgs);
 

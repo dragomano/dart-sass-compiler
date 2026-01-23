@@ -14,7 +14,6 @@ use function atan;
 use function atan2;
 use function ceil;
 use function cos;
-use function count;
 use function deg2rad;
 use function floor;
 use function in_array;
@@ -34,15 +33,13 @@ use function tan;
 use const M_E;
 use const M_PI;
 
-class MathModule
+class MathModule extends AbstractModule
 {
     public function ceil(array $args): SassNumber
     {
-        if (count($args) !== 1) {
-            throw new CompilationException('ceil() requires exactly one argument');
-        }
+        [$val] = $this->validateArgs($args, 1, 'ceil');
 
-        $val = $this->normalize($args[0]);
+        $val = $this->normalize($val);
 
         if ($val === null) {
             throw new CompilationException('ceil() argument must be a number');
@@ -53,13 +50,11 @@ class MathModule
 
     public function clamp(array $args): SassNumber|array
     {
-        if (count($args) !== 3) {
-            throw new CompilationException('clamp() requires exactly three arguments');
-        }
+        [$arg1, $arg2, $arg3] = $this->validateArgs($args, 3, 'clamp');
 
-        $v1 = $this->normalize($args[0]);
-        $v2 = $this->normalize($args[1]);
-        $v3 = $this->normalize($args[2]);
+        $v1 = $this->normalize($arg1);
+        $v2 = $this->normalize($arg2);
+        $v3 = $this->normalize($arg3);
 
         if (
             $v1 && $v2 && $v3
@@ -82,11 +77,9 @@ class MathModule
 
     public function floor(array $args): SassNumber
     {
-        if (count($args) !== 1) {
-            throw new CompilationException('floor() requires exactly one argument');
-        }
+        [$val] = $this->validateArgs($args, 1, 'floor');
 
-        $val = $this->normalize($args[0]);
+        $val = $this->normalize($val);
 
         if ($val === null) {
             throw new CompilationException('floor() argument must be a number');
@@ -107,9 +100,7 @@ class MathModule
 
     public function round(array $args): SassNumber
     {
-        if (count($args) < 1 || count($args) > 2) {
-            throw new CompilationException('round() requires one or two arguments');
-        }
+        $this->validateArgRange($args, 1, 2, 'round');
 
         $val = $this->normalize($args[0]);
 
@@ -130,11 +121,9 @@ class MathModule
 
     public function abs(array $args): SassNumber
     {
-        if (count($args) !== 1) {
-            throw new CompilationException('abs() requires exactly one argument');
-        }
+        [$val] = $this->validateArgs($args, 1, 'abs');
 
-        $val = $this->normalize($args[0]);
+        $val = $this->normalize($val);
 
         if ($val === null) {
             throw new CompilationException('abs() argument must be a number');
@@ -145,15 +134,15 @@ class MathModule
 
     public function hypot(array $args): SassNumber
     {
-        if (empty($args)) {
-            throw new CompilationException('hypot() requires at least one argument');
-        }
+        $this->validateArgs($args, 1, 'hypot', true);
 
         $sumOfSquares = 0.0;
+
         $unit = '';
 
         foreach ($args as $arg) {
             $val = $this->normalize($arg);
+
             if ($val === null) {
                 throw new CompilationException('hypot() argument must be a number');
             }
@@ -172,11 +161,10 @@ class MathModule
 
     public function log(array $args): SassNumber
     {
-        if (empty($args) || count($args) > 2) {
-            throw new CompilationException('log() requires one or two arguments');
-        }
+        $this->validateArgRange($args, 1, 2, 'log');
 
         $number = $this->normalize($args[0]);
+
         if ($number === null) {
             throw new CompilationException('log() first argument must be a number');
         }
@@ -185,9 +173,11 @@ class MathModule
             throw new CompilationException('log() arguments must be unitless');
         }
 
-        $base = M_E; // Natural logarithm by default
+        $base = M_E;
+
         if (isset($args[1])) {
             $baseVal = $this->normalize($args[1]);
+
             if ($baseVal === null) {
                 throw new CompilationException('log() second argument must be a number');
             }
@@ -212,12 +202,10 @@ class MathModule
 
     public function pow(array $args): SassNumber
     {
-        if (count($args) !== 2) {
-            throw new CompilationException('pow() requires exactly two arguments');
-        }
+        [$base, $exponent] = $this->validateArgs($args, 2, 'pow');
 
-        $base = $this->normalize($args[0]);
-        $exponent = $this->normalize($args[1]);
+        $base     = $this->normalize($base);
+        $exponent = $this->normalize($exponent);
 
         if ($base === null) {
             throw new CompilationException('pow() first argument must be a number');
@@ -236,11 +224,10 @@ class MathModule
 
     public function sqrt(array $args): SassNumber
     {
-        if (count($args) !== 1) {
-            throw new CompilationException('sqrt() requires exactly one argument');
-        }
+        [$val] = $this->validateArgs($args, 1, 'sqrt');
 
-        $val = $this->normalize($args[0]);
+        $val = $this->normalize($val);
+
         if ($val === null) {
             throw new CompilationException('sqrt() argument must be a number');
         }
@@ -258,11 +245,10 @@ class MathModule
 
     public function cos(array $args): SassNumber
     {
-        if (count($args) !== 1) {
-            throw new CompilationException('cos() requires exactly one argument');
-        }
+        [$val] = $this->validateArgs($args, 1, 'cos');
 
-        $val = $this->normalize($args[0]);
+        $val = $this->normalize($val);
+
         if ($val === null) {
             throw new CompilationException('cos() argument must be a number');
         }
@@ -270,6 +256,7 @@ class MathModule
         $this->validateAngleUnit($val, 'cos');
 
         $value = $val['value'];
+
         if ($val['unit'] === 'deg') {
             $value = deg2rad($value);
         }
@@ -279,11 +266,10 @@ class MathModule
 
     public function sin(array $args): SassNumber
     {
-        if (count($args) !== 1) {
-            throw new CompilationException('sin() requires exactly one argument');
-        }
+        [$val] = $this->validateArgs($args, 1, 'sin');
 
-        $val = $this->normalize($args[0]);
+        $val = $this->normalize($val);
+
         if ($val === null) {
             throw new CompilationException('sin() argument must be a number');
         }
@@ -291,6 +277,7 @@ class MathModule
         $this->validateAngleUnit($val, 'sin');
 
         $value = $val['value'];
+
         if ($val['unit'] === 'deg') {
             $value = deg2rad($value);
         }
@@ -300,11 +287,10 @@ class MathModule
 
     public function tan(array $args): SassNumber
     {
-        if (count($args) !== 1) {
-            throw new CompilationException('tan() requires exactly one argument');
-        }
+        [$val] = $this->validateArgs($args, 1, 'tan');
 
-        $val = $this->normalize($args[0]);
+        $val = $this->normalize($val);
+
         if ($val === null) {
             throw new CompilationException('tan() argument must be a number');
         }
@@ -312,6 +298,7 @@ class MathModule
         $this->validateAngleUnit($val, 'tan');
 
         $value = $val['value'];
+
         if ($val['unit'] === 'deg') {
             $value = deg2rad($value);
         }
@@ -321,11 +308,10 @@ class MathModule
 
     public function acos(array $args): SassNumber
     {
-        if (count($args) !== 1) {
-            throw new CompilationException('acos() requires exactly one argument');
-        }
+        [$val] = $this->validateArgs($args, 1, 'acos');
 
-        $val = $this->normalize($args[0]);
+        $val = $this->normalize($val);
+
         if ($val === null) {
             throw new CompilationException('acos() argument must be a number');
         }
@@ -343,11 +329,10 @@ class MathModule
 
     public function asin(array $args): SassNumber
     {
-        if (count($args) !== 1) {
-            throw new CompilationException('asin() requires exactly one argument');
-        }
+        [$val] = $this->validateArgs($args, 1, 'asin');
 
-        $val = $this->normalize($args[0]);
+        $val = $this->normalize($val);
+
         if ($val === null) {
             throw new CompilationException('asin() argument must be a number');
         }
@@ -365,11 +350,10 @@ class MathModule
 
     public function atan(array $args): SassNumber
     {
-        if (count($args) !== 1) {
-            throw new CompilationException('atan() requires exactly one argument');
-        }
+        [$val] = $this->validateArgs($args, 1, 'atan');
 
-        $val = $this->normalize($args[0]);
+        $val = $this->normalize($val);
+
         if ($val === null) {
             throw new CompilationException('atan() argument must be a number');
         }
@@ -383,12 +367,10 @@ class MathModule
 
     public function atan2(array $args): SassNumber
     {
-        if (count($args) !== 2) {
-            throw new CompilationException('atan2() requires exactly two arguments');
-        }
+        [$y, $x] = $this->validateArgs($args, 2, 'atan2');
 
-        $y = $this->normalize($args[0]);
-        $x = $this->normalize($args[1]);
+        $y = $this->normalize($y);
+        $x = $this->normalize($x);
 
         if ($y === null) {
             throw new CompilationException('atan2() first argument must be a number');
@@ -407,12 +389,10 @@ class MathModule
 
     public function compatible(array $args): array
     {
-        if (count($args) !== 2) {
-            throw new CompilationException('compatible() requires exactly two arguments');
-        }
+        [$val1, $val2] = $this->validateArgs($args, 2, 'compatible');
 
-        $val1 = $this->normalize($args[0]);
-        $val2 = $this->normalize($args[1]);
+        $val1 = $this->normalize($val1);
+        $val2 = $this->normalize($val2);
 
         if ($val1 === null || $val2 === null) {
             throw new CompilationException('compatible() arguments must be numbers');
@@ -423,11 +403,10 @@ class MathModule
 
     public function isUnitless(array $args): array
     {
-        if (count($args) !== 1) {
-            throw new CompilationException('isUnitless() requires exactly one argument');
-        }
+        [$val] = $this->validateArgs($args, 1, 'is-unitless');
 
-        $val = $this->normalize($args[0]);
+        $val = $this->normalize($val);
+
         if ($val === null) {
             throw new CompilationException('isUnitless() argument must be a number');
         }
@@ -438,11 +417,10 @@ class MathModule
 
     public function unit(array $args): array
     {
-        if (count($args) !== 1) {
-            throw new CompilationException('unit() requires exactly one argument');
-        }
+        [$val] = $this->validateArgs($args, 1, 'unit');
 
-        $val = $this->normalize($args[0]);
+        $val = $this->normalize($val);
+
         if ($val === null) {
             throw new CompilationException('unit() argument must be a number');
         }
@@ -453,12 +431,10 @@ class MathModule
 
     public function div(array $args): SassNumber
     {
-        if (count($args) !== 2) {
-            throw new CompilationException('div() requires exactly two arguments');
-        }
+        [$dividend, $divisor] = $this->validateArgs($args, 2, 'div');
 
-        $dividend = $this->normalize($args[0]);
-        $divisor  = $this->normalize($args[1]);
+        $dividend = $this->normalize($dividend);
+        $divisor  = $this->normalize($divisor);
 
         if ($dividend === null) {
             throw new CompilationException('div() first argument must be a number');
@@ -489,11 +465,10 @@ class MathModule
 
     public function percentage(array $args): SassNumber
     {
-        if (count($args) !== 1) {
-            throw new CompilationException('percentage() requires exactly one argument');
-        }
+        [$val] = $this->validateArgs($args, 1, 'percentage');
 
-        $val = $this->normalize($args[0]);
+        $val = $this->normalize($val);
+
         if ($val === null) {
             throw new CompilationException('percentage() argument must be a number');
         }
@@ -507,9 +482,7 @@ class MathModule
 
     public function random(array $args): SassNumber
     {
-        if (count($args) > 1) {
-            throw new CompilationException('random() requires zero or one argument');
-        }
+        $this->validateArgRange($args, 0, 1, 'random');
 
         // If no arguments, return a decimal between 0 and 1
         if (empty($args)) {
@@ -517,6 +490,7 @@ class MathModule
         }
 
         $val = $this->normalize($args[0]);
+
         if ($val === null) {
             throw new CompilationException('random() argument must be a number');
         }
@@ -526,6 +500,7 @@ class MathModule
         }
 
         $limit = (int) $val['value'];
+
         if ($limit <= 0) {
             throw new CompilationException('random() argument must be greater than zero');
         }
@@ -565,9 +540,7 @@ class MathModule
 
     private function handleMinMax(array $args, string $type): SassNumber|array
     {
-        if (empty($args)) {
-            throw new CompilationException("$type() requires at least one argument");
-        }
+        $this->validateArgs($args, 1, $type, true);
 
         $normalized = [];
 

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace DartSass\Utils;
 
 use DartSass\Parsers\Nodes\IdentifierNode;
-use DartSass\Values\SassList;
 use DartSass\Values\SassNumber;
 
 use function array_filter;
@@ -26,10 +25,6 @@ class ValueFormatter
     {
         if ($value instanceof LazyValue) {
             return $this->format($value->getValue());
-        }
-
-        if ($value instanceof SassList) {
-            return $this->formatSassList($value);
         }
 
         if ($value instanceof SassNumber) {
@@ -129,7 +124,7 @@ class ValueFormatter
         );
 
         $separator = $this->detectArraySeparator($formattedItems);
-        $result = implode($separator, $formattedItems);
+        $result    = implode($separator, $formattedItems);
 
         return preg_replace('/\s*,\s*/', ', ', $result);
     }
@@ -146,28 +141,8 @@ class ValueFormatter
         return ', ';
     }
 
-    private function formatSassList(SassList $list): string
-    {
-        $formattedItems = $this->filterEmptyItems(
-            array_map($this->format(...), $list->value)
-        );
-
-        $separator = $this->getSeparatorString($list->separator);
-
-        return implode($separator, $formattedItems);
-    }
-
     private function filterEmptyItems(array $items): array
     {
         return array_filter($items, fn($item): bool => $item !== '');
-    }
-
-    private function getSeparatorString(string $separator): string
-    {
-        return match($separator) {
-            'comma' => ', ',
-            'slash' => ' / ',
-            default => ' ',
-        };
     }
 }

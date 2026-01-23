@@ -10,7 +10,6 @@ use Random\RandomException;
 
 use function array_map;
 use function array_merge;
-use function count;
 use function is_numeric;
 use function is_string;
 use function max;
@@ -32,15 +31,11 @@ use function substr;
 
 use const PREG_SPLIT_NO_EMPTY;
 
-class StringModule
+class StringModule extends AbstractModule
 {
     public function quote(array $args): string
     {
-        if (count($args) !== 1) {
-            throw new CompilationException('quote() requires exactly one argument');
-        }
-
-        $string = $args[0];
+        [$string] = $this->validateArgs($args, 1, 'quote');
 
         if (! is_string($string)) {
             throw new CompilationException('quote() argument must be a string');
@@ -61,12 +56,7 @@ class StringModule
 
     public function index(array $args): ?int
     {
-        if (count($args) !== 2) {
-            throw new CompilationException('index() requires exactly two arguments');
-        }
-
-        $string = $args[0] ?? '';
-        $substring = $args[1] ?? '';
+        [$string, $substring] = $this->validateArgs($args, 2, 'index');
 
         if (! is_string($string)) {
             throw new CompilationException('index() first argument must be a string');
@@ -90,13 +80,7 @@ class StringModule
 
     public function insert(array $args): string
     {
-        if (count($args) !== 3) {
-            throw new CompilationException('insert() requires exactly three arguments');
-        }
-
-        $string = $args[0] ?? '';
-        $insert = $args[1] ?? '';
-        $index  = $args[2] ?? 0;
+        [$string, $insert, $index] = $this->validateArgs($args, 3, 'insert');
 
         if (! is_string($string)) {
             throw new CompilationException('insert() first argument must be a string');
@@ -133,11 +117,7 @@ class StringModule
 
     public function length(array $args): int
     {
-        if (count($args) !== 1) {
-            throw new CompilationException('length() requires exactly one argument');
-        }
-
-        $string = $args[0];
+        [$string] = $this->validateArgs($args, 1, 'length');
 
         if (! is_string($string)) {
             throw new CompilationException('length() argument must be a string');
@@ -148,13 +128,10 @@ class StringModule
 
     public function slice(array $args): string
     {
-        $argCount = count($args);
-        if ($argCount < 2 || $argCount > 3) {
-            throw new CompilationException('slice() requires 2 or 3 arguments');
-        }
+        $this->validateArgRange($args, 2, 3, 'slice');
 
-        $string  = $args[0] ?? '';
-        $startAt = $args[1] ?? 0;
+        $string  = $args[0];
+        $startAt = $args[1];
         $endAt   = $args[2] ?? -1;
 
         if (! is_string($string)) {
@@ -207,13 +184,10 @@ class StringModule
 
     public function split(array $args): array
     {
-        $argCount = count($args);
-        if ($argCount < 2 || $argCount > 3) {
-            throw new CompilationException('split() requires 2 or 3 arguments');
-        }
+        $this->validateArgRange($args, 2, 3, 'split');
 
-        $string    = $args[0] ?? '';
-        $separator = $args[1] ?? '';
+        $string    = $args[0];
+        $separator = $args[1];
         $limit     = $args[2] ?? null;
 
         if (! is_string($string)) {
@@ -254,14 +228,10 @@ class StringModule
 
     public function toUpperCase(array $args): string
     {
-        if (count($args) !== 1) {
-            throw new CompilationException('toUpperCase() requires exactly one argument');
-        }
-
-        $string = $args[0];
+        [$string] = $this->validateArgs($args, 1, 'to-upper-case');
 
         if (! is_string($string)) {
-            throw new CompilationException('toUpperCase() argument must be a string');
+            throw new CompilationException('to-upper-case() argument must be a string');
         }
 
         return StringFormatter::forceQuoteString(strtoupper($this->unquoteString($string)));
@@ -269,14 +239,10 @@ class StringModule
 
     public function toLowerCase(array $args): string
     {
-        if (count($args) !== 1) {
-            throw new CompilationException('toLowerCase() requires exactly one argument');
-        }
-
-        $string = $args[0];
+        [$string] = $this->validateArgs($args, 1, 'to-lower-case');
 
         if (! is_string($string)) {
-            throw new CompilationException('toLowerCase() argument must be a string');
+            throw new CompilationException('to-lower-case() argument must be a string');
         }
 
         return StringFormatter::forceQuoteString(strtolower($this->unquoteString($string)));
@@ -284,9 +250,7 @@ class StringModule
 
     public function uniqueId(array $args): string
     {
-        if ($args !== []) {
-            throw new CompilationException('unique-id() takes no arguments');
-        }
+        $this->validateArgs($args, 0, 'unique-id');
 
         $letters = array_merge(range('a', 'z'), range('A', 'Z'));
         $chars   = array_merge($letters, range('0', '9'));
@@ -308,11 +272,7 @@ class StringModule
 
     public function unquote(array $args): ?string
     {
-        if (count($args) !== 1) {
-            throw new CompilationException('unquote() requires exactly one argument');
-        }
-
-        $string = $args[0];
+        [$string] = $this->validateArgs($args, 1, 'unquote');
 
         if (! is_string($string)) {
             throw new CompilationException('unquote() argument must be a string');

@@ -6,7 +6,6 @@ namespace DartSass\Compilers\Nodes;
 
 use DartSass\Compilers\CompilerContext;
 use DartSass\Parsers\Nodes\AstNode;
-use DartSass\Parsers\Nodes\AtRuleNode;
 use DartSass\Parsers\Nodes\IncludeNode;
 use DartSass\Parsers\Nodes\RuleNode;
 use DartSass\Parsers\Nodes\SelectorNode;
@@ -51,25 +50,11 @@ class RuleNodeCompiler extends AbstractNodeCompiler
 
         $context->variableHandler->enterScope();
 
-        foreach ($node->nested ?? [] as $nestedItem) {
-            if ($nestedItem instanceof AtRuleNode && ($nestedItem->properties['name'] ?? '') === '@mixin') {
-                $context->mixinHandler->define(
-                    $nestedItem->properties['value'],
-                    [],
-                    $nestedItem->properties['body']['declarations'] ?? []
-                );
-            }
-        }
-
         $includesCss    = '';
         $flowControlCss = '';
         $otherNestedCss = '';
 
         foreach ($node->nested ?? [] as $nestedItem) {
-            if ($nestedItem instanceof AtRuleNode && ($nestedItem->properties['name'] ?? '') === '@mixin') {
-                continue;
-            }
-
             $itemCss = match ($nestedItem->type) {
                 'include' => $this->compileIncludeNode($nestedItem, $context, $selector, $nestingLevel + 1),
                 'media'   => $this->bubbleMediaQuery($nestedItem, $selector, $nestingLevel, $context),

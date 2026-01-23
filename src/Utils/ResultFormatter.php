@@ -9,6 +9,7 @@ use DartSass\Parsers\Nodes\CommentNode;
 use DartSass\Parsers\Nodes\IdentifierNode;
 use DartSass\Parsers\Nodes\OperationNode;
 use DartSass\Parsers\Nodes\VariableNode;
+use DartSass\Values\CalcValue;
 
 readonly class ResultFormatter implements ResultFormatterInterface
 {

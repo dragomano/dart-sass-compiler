@@ -33,7 +33,7 @@ class UseNodeCompiler extends AbstractNodeCompiler
         $namespace = $node->properties['namespace'] ?? null;
 
         if (! $context->moduleHandler->isModuleLoaded($path)) {
-            $result          = $context->moduleHandler->loadModule($path, $namespace);
+            $result          = $context->moduleHandler->loadModule($path, $namespace ?? '');
             $actualNamespace = $result['namespace'];
 
             $context->moduleCompiler->registerModuleMixins($actualNamespace);

@@ -73,12 +73,10 @@ class ExpressionEvaluator extends AbstractEvaluator
         $type  = $expr->type;
         $props = $expr->properties;
 
-        // Direct value types
         if (in_array($type, self::DIRECT_VALUE_TYPES, true)) {
             return $props['value'];
         }
 
-        // Recursive evaluation types
         if (in_array($type, self::RECURSIVE_TYPES, true)) {
             return $this->evaluate($props['expression']);
         }
@@ -175,7 +173,6 @@ class ExpressionEvaluator extends AbstractEvaluator
             return $numericValue;
         }
 
-        // Use SassNumber for consistent handling
         $sassNumber = new SassNumber((float) $numericValue, $unit);
 
         return $sassNumber->toArray();

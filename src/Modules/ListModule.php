@@ -8,6 +8,7 @@ use DartSass\Exceptions\CompilationException;
 use DartSass\Parsers\Nodes\ListNode;
 use DartSass\Utils\ValueComparator;
 use DartSass\Values\SassList;
+use DartSass\Values\SassMap;
 use DartSass\Values\SassNumber;
 
 use function array_filter;
@@ -26,12 +27,14 @@ use function str_ends_with;
 use function str_starts_with;
 use function trim;
 
-class ListModule
+class ListModule extends AbstractModule
 {
     public function append(array $args): SassList
     {
-        $list = $args[0] ?? throw new CompilationException('Missing list for append');
-        $val  = $args[1] ?? throw new CompilationException('Missing value for append');
+        $this->validateArgs($args, 2, 'append', true);
+
+        $list = $args[0];
+        $val  = $args[1];
 
         $separator = $args['$separator'] ?? ($args[2] ?? 'auto');
 
@@ -49,8 +52,7 @@ class ListModule
 
     public function index(array $args): ?int
     {
-        $list  = $args[0] ?? throw new CompilationException('Missing list for index');
-        $value = $args[1] ?? throw new CompilationException('Missing value for index');
+        [$list, $value] = $this->validateArgs($args, 2, 'index');
 
         $listObj = $this->toSassList($list);
 
@@ -65,15 +67,17 @@ class ListModule
 
     public function isBracketed(array $args): bool
     {
-        $list = $args[0] ?? throw new CompilationException('Missing list for is-bracketed');
+        [$list] = $this->validateArgs($args, 1, 'is-bracketed');
 
         return $this->toSassList($list)->bracketed;
     }
 
     public function join(array $args): SassList
     {
-        $list1 = $args[0] ?? throw new CompilationException('Missing list1 for join');
-        $list2 = $args[1] ?? throw new CompilationException('Missing list2 for join');
+        $this->validateArgs($args, 2, 'join', true);
+
+        $list1 = $args[0];
+        $list2 = $args[1];
 
         $separator = $args['$separator'] ?? ($args[2] ?? 'auto');
         $bracketed = $args['$bracketed'] ?? ($args[3] ?? 'auto');
@@ -91,7 +95,8 @@ class ListModule
 
     public function length(array $args): int
     {
-        $value = $args[0] ?? throw new CompilationException('Missing list for length');
+        [$value] = $this->validateArgs($args, 1, 'length');
+
         $value = $this->toArray($value);
 
         return count($value);
@@ -121,7 +126,7 @@ class ListModule
 
     public function separator(array $args): string
     {
-        $list = $args[0] ?? throw new CompilationException('Missing list for separator');
+        [$list] = $this->validateArgs($args, 1, 'separator');
 
         return $this->toSassList($list)->separator;
     }
@@ -154,17 +159,17 @@ class ListModule
 
     public function slash(array $args): SassList
     {
-        if (count($args) < 2) {
-            throw new CompilationException('slash requires at least two elements');
-        }
+        $this->validateArgs($args, 2, 'slash', true);
 
         return new SassList($args, 'slash', false);
     }
 
-    public function zip(array $args): array
+    public function zip(array $args): SassList
     {
+        $this->validateArgs($args, 0, 'zip', true);
+
         if (empty($args)) {
-            return [];
+            return new SassList([], 'comma', false);
         }
 
         $sassLists = array_map($this->toSassList(...), $args);
@@ -177,7 +182,7 @@ class ListModule
             $result[] = new SassList($row, 'space', false);
         }
 
-        return $result;
+        return new SassList($result, 'comma', false);
     }
 
     private function resolveSeparator(string $separator, SassList $list1, SassList $list2): string
@@ -200,7 +205,6 @@ class ListModule
 
     private function parseListArg(mixed $listArg): array
     {
-        // Handle wrapped single-element array
         if (is_array($listArg) && count($listArg) === 1 && isset($listArg[0])) {
             return $this->parseWrappedValue($listArg[0]);
         }
@@ -260,7 +264,6 @@ class ListModule
             $index = (int) $indexArg['value'];
         }
 
-        // Handle negative indices
         if ($index < 0) {
             $index = $listLength + $index + 1;
         }
@@ -276,6 +279,10 @@ class ListModule
 
         if ($value instanceof SassList) {
             return $value->value;
+        }
+
+        if ($value instanceof SassMap) {
+            return array_keys($value->value);
         }
 
         if (is_array($value) && isset($value['value'])) {
@@ -305,13 +312,11 @@ class ListModule
         if (is_string($value)) {
             $trimmed = trim($value);
 
-            // Check for bracketed lists
             if (str_starts_with($trimmed, '[') && str_ends_with($trimmed, ']')) {
                 $bracketed = true;
                 $value = trim($trimmed, '[]');
             }
 
-            // Check for comma-separated lists
             if (str_contains($value, ',')) {
                 $separator = 'comma';
             }

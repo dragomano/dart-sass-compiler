@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Utils;
+namespace DartSass\Values;
 
-use DartSass\Values\SassNumber;
+use DartSass\Utils\LazyEvaluatable;
 use Exception;
 use Stringable;
 

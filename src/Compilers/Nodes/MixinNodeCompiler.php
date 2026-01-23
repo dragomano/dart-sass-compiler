@@ -29,7 +29,7 @@ class MixinNodeCompiler extends AbstractNodeCompiler
         $context->mixinHandler->define(
             $node->properties['name'],
             $node->args ?? [],
-            $node->body ?? [],
+            $node->body ?? []
         );
 
         return '';

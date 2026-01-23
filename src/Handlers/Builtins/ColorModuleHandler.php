@@ -9,6 +9,7 @@ use DartSass\Handlers\SassModule;
 use DartSass\Modules\ColorFormat;
 use DartSass\Modules\ColorModule;
 use DartSass\Modules\ColorSerializer;
+use DartSass\Values\SassNumber;
 
 use function array_slice;
 use function count;
@@ -19,70 +20,26 @@ use function is_numeric;
 use function is_string;
 use function method_exists;
 use function preg_match;
-use function str_contains;
-use function str_replace;
 use function str_starts_with;
 use function trim;
-use function ucwords;
 
 class ColorModuleHandler extends BaseModuleHandler
 {
     protected const MODULE_FUNCTIONS = [
-        'adjust',
-        'change',
-        'channel',
-        'complement',
-        'grayscale',
-        'ie-hex-str',
-        'invert',
-        'is-legacy',
-        'is-missing',
-        'is-powerless',
-        'mix',
-        'same',
-        'scale',
-        'space',
-        'to-gamut',
-        'to-space',
-        'alpha',
-        'blackness',
-        'red',
-        'green',
-        'blue',
-        'hue',
-        'lightness',
-        'saturation',
-        'whiteness',
-        'hwb',
+        'adjust', 'change', 'channel', 'complement', 'grayscale',
+        'ie-hex-str', 'invert', 'is-legacy', 'is-missing', 'is-powerless',
+        'mix', 'same', 'scale', 'space', 'to-gamut', 'to-space',
+        'alpha', 'blackness', 'red', 'green', 'blue', 'hue',
+        'lightness', 'saturation', 'whiteness', 'hwb',
     ];
 
     protected const GLOBAL_FUNCTIONS = [
-        'adjust-color',
-        'change-color',
-        'complement',
-        'grayscale',
-        'ie-hex-str',
-        'invert',
-        'mix',
-        'scale-color',
-        'adjust-hue',
-        'alpha',
-        'opacity',
-        'blackness',
-        'red',
-        'green',
-        'blue',
-        'darken',
-        'desaturate',
-        'hue',
-        'lighten',
-        'lightness',
-        'opacify',
-        'fade-in',
-        'fade-out',
-        'saturate',
-        'saturation',
-        'transparentize',
+        'adjust-color', 'change-color', 'complement', 'grayscale',
+        'ie-hex-str', 'invert', 'mix', 'scale-color', 'adjust-hue',
+        'alpha', 'opacity', 'blackness', 'red', 'green', 'blue',
+        'darken', 'desaturate', 'hue', 'lighten', 'lightness',
+        'opacify', 'fade-in', 'fade-out', 'saturate',
+        'saturation', 'transparentize',
     ];
 
     private const CSS_FILTER_FUNCTIONS = [
@@ -103,14 +60,12 @@ class ColorModuleHandler extends BaseModuleHandler
 
     public function handle(string $functionName, array $args): string
     {
-        // Check if this is a CSS filter function that should be returned as-is
         if ($this->isCssFilterFunction($functionName, $args)) {
             return $this->formatCssFunction($functionName, $args);
         }
 
         $processedArgs = $this->normalizeArgs($args);
 
-        // Map legacy function names to their modern equivalents
         $mappedFunctionName = match ($functionName) {
             'adjust-color' => 'adjust',
             'change-color' => 'change',
@@ -136,6 +91,7 @@ class ColorModuleHandler extends BaseModuleHandler
     private function handleAdjustmentFunction(string $function, array $args): string
     {
         $color = $this->extract($args[0]);
+
         $adjustments = $this->extractAdjustments($args);
 
         return $this->colorModule->$function($color, $adjustments);
@@ -154,35 +110,31 @@ class ColorModuleHandler extends BaseModuleHandler
     {
         $color = $this->extract($args[0]);
 
-        // If first argument is not a valid color, return as CSS function call
         if (! $this->isValidColorFormat($color)) {
             $formattedArgs = array_map($this->extract(...), $args);
 
             return 'scale(' . implode(', ', $formattedArgs) . ')';
         }
 
-        // Handle as Sass color scale function
         return $this->colorModule->scale($color, $this->extractAdjustments($args));
     }
 
     private function handleSimpleColorFunction(string $functionName, array $args): string
     {
         $color = $this->extract($args[0]);
-        $methodName = $this->convertToMethodName($functionName);
+
+        $methodName = $this->kebabToCamel($functionName);
 
         if (! method_exists($this->colorModule, $methodName)) {
             throw new CompilationException("Unknown color function: $functionName");
         }
 
-        // Get remaining arguments after color
         $remainingArgs = array_slice($args, 1);
 
-        // If no additional arguments, just call with color
         if (empty($remainingArgs)) {
             return $this->colorModule->$methodName($color);
         }
 
-        // Otherwise extract scalar arguments based on function type
         $scalarArgs = $this->extractTypedArguments($functionName, $remainingArgs);
 
         return $this->colorModule->$methodName($color, ...$scalarArgs);
@@ -201,11 +153,6 @@ class ColorModuleHandler extends BaseModuleHandler
         }
 
         return $scalarArgs;
-    }
-
-    private function convertToMethodName(string $functionName): string
-    {
-        return str_replace(' ', '', ucwords(str_replace('-', ' ', $functionName)));
     }
 
     private function extract(mixed $arg, string $cast = 'string'): int|float|string
@@ -247,12 +194,10 @@ class ColorModuleHandler extends BaseModuleHandler
 
         $color = trim($color);
 
-        // Check for named colors
         if (isset(ColorSerializer::NAMED_COLORS[$color])) {
             return true;
         }
 
-        // Check for functional color notations using ColorFormat patterns
         foreach (ColorFormat::cases() as $format) {
             if (preg_match($format->getPattern(), $color)) {
                 return true;
@@ -276,14 +221,10 @@ class ColorModuleHandler extends BaseModuleHandler
 
         $value = is_array($arg) && isset($arg['value']) ? (string) $arg['value'] : (string) $arg;
 
-        // Check if the argument looks like a CSS filter value
-        // (contains units, percentages, or looks like a CSS value)
-        return preg_match('/^(-?\d*\.?\d+)(deg|px|em|rem|%|)$/', $value) > 0
-            || str_contains($value, '%')
-            || str_contains($value, 'deg')
-            || str_contains($value, 'px')
-            || str_contains($value, 'em')
-            || str_contains($value, 'rem');
+        return (bool) preg_match(
+            '/^-?\d+(?:\.\d+)?(?:' . SassNumber::UNIT_REGEX . ')?$/',
+            $value
+        );
     }
 
     private function formatCssFunction(string $functionName, array $args): string

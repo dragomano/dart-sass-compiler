@@ -81,11 +81,6 @@ class VariableHandler
         return array_key_exists($name, $this->globalVariables);
     }
 
-    public function has(string $name): bool
-    {
-        return $this->variableExists($name);
-    }
-
     private function variableExists(string $name): bool
     {
         if (! empty($this->scopes)) {

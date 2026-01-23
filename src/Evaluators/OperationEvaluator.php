@@ -7,11 +7,11 @@ namespace DartSass\Evaluators;
 use DartSass\Exceptions\CompilationException;
 use DartSass\Parsers\Nodes\OperationNode;
 use DartSass\Utils\ArithmeticCalculator;
-use DartSass\Utils\CalcValue;
 use DartSass\Utils\LazyEvaluatable;
 use DartSass\Utils\LazyValue;
 use DartSass\Utils\StringFormatter;
 use DartSass\Utils\ValueComparator;
+use DartSass\Values\CalcValue;
 use DartSass\Values\SassNumber;
 
 use function in_array;
@@ -99,7 +99,6 @@ class OperationEvaluator extends AbstractEvaluator
             return StringFormatter::concat($left, $this->formatStructuredValue($right));
         }
 
-        // Try arithmetic addition
         $result = ArithmeticCalculator::calculate('+', $left, $right);
         if ($result !== null) {
             return $result;
