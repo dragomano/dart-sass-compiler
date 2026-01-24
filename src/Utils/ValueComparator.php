@@ -9,22 +9,19 @@ use DartSass\Values\SassList;
 use DartSass\Values\SassMap;
 use DartSass\Values\SassNumber;
 
-use function array_keys;
+use function array_key_exists;
 use function count;
 use function in_array;
 use function is_array;
 use function is_numeric;
 use function is_string;
-use function strlen;
-use function substr;
+use function strtolower;
 
 final class ValueComparator
 {
     private const COMPARISON_OPERATORS = ['==', '!=', '<', '>', '<=', '>='];
 
     private const LOGICAL_OPERATORS = ['and', 'or', 'not'];
-
-    private const QUOTE_CHARS = ['"', "'"];
 
     public static function equals(mixed $left, mixed $right): bool
     {
@@ -199,23 +196,7 @@ final class ValueComparator
 
     private static function stringsAreEqual(string $left, string $right): bool
     {
-        return self::removeQuotes($left) === self::removeQuotes($right);
-    }
-
-    private static function removeQuotes(string $str): string
-    {
-        $length = strlen($str);
-
-        if ($length >= 2) {
-            $first = $str[0];
-            $last  = $str[$length - 1];
-
-            if (in_array($first, self::QUOTE_CHARS, true) && $first === $last) {
-                return substr($str, 1, -1);
-            }
-        }
-
-        return $str;
+        return StringFormatter::unquoteString($left) === StringFormatter::unquoteString($right);
     }
 
     private static function listsAreEqual(SassList $left, SassList $right): bool
@@ -228,6 +209,11 @@ final class ValueComparator
         return self::collectionsAreEqual($left->value, $right->value);
     }
 
+    private static function arraysAreEqual(array $left, array $right): bool
+    {
+        return self::collectionsAreEqual($left, $right);
+    }
+
     private static function collectionsAreEqual(array $left, array $right): bool
     {
         if (count($left) !== count($right)) {
@@ -235,33 +221,7 @@ final class ValueComparator
         }
 
         foreach ($left as $key => $leftValue) {
-            if (! isset($right[$key])) {
-                return false;
-            }
-
-            if (! self::areEqual($leftValue, $right[$key])) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static function arraysAreEqual(array $left, array $right): bool
-    {
-        if (count($left) !== count($right)) {
-            return false;
-        }
-
-        $leftKeys  = array_keys($left);
-        $rightKeys = array_keys($right);
-
-        if ($leftKeys !== $rightKeys) {
-            return false;
-        }
-
-        foreach ($left as $key => $leftValue) {
-            if (! self::areEqual($leftValue, $right[$key])) {
+            if (! array_key_exists($key, $right) || ! self::areEqual($leftValue, $right[$key])) {
                 return false;
             }
         }

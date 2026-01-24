@@ -25,7 +25,7 @@ readonly class SassMap implements Stringable
             $formattedKey = is_string($key) ? $key : json_encode($key);
 
             if ($value instanceof SassMixin) {
-                $formattedValue = (string) $value;
+                $formattedValue = $value;
             } elseif (is_object($value) && method_exists($value, '__toString')) {
                 $formattedValue = $value->__toString();
             } elseif (is_array($value) || is_object($value)) {
