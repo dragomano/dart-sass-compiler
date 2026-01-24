@@ -114,6 +114,16 @@ describe('ArithmeticCalculator', function () {
             expect(fn() => ArithmeticCalculator::divide($left, $right))
                 ->toThrow(CompilationException::class, 'Cannot divide px by deg: incompatible units');
         });
+
+        it('divides same non-convertible units', function () {
+            $left  = new SassNumber(10, '%');
+            $right = new SassNumber(2, '%');
+
+            $result = ArithmeticCalculator::divide($left, $right);
+
+            expect($result->getValue())->toBe(5.0)
+                ->and($result->getUnit())->toBeNull();
+        });
     });
 
     describe('modulo()', function () {
@@ -283,6 +293,17 @@ describe('ArithmeticCalculator', function () {
             expect(fn() => ArithmeticCalculator::normalizeUnits($left, $right))
                 ->toThrow(CompilationException::class, 'Incompatible units: px and deg');
         });
+
+        it('normalizes units for same non-convertible units', function () {
+            $left  = new SassNumber(10, '%');
+            $right = new SassNumber(2, '%');
+
+            [$leftVal, $rightVal, $unit] = ArithmeticCalculator::normalizeUnits($left, $right);
+
+            expect($leftVal)->toBe(10.0)
+                ->and($rightVal)->toBe(2.0)
+                ->and($unit)->toBe('%');
+        });
     });
 
     describe('resolveResultUnit()', function () {
@@ -377,9 +398,8 @@ describe('ArithmeticCalculator', function () {
 
         it('throws on bool conversion', function () {
             expect(fn() => ArithmeticCalculator::toSassNumber(true))
-                ->toThrow(CompilationException::class, 'Cannot convert value to SassNumber: true');
-
-            expect(fn() => ArithmeticCalculator::toSassNumber(false))
+                ->toThrow(CompilationException::class, 'Cannot convert value to SassNumber: true')
+                ->and(fn() => ArithmeticCalculator::toSassNumber(false))
                 ->toThrow(CompilationException::class, 'Cannot convert value to SassNumber: false');
         });
 
@@ -421,7 +441,8 @@ describe('ArithmeticCalculator', function () {
         it('checks unit compatibility', function () {
             expect(ArithmeticCalculator::areUnitsCompatible('px', 'px'))->toBeTrue()
                 ->and(ArithmeticCalculator::areUnitsCompatible('px', 'em'))->toBeFalse()
-                ->and(ArithmeticCalculator::areUnitsCompatible('', ''))->toBeTrue();
+                ->and(ArithmeticCalculator::areUnitsCompatible('', ''))->toBeTrue()
+                ->and(ArithmeticCalculator::areUnitsCompatible('%', '%'))->toBeTrue();
         });
     });
 
@@ -434,6 +455,12 @@ describe('ArithmeticCalculator', function () {
 
         it('converts same units', function () {
             $result = ArithmeticCalculator::convertUnit(10, 'px', 'px');
+
+            expect($result)->toBe(10.0);
+        });
+
+        it('converts same non-convertible units', function () {
+            $result = ArithmeticCalculator::convertUnit(10, '%', '%');
 
             expect($result)->toBe(10.0);
         });

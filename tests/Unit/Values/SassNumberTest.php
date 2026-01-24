@@ -93,6 +93,15 @@ describe('SassNumber', function () {
                 ->and($converted->getUnit())->toBe('px');
         });
 
+        it('converts to same unit with non-convertible unit', function () {
+            $number = new SassNumber(10, '%');
+
+            $converted = $number->convertTo('%');
+
+            expect($converted->getValue())->toBe(10.0)
+                ->and($converted->getUnit())->toBe('%');
+        });
+
         it('assigns unit to unitless number', function () {
             $number = new SassNumber(5.5);
 
@@ -225,6 +234,16 @@ describe('SassNumber', function () {
         it('divides compatible units', function () {
             $left  = new SassNumber(10, 'px');
             $right = new SassNumber(2, 'px');
+
+            $result = $left->divide($right);
+
+            expect($result->getValue())->toBe(5.0)
+                ->and($result->getUnit())->toBeNull();
+        });
+
+        it('divides same non-convertible units', function () {
+            $left  = new SassNumber(10, '%');
+            $right = new SassNumber(2, '%');
 
             $result = $left->divide($right);
 

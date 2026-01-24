@@ -151,6 +151,7 @@ describe('InterpolationEvaluator', function () {
                         return 'outer-ast-result';
                     }
                 }
+
                 return $arg;
             };
 

@@ -24,6 +24,14 @@ describe('SassMixin', function () {
             expect($mixin->acceptsContent())->toBeFalse();
         });
 
+        it('does not throw when mixin definition is null', function () {
+            $handler = mock(MixinHandler::class);
+            $handler->shouldReceive('getMixins')->andReturn(['mixins' => []]);
+            $mixin = new SassMixin($handler, 'nonExistentMixin');
+
+            expect(fn() => $mixin->acceptsContent())->not->toThrow(Throwable::class);
+        });
+
         it('returns true when body contains @content', function () {
             $handler = mock(MixinHandler::class);
             $handler->shouldReceive('getMixins')->andReturn([
