@@ -10,13 +10,8 @@ final class AtRuleNode extends AstNode
         public string $name,
         public string $value,
         public ?array $body,
-        public int $line
+        int $line = 0
     ) {
-        parent::__construct('at-rule', [
-            'name'  => $name,
-            'value' => $value,
-            'body'  => $body,
-            'line'  => $line,
-        ]);
+        parent::__construct(NodeType::AT_RULE, $line);
     }
 }

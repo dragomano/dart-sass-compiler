@@ -6,8 +6,8 @@ namespace DartSass\Parsers\Nodes;
 
 final class ReturnNode extends AstNode
 {
-    public function __construct(public AstNode $value, public int $line)
+    public function __construct(public AstNode $value, int $line = 0)
     {
-        parent::__construct('return', ['value' => $value, 'line' => $line]);
+        parent::__construct(NodeType::RETURN, $line);
     }
 }

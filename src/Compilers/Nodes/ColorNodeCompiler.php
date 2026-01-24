@@ -7,6 +7,7 @@ namespace DartSass\Compilers\Nodes;
 use DartSass\Compilers\CompilerContext;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\ColorNode;
+use DartSass\Parsers\Nodes\NodeType;
 
 class ColorNodeCompiler extends AbstractNodeCompiler
 {
@@ -15,9 +16,9 @@ class ColorNodeCompiler extends AbstractNodeCompiler
         return ColorNode::class;
     }
 
-    protected function getNodeType(): string
+    protected function getNodeType(): NodeType
     {
-        return 'color';
+        return NodeType::COLOR;
     }
 
     protected function compileNode(

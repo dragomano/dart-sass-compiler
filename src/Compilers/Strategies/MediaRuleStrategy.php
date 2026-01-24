@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace DartSass\Compilers\Strategies;
 
+use DartSass\Parsers\Nodes\NodeType;
+
 readonly class MediaRuleStrategy extends ConditionalRuleStrategy
 {
-    protected function getRuleName(): string
+    protected function getRuleName(): NodeType
     {
-        return 'media';
+        return NodeType::MEDIA;
     }
 
     protected function getAtSymbol(): string

@@ -7,6 +7,7 @@ namespace DartSass\Compilers\Nodes;
 use DartSass\Compilers\CompilerContext;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\ForwardNode;
+use DartSass\Parsers\Nodes\NodeType;
 
 class ForwardNodeCompiler extends AbstractNodeCompiler
 {
@@ -15,19 +16,19 @@ class ForwardNodeCompiler extends AbstractNodeCompiler
         return ForwardNode::class;
     }
 
-    protected function getNodeType(): string
+    protected function getNodeType(): NodeType
     {
-        return 'forward';
+        return NodeType::FORWARD;
     }
 
     protected function compileNode(
-        AstNode $node,
+        ForwardNode|AstNode $node,
         CompilerContext $context,
         string $parentSelector = '',
         int $nestingLevel = 0
     ): string {
         $properties = $context->moduleHandler->forwardModule(
-            $node->properties['path'],
+            $node->path,
             fn($expr): mixed => $context->engine->evaluateExpression($expr),
             $node->namespace ?? null,
             $node->config ?? [],

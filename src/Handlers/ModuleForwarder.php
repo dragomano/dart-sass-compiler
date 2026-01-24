@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace DartSass\Handlers;
 
+use DartSass\Parsers\Nodes\NodeType;
+
 use function in_array;
 use function ltrim;
 
@@ -35,14 +37,14 @@ readonly class ModuleForwarder
                 $show,
                 &$result
             ): void {
-                $name = $node->properties['name'];
+                $name = $node->name;
                 $configKey = ltrim((string) $name, '$');
 
                 if (! $this->isAllowed($name, $hide, $show)) {
                     return;
                 }
 
-                $value = $config[$configKey] ?? $expression($node->properties['value']);
+                $value = $config[$configKey] ?? $expression($node->value);
 
                 $result['variables'][$name] = $value;
             },
@@ -62,10 +64,10 @@ readonly class ModuleForwarder
     ): void {
         foreach ($ast as $node) {
             match ($node->type) {
-                'variable' => $onVariable && $onVariable($node),
-                'mixin'    => $onMixin && $onMixin($node),
-                'function' => $onFunction && $onFunction($node),
-                default    => $onCssNode && $onCssNode($node),
+                NodeType::VARIABLE => $onVariable && $onVariable($node),
+                NodeType::MIXIN    => $onMixin && $onMixin($node),
+                NodeType::FUNCTION => $onFunction && $onFunction($node),
+                default            => $onCssNode && $onCssNode($node),
             };
         }
     }
@@ -85,15 +87,15 @@ readonly class ModuleForwarder
 
     private function forwardCallable($node, string $type, array &$result, array $hide, array $show): void
     {
-        $name = $node->properties['name'];
+        $name = $node->name;
 
         if (! $this->isAllowed($name, $hide, $show)) {
             return;
         }
 
         $payload = [
-            'args' => $node->properties['args'],
-            'body' => $node->properties['body'],
+            'args' => $node->args,
+            'body' => $node->body,
         ];
 
         $result[$type][$name] = $payload;

@@ -6,8 +6,8 @@ namespace DartSass\Parsers\Nodes;
 
 final class SelectorNode extends AstNode
 {
-    public function __construct(public string $value, public int $line)
+    public function __construct(public string $value, int $line = 0)
     {
-        parent::__construct('selector', ['value' => $value, 'line'  => $line]);
+        parent::__construct(NodeType::SELECTOR, $line);
     }
 }

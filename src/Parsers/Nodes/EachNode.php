@@ -10,13 +10,8 @@ final class EachNode extends AstNode
         public array $variables,
         public AstNode $condition,
         public array $body,
-        public int $line
+        int $line = 0
     ) {
-        parent::__construct('each', [
-            'variables' => $variables,
-            'condition' => $condition,
-            'body'      => $body,
-            'line'      => $line,
-        ]);
+        parent::__construct(NodeType::EACH, $line);
     }
 }

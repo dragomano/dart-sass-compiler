@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DartSass\Utils;
 
-use DartSass\Parsers\Nodes\IdentifierNode;
 use DartSass\Values\SassNumber;
 
 use function array_filter;
@@ -46,16 +45,6 @@ class ValueFormatter
 
         if (is_bool($value)) {
             return $value ? 'true' : 'false';
-        }
-
-        if ($value instanceof IdentifierNode && ($value->properties['important'] ?? false)) {
-            $value->value .= ' !important';
-
-            return $value->value;
-        }
-
-        if ($value instanceof IdentifierNode) {
-            return $value->value;
         }
 
         return (string) $value;

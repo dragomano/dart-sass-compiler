@@ -10,6 +10,7 @@ use DartSass\Exceptions\CompilationException;
 use DartSass\Handlers\ModuleRegistry;
 use DartSass\Loaders\FileLoader;
 use DartSass\Loaders\HttpLoader;
+use DartSass\Parsers\Nodes\HexColorNode;
 use DartSass\Parsers\Nodes\VariableDeclarationNode;
 use DartSass\Parsers\Syntax;
 use DartSass\Utils\StringFormatter;
@@ -376,8 +377,13 @@ class MetaModule extends AbstractModule
             return '(' . implode(', ', $pairs) . ')';
         }
 
+        if ($value instanceof HexColorNode) {
+            return $this->inspect([$value->value]);
+        }
+
         if (is_string($value)) {
             $parsed = ColorParser::HEX->parse($value);
+
             if ($parsed !== null) {
                 $named = ColorSerializer::getNamedColor($parsed['r'], $parsed['g'], $parsed['b']);
                 if ($named !== null) {
@@ -523,7 +529,7 @@ class MetaModule extends AbstractModule
             $key = ltrim($name, '$');
 
             if ($value instanceof VariableDeclarationNode && $this->evaluator) {
-                $variables[$key] = ($this->evaluator)($value->properties['value']);
+                $variables[$key] = ($this->evaluator)($value->value);
 
                 continue;
             }
@@ -544,7 +550,7 @@ class MetaModule extends AbstractModule
             return 'number';
         }
 
-        if ($value instanceof SassColor) {
+        if ($value instanceof SassColor || $value instanceof HexColorNode) {
             return 'color';
         }
 
@@ -573,10 +579,6 @@ class MetaModule extends AbstractModule
         }
 
         if (is_string($value)) {
-            if (ColorParser::HEX->parse($value) !== null) {
-                return 'color';
-            }
-
             return 'string';
         }
 

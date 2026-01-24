@@ -235,7 +235,7 @@ class MixinHandler
             return $arguments[$argIndex];
         }
 
-        if ($defaultValue instanceof IdentifierNode && $defaultValue->properties['value'] === 'null') {
+        if ($defaultValue instanceof IdentifierNode && $defaultValue->value === 'null') {
             return null;
         }
 

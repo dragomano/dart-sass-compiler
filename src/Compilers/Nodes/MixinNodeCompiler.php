@@ -7,6 +7,7 @@ namespace DartSass\Compilers\Nodes;
 use DartSass\Compilers\CompilerContext;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\MixinNode;
+use DartSass\Parsers\Nodes\NodeType;
 
 class MixinNodeCompiler extends AbstractNodeCompiler
 {
@@ -15,19 +16,19 @@ class MixinNodeCompiler extends AbstractNodeCompiler
         return MixinNode::class;
     }
 
-    protected function getNodeType(): string
+    protected function getNodeType(): NodeType
     {
-        return 'mixin';
+        return NodeType::MIXIN;
     }
 
     protected function compileNode(
-        AstNode $node,
+        MixinNode|AstNode $node,
         CompilerContext $context,
         string $parentSelector = '',
         int $nestingLevel = 0
     ): string {
         $context->mixinHandler->define(
-            $node->properties['name'],
+            $node->name,
             $node->args ?? [],
             $node->body ?? []
         );

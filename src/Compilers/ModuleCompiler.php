@@ -26,7 +26,7 @@ readonly class ModuleCompiler
         $moduleVars = $this->context->moduleHandler->getVariables($actualNamespace);
         foreach ($moduleVars as $name => $varNode) {
             if ($varNode instanceof VariableDeclarationNode) {
-                $value = $expression($varNode->properties['value']);
+                $value = $expression($varNode->value);
                 $this->context->variableHandler->define($name, $value);
             }
         }
@@ -63,7 +63,7 @@ readonly class ModuleCompiler
 
         foreach ($globalVariables as $varName => $varValue) {
             if ($varValue instanceof VariableDeclarationNode) {
-                $evaluatedValue = $expression($varValue->properties['value']);
+                $evaluatedValue = $expression($varValue->value);
 
                 $this->context->variableHandler->define($varName, $evaluatedValue, true);
             }

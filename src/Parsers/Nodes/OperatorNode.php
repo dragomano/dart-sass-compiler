@@ -6,8 +6,8 @@ namespace DartSass\Parsers\Nodes;
 
 final class OperatorNode extends AstNode
 {
-    public function __construct(public string $value, public int $line)
+    public function __construct(public string $value, int $line = 0)
     {
-        parent::__construct('operator', ['value' => $value, 'line' => $line]);
+        parent::__construct(NodeType::OPERATOR, $line);
     }
 }

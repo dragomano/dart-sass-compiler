@@ -10,6 +10,7 @@ use DartSass\Compilers\Strategies\KeyframesRuleStrategy;
 use DartSass\Compilers\Strategies\MediaRuleStrategy;
 use DartSass\Compilers\Strategies\RuleCompilationStrategy;
 use DartSass\Parsers\Nodes\AstNode;
+use DartSass\Parsers\Nodes\NodeType;
 use InvalidArgumentException;
 
 class RuleCompiler
@@ -28,17 +29,17 @@ class RuleCompiler
         $this->strategies ??= self::STRATEGIES;
     }
 
-    private function findStrategy(string $ruleType): ?RuleCompilationStrategy
+    private function findStrategy(NodeType $ruleType): ?RuleCompilationStrategy
     {
-        if (isset($this->strategyInstances[$ruleType])) {
-            return $this->strategyInstances[$ruleType];
+        if (isset($this->strategyInstances[$ruleType->value])) {
+            return $this->strategyInstances[$ruleType->value];
         }
 
         foreach ($this->strategies as $className) {
             $strategy = new $className();
 
             if ($strategy instanceof RuleCompilationStrategy && $strategy->canHandle($ruleType)) {
-                $this->strategyInstances[$ruleType] = $strategy;
+                $this->strategyInstances[$ruleType->value] = $strategy;
 
                 return $strategy;
             }
@@ -61,6 +62,6 @@ class RuleCompiler
             return $strategy->compile($node, $context, $currentNestingLevel, $parentSelector, ...$params);
         }
 
-        throw new InvalidArgumentException("Unknown rule type: $ruleType");
+        throw new InvalidArgumentException("Unknown rule type: $ruleType->value");
     }
 }

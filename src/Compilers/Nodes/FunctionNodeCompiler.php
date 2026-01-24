@@ -7,6 +7,7 @@ namespace DartSass\Compilers\Nodes;
 use DartSass\Compilers\CompilerContext;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\FunctionNode;
+use DartSass\Parsers\Nodes\NodeType;
 
 class FunctionNodeCompiler extends AbstractNodeCompiler
 {
@@ -15,19 +16,19 @@ class FunctionNodeCompiler extends AbstractNodeCompiler
         return FunctionNode::class;
     }
 
-    protected function getNodeType(): string
+    protected function getNodeType(): NodeType
     {
-        return 'function';
+        return NodeType::FUNCTION;
     }
 
     protected function compileNode(
-        AstNode $node,
+        FunctionNode|AstNode $node,
         CompilerContext $context,
         string $parentSelector = '',
         int $nestingLevel = 0
     ): string {
         $context->functionHandler->defineUserFunction(
-            $node->properties['name'],
+            $node->name,
             $node->args ?? [],
             $node->body ?? [],
             $context->variableHandler,

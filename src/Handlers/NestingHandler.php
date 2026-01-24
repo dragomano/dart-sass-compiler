@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace DartSass\Handlers;
 
-use DartSass\Parsers\Nodes\AstNode;
-
 use function array_map;
 use function explode;
 use function implode;
@@ -18,16 +16,14 @@ use function trim;
 
 class NestingHandler
 {
-    public function resolveSelector(mixed $selector, string $parentSelector): string
+    public function resolveSelector(string $selector, string $parentSelector): string
     {
-        $selectorValue = $selector instanceof AstNode ? $selector->properties['value'] : $selector;
-
         if (empty($parentSelector)) {
-            return $selectorValue;
+            return $selector;
         }
 
-        $selectors = array_map(trim(...), explode(',', $selectorValue));
-        $parentSelectors = array_map(trim(...), explode(',', $parentSelector));
+        $selectors         = array_map(trim(...), explode(',', $selector));
+        $parentSelectors   = array_map(trim(...), explode(',', $parentSelector));
         $resolvedSelectors = [];
 
         foreach ($selectors as $individualSelector) {
