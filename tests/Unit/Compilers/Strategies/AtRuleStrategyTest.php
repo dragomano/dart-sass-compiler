@@ -17,7 +17,7 @@ describe('AtRuleStrategy', function () {
 
         $context = new CompilerContext([]);
 
-        expect(fn() => $strategy->compile($node, $context, 0, ''))
+        expect(fn() => $strategy->compile($node, $context, '', 0))
             ->toThrow(
                 InvalidArgumentException::class,
                 'Missing required parameters for at-rule compilation'

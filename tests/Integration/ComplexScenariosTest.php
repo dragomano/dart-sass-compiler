@@ -88,10 +88,10 @@ describe('integration tests for complex SCSS', function () {
         .for-class-1 {
           background-color: #76828d;
           border: 1px solid #537696;
+          border-radius: 3px;
           padding: max(8px, min(10px, 2vw)) max(15px, calc(min(10px, 2vw) * 2));
           width: 10px;
           height: 22px;
-          border-radius: 3px;
           filter: hue-rotate(18deg);
         }
         .for-class-1:hover {
@@ -154,5 +154,39 @@ describe('integration tests for complex SCSS', function () {
 
         expect($this->compiler->compileString($scss))
             ->toEqualCss($expected);
+    });
+
+    it('handles type-of in comments with @each', function () {
+        $scss = <<<'SCSS'
+        @use "sass:meta";
+
+        .test-map {
+            $test-map: (string: #080, comment-val: #800);
+            /* Map type: #{meta.type-of($test-map)} */
+            /* Map count: #{length($test-map)} */
+
+            @each $key, $val in $test-map {
+                .#{$key} {
+                    color: $val;
+                }
+            }
+        }
+        SCSS;
+
+        $expected = /** @lang text */ <<<'CSS'
+        .test-map {
+          /* Map type: map */
+          /* Map count: 2 */
+        }
+        .test-map .string {
+          color: #080;
+        }
+        .test-map .comment-val {
+          color: #800;
+        }
+        CSS;
+
+        $css = $this->compiler->compileString($scss);
+        expect($css)->toEqualCss($expected);
     });
 });

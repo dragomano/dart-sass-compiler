@@ -22,7 +22,7 @@ describe('KeyframesRuleStrategy', function () {
         $context = new CompilerContext([]);
         $context->resultFormatter = $formatter;
 
-        expect(fn() => $strategy->compile($node, $context, 0, ''))
+        expect(fn() => $strategy->compile($node, $context, '', 0))
             ->toThrow(
                 InvalidArgumentException::class,
                 'Missing required parameters for keyframes rule compilation'

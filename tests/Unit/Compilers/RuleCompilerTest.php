@@ -25,7 +25,7 @@ describe('RuleCompiler', function () {
         $unknownNode = mock(AstNode::class);
         $unknownNode->type = NodeType::UNKNOWN;
 
-        expect(fn() => $this->compiler->compileRule($unknownNode, $context, 0, ''))
+        expect(fn() => $this->compiler->compileRule($unknownNode, $context, '', 0))
             ->toThrow(InvalidArgumentException::class, 'Unknown rule type: unknown');
     });
 });

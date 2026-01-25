@@ -88,4 +88,12 @@ describe('RuleNodeCompiler', function () {
 
         expect($result)->toBe('');
     });
+
+    it('returns empty string when CSS does not contain declarations in extractDeclarations', function () {
+        $css = ".nested {\n  /* comment */\n}";
+
+        $result = $this->accessor->callMethod('extractDeclarations', [$css, '.test', 0]);
+
+        expect($result)->toBe('');
+    });
 });
