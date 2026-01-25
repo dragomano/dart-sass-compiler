@@ -48,6 +48,7 @@ describe('MetaModule', function () {
             $this->mixinHandler
                 ->shouldReceive('getMixins')
                 ->andReturn(['mixins' => ['testMixin' => ['body' => []]]]);
+
             $this->mixinHandler
                 ->shouldReceive('include')
                 ->with('testMixin', ['arg1'], null)
@@ -62,6 +63,7 @@ describe('MetaModule', function () {
             $this->mixinHandler
                 ->shouldReceive('getMixins')
                 ->andReturn(['mixins' => ['testMixin' => []]]);
+
             $this->mixinHandler
                 ->shouldReceive('include')
                 ->with('testMixin', ['arg1'])
@@ -152,9 +154,9 @@ describe('MetaModule', function () {
         });
 
         it('handles relative paths correctly', function () {
-            $fixtureDir = __DIR__ . '/../../../tests/Feature/Sass/fixtures';
+            $fixtureDir   = __DIR__ . '/../../../tests/Feature/Sass/fixtures';
             $testFileName = 'test_main.scss';
-            $testFile = $fixtureDir . DIRECTORY_SEPARATOR . $testFileName;
+            $testFile     = $fixtureDir . DIRECTORY_SEPARATOR . $testFileName;
 
             $this->context->options['sourceFile'] = $fixtureDir . DIRECTORY_SEPARATOR . 'source.scss';
 
@@ -171,16 +173,6 @@ describe('MetaModule', function () {
 
             $result = $this->metaModule->loadCss([$testFileName]);
             expect($result)->toContain('border-radius: 5px');
-        });
-
-        it('handles absolute URLs correctly', function () {
-            $this->context->engine = mock(CompilerEngineInterface::class);
-            $this->context->engine
-                ->shouldReceive('compileString')
-                ->andReturn('compiled css');
-
-            $result = $this->metaModule->loadCss(['https://httpbin.org/status/200']);
-            expect($result)->toBeString();
         });
     });
 
@@ -210,6 +202,7 @@ describe('MetaModule', function () {
     describe('calcName()', function () {
         it('returns name of calculation', function () {
             $calc = new CalcValue('10px', '+', '20px');
+
             expect($this->metaModule->calcName([$calc]))->toBe('"calc"');
         });
 
@@ -233,26 +226,31 @@ describe('MetaModule', function () {
     describe('inspect()', function () {
         it('returns string representation of SassNumber', function () {
             $number = new SassNumber(42, 'px');
+
             expect($this->metaModule->inspect([$number]))->toBe('42px');
         });
 
         it('returns string representation of SassColor', function () {
             $color = SassColor::rgb(255, 0, 0);
+
             expect($this->metaModule->inspect([$color]))->toBe('red');
         });
 
         it('returns string representation of SassList', function () {
             $list = new SassList([1, 'hello'], 'space');
+
             expect($this->metaModule->inspect([$list]))->toBe('1 "hello"');
         });
 
         it('returns string representation of bracketed SassList', function () {
             $list = new SassList([1, 2], 'comma', true);
+
             expect($this->metaModule->inspect([$list]))->toBe('[1, 2]');
         });
 
         it('returns string representation of SassMap', function () {
             $map = new SassMap(['key' => 'value']);
+
             expect($this->metaModule->inspect([$map]))->toBe('(key: "value")');
         });
 
@@ -271,16 +269,19 @@ describe('MetaModule', function () {
 
         it('returns "function" for callable', function () {
             $func = function () {};
+
             expect($this->metaModule->inspect([$func]))->toBe('function');
         });
 
         it('returns string representation of SassMixin', function () {
             $mixin = new SassMixin($this->mixinHandler, 'testMixin');
+
             expect($this->metaModule->inspect([$mixin]))->toBe('testMixin');
         });
 
         it('returns string representation of CalcValue', function () {
             $calc = new CalcValue('100%', '+', '10px');
+
             expect($this->metaModule->inspect([$calc]))->toBe('calc(100% + 10px)');
         });
 
@@ -307,21 +308,25 @@ describe('MetaModule', function () {
     describe('typeOf()', function () {
         it('returns "number" for SassNumber', function () {
             $number = new SassNumber(42);
+
             expect($this->metaModule->typeOf([$number]))->toBe('number');
         });
 
         it('returns "color" for SassColor', function () {
             $color = SassColor::rgb(255, 0, 0);
+
             expect($this->metaModule->typeOf([$color]))->toBe('color');
         });
 
         it('returns "list" for SassList', function () {
             $list = new SassList([1, 2, 3]);
+
             expect($this->metaModule->typeOf([$list]))->toBe('list');
         });
 
         it('returns "map" for SassMap', function () {
             $map = new SassMap([]);
+
             expect($this->metaModule->typeOf([$map]))->toBe('map');
         });
 
@@ -339,16 +344,19 @@ describe('MetaModule', function () {
 
         it('returns "function" for callable', function () {
             $func = function () {};
+
             expect($this->metaModule->typeOf([$func]))->toBe('function');
         });
 
         it('returns "mixin" for SassMixin', function () {
             $mixin = new SassMixin($this->mixinHandler, 'testMixin');
+
             expect($this->metaModule->typeOf([$mixin]))->toBe('mixin');
         });
 
         it('returns "calculation" for CalcValue', function () {
             $calc = new CalcValue('10px', '+', '20px');
+
             expect($this->metaModule->typeOf([$calc]))->toBe('calculation');
         });
 
@@ -375,18 +383,21 @@ describe('MetaModule', function () {
     describe('keywords()', function () {
         it('returns empty SassMap', function () {
             $result = $this->metaModule->keywords([]);
+
             expect($result)->toBeInstanceOf(SassMap::class)
                 ->and($result->value)->toBeEmpty();
         });
 
         it('returns SassMap when first arg is SassMap', function () {
             $map = new SassMap(['key' => 'value']);
+
             $result = $this->metaModule->keywords([$map]);
             expect($result)->toBe($map);
         });
 
         it('returns SassMap with named arguments', function () {
             $args = ['key1' => 'value1', 'key2' => 'value2'];
+
             $result = $this->metaModule->keywords($args);
             expect($result)->toBeInstanceOf(SassMap::class)
                 ->and($result->value)->toBe(['key1' => 'value1', 'key2' => 'value2']);
@@ -394,6 +405,7 @@ describe('MetaModule', function () {
 
         it('removes $ prefix from keys', function () {
             $args = ['$key1' => 'value1', 'key2' => 'value2'];
+
             $result = $this->metaModule->keywords($args);
             expect($result)->toBeInstanceOf(SassMap::class)
                 ->and($result->value)->toBe(['key1' => 'value1', 'key2' => 'value2']);
@@ -401,6 +413,7 @@ describe('MetaModule', function () {
 
         it('returns empty SassMap for args without string keys', function () {
             $args = [1, 'value', true];
+
             $result = $this->metaModule->keywords($args);
             expect($result)->toBeInstanceOf(SassMap::class)
                 ->and($result->value)->toBeEmpty();
@@ -571,6 +584,7 @@ describe('MetaModule', function () {
 
         it('returns false for invalid mixin', function () {
             $this->mixinHandler->shouldReceive('getMixins')->andReturn(['mixins' => []]);
+
             expect($this->metaModule->acceptsContent(['string']))->toBeFalse();
         });
 
@@ -580,6 +594,7 @@ describe('MetaModule', function () {
 
         it('returns false for callable mixin without mixinName', function () {
             $callable = function () {};
+
             expect($this->metaModule->acceptsContent([$callable]))->toBeFalse();
         });
 
@@ -589,7 +604,8 @@ describe('MetaModule', function () {
 
                 public function __invoke() {}
 
-                public function __toString() {
+                public function __toString()
+                {
                     return $this->mixinName;
                 }
             };

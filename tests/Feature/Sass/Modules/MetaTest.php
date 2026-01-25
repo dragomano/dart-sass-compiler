@@ -52,7 +52,7 @@ describe('sass:meta', function () {
         $scss = <<<'SCSS'
         @use "sass:meta";
 
-        test {
+        .test {
             content: meta.load-css("https://php.dragomano.ru/extra.css");
         }
         SCSS;
@@ -72,14 +72,14 @@ describe('sass:meta', function () {
             value: "no-content";
         }
 
-        test {
+        .test {
             with: meta.accepts-content(meta.get-mixin("with-content"));
             without: meta.accepts-content(meta.get-mixin("without-content"));
         }
         SCSS;
 
         $expected = /** @lang text */ <<<'CSS'
-        test {
+        .test {
           with: true;
           without: false;
         }
@@ -94,14 +94,14 @@ describe('sass:meta', function () {
         $scss = <<<'SCSS'
         @use "sass:meta";
 
-        test {
+        .test {
             args: meta.calc-args(calc(10px + 20%));
             args2: meta.calc-args(clamp(50px, var(--width), 1000px));
         }
         SCSS;
 
         $expected = /** @lang text */ <<<'CSS'
-        test {
+        .test {
           args: 10px + 20%;
           args2: 50px, var(--width), 1000px;
         }
@@ -116,13 +116,13 @@ describe('sass:meta', function () {
         $scss = <<<'SCSS'
         @use "sass:meta";
 
-        test {
+        .test {
             name: meta.calc-name(calc(10px + 20%));
         }
         SCSS;
 
         $expected = /** @lang text */ <<<'CSS'
-        test {
+        .test {
           name: "calc";
         }
         CSS;
@@ -137,13 +137,13 @@ describe('sass:meta', function () {
         @use "sass:meta";
         @use "sass:math";
 
-        test {
+        .test {
             result: meta.call(meta.get-function("ceil", "math"), 4.2);
         }
         SCSS;
 
         $expected = /** @lang text */ <<<'CSS'
-        test {
+        .test {
           result: 5;
         }
         CSS;
@@ -161,13 +161,13 @@ describe('sass:meta', function () {
             exists: meta.content-exists();
         }
 
-        test {
+        .test {
             @include test-mixin;
         }
         SCSS;
 
         $expected = /** @lang text */ <<<'CSS'
-        test {
+        .test {
           exists: false;
         }
         CSS;
@@ -206,14 +206,14 @@ describe('sass:meta', function () {
         @use "sass:meta";
         @use "sass:math";
 
-        test {
+        .test {
             exists: meta.function-exists("ceil", "math");
             not-exists: meta.function-exists("nonexistent");
         }
         SCSS;
 
         $expected = /** @lang text */ <<<'CSS'
-        test {
+        .test {
           exists: true;
           not-exists: false;
         }
@@ -232,13 +232,13 @@ describe('sass:meta', function () {
             @return $x * 2;
         }
 
-        test {
+        .test {
             result: meta.call(meta.get-function("test-function"), 3);
         }
         SCSS;
 
         $expected = /** @lang text */ <<<'CSS'
-        test {
+        .test {
           result: 6;
         }
         CSS;
@@ -280,14 +280,14 @@ describe('sass:meta', function () {
 
         $global-var: "test";
 
-        test {
+        .test {
             exists: meta.global-variable-exists("global-var");
             not-exists: meta.global-variable-exists("nonexistent");
         }
         SCSS;
 
         $expected = /** @lang text */ <<<'CSS'
-        test {
+        .test {
           exists: true;
           not-exists: false;
         }
@@ -302,7 +302,7 @@ describe('sass:meta', function () {
         $scss = <<<'SCSS'
         @use "sass:meta";
 
-        test {
+        .test {
             number: meta.inspect(123px);
             color: meta.inspect(#ff0000);
             string: meta.inspect("hello");
@@ -312,7 +312,7 @@ describe('sass:meta', function () {
         SCSS;
 
         $expected = /** @lang text */ <<<'CSS'
-        test {
+        .test {
           number: 123px;
           color: red;
           string: "hello";
@@ -370,14 +370,14 @@ describe('sass:meta', function () {
             content: "test";
         }
 
-        test {
+        .test {
             exists: meta.mixin-exists("other-test-mixin");
             not-exists: meta.mixin-exists("nonexistent");
         }
         SCSS;
 
         $expected = /** @lang text */ <<<'CSS'
-        test {
+        .test {
           exists: true;
           not-exists: false;
         }
@@ -463,7 +463,7 @@ describe('sass:meta', function () {
         $scss = <<<'SCSS'
         @use "sass:meta";
 
-        test {
+        .test {
             number: meta.type-of(42);
             color: meta.type-of(#ff0000);
             string: meta.type-of("hello");
@@ -475,7 +475,7 @@ describe('sass:meta', function () {
         SCSS;
 
         $expected = /** @lang text */ <<<'CSS'
-        test {
+        .test {
           number: number;
           color: color;
           string: string;
@@ -502,14 +502,14 @@ describe('sass:meta', function () {
             global: meta.variable-exists("local-var");
         }
 
-        test {
+        .test {
             @include another-test-mixin;
             not-exists: meta.variable-exists("nonexistent");
         }
         SCSS;
 
         $expected = /** @lang text */ <<<'CSS'
-        test {
+        .test {
           local: true;
           global: true;
           not-exists: false;

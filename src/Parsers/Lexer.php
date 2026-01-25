@@ -70,6 +70,7 @@ class Lexer implements LexerInterface
 
                     $tokenType = $this->resolveTokenType($type, $matchValue);
                     $tokens[] = new Token($tokenType, $matchValue, $this->line, $this->column);
+
                     $this->updatePosition($matchValue, $matchLength);
 
                     continue 2;
@@ -136,7 +137,7 @@ class Lexer implements LexerInterface
     {
         if (! isset(self::$cachedRegexes)) {
             self::$cachedPatterns = TokenPattern::getPatterns();
-            self::$cachedRegexes = TokenPattern::buildRegexFromPatterns();
+            self::$cachedRegexes  = TokenPattern::buildRegexFromPatterns();
         }
 
         return [self::$cachedRegexes, self::$cachedPatterns];

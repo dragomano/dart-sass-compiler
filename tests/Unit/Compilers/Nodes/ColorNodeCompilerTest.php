@@ -5,6 +5,7 @@ declare(strict_types=1);
 use DartSass\Compilers\CompilerContext;
 use DartSass\Compilers\Nodes\ColorNodeCompiler;
 use DartSass\Parsers\Nodes\ColorNode;
+use DartSass\Parsers\Nodes\NodeType;
 
 describe('ColorNodeCompiler', function () {
     beforeEach(function () {
@@ -23,10 +24,10 @@ describe('ColorNodeCompiler', function () {
     });
 
     it('can compile color node type', function () {
-        expect($this->compiler->canCompile('color'))->toBeTrue();
+        expect($this->compiler->canCompile(NodeType::COLOR))->toBeTrue();
     });
 
     it('cannot compile other node types', function () {
-        expect($this->compiler->canCompile('rule'))->toBeFalse();
+        expect($this->compiler->canCompile(NodeType::RULE))->toBeFalse();
     });
 });

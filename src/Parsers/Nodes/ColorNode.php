@@ -13,16 +13,9 @@ final class ColorNode extends AstNode implements Stringable
         public string $functionName,
         public array $components,
         public ?float $alpha = null,
-        public int $line = 0
+        int $line = 0
     ) {
-        $properties = [
-            'function_name' => $functionName,
-            'components'    => $components,
-            'alpha'         => $alpha,
-            'line'          => $line,
-        ];
-
-        parent::__construct('color', $properties);
+        parent::__construct(NodeType::COLOR, $line);
     }
 
     public function __toString(): string

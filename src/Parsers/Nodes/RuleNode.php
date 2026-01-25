@@ -10,15 +10,9 @@ final class RuleNode extends AstNode
         public AstNode $selector,
         public array $declarations,
         public array $nested,
-        public int $line,
-        public int $column = 0
+        int $line = 0,
+        int $column = 0
     ) {
-        parent::__construct('rule', [
-            'selector'     => $selector,
-            'declarations' => $declarations,
-            'nested'       => $nested,
-            'line'         => $line,
-            'column'       => $column,
-        ]);
+        parent::__construct(NodeType::RULE, $line, $column);
     }
 }

@@ -6,8 +6,8 @@ namespace DartSass\Parsers\Nodes;
 
 final class StringNode extends AstNode
 {
-    public function __construct(public string $value, public int $line)
+    public function __construct(public string $value, int $line = 0)
     {
-        parent::__construct('string', ['value' => $value, 'line' => $line]);
+        parent::__construct(NodeType::STRING, $line);
     }
 }

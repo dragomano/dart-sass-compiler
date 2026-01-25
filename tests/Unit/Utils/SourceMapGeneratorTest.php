@@ -26,7 +26,25 @@ describe('source map generation', function () {
         expect($sourceMap)->toHaveKey('version')
             ->and($sourceMap)->toHaveKey('sources')
             ->and($sourceMap)->toHaveKey('mappings')
+            ->and($sourceMap['mappings'])->toBe(';AACA')
             ->and($sourceMap)->not->toHaveKey('sourcesContent');
+    });
+
+    it('includes sourcesContent when includeSources is true', function () {
+        $mappings = [
+            [
+                'generated' => ['line' => 1, 'column' => 0],
+                'original'  => ['line' => 1, 'column' => 0],
+            ],
+        ];
+        $options = ['includeSources' => true, 'sourceContent' => ''];
+
+        $result = $this->generator->generate($mappings, 'input.scss', 'output.css', $options);
+
+        $sourceMap = json_decode($result, true);
+
+        expect($sourceMap)->toHaveKey('sourcesContent')
+            ->and($sourceMap['sourcesContent'])->toBe(['']);
     });
 })->covers(SourceMapGenerator::class);
 

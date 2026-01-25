@@ -12,15 +12,8 @@ final class ForwardNode extends AstNode
         public array $config,
         public array $hide,
         public array $show,
-        public int $line
+        int $line = 0
     ) {
-        parent::__construct('forward', [
-            'path'      => $path,
-            'namespace' => $namespace,
-            'config'    => $config,
-            'hide'      => $hide,
-            'show'      => $show,
-            'line'      => $line,
-        ]);
+        parent::__construct(NodeType::FORWARD, $line);
     }
 }

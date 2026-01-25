@@ -6,10 +6,11 @@ namespace DartSass\Compilers\Nodes;
 
 use DartSass\Compilers\CompilerContext;
 use DartSass\Parsers\Nodes\AstNode;
+use DartSass\Parsers\Nodes\NodeType;
 
 interface NodeCompiler
 {
-    public function canCompile(string $nodeType): bool;
+    public function canCompile(NodeType $nodeType): bool;
 
     public function compile(
         AstNode $node,

@@ -7,6 +7,7 @@ namespace DartSass\Utils;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\CommentNode;
 use DartSass\Parsers\Nodes\IdentifierNode;
+use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Parsers\Nodes\OperationNode;
 use DartSass\Parsers\Nodes\VariableNode;
 use DartSass\Values\CalcValue;
@@ -43,10 +44,10 @@ readonly class ResultFormatter implements ResultFormatterInterface
             return $node->value;
         }
 
-        if ($node->type === 'color') {
+        if ($node->type === NodeType::COLOR || $node->type === NodeType::HEX_COLOR) {
             return (string) $node;
         }
 
-        return '[' . $node->type . ']';
+        return '[' . $node->type->value . ']';
     }
 }

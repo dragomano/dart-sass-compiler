@@ -8,6 +8,7 @@ use DartSass\Handlers\VariableHandler;
 use DartSass\Parsers\Nodes\EachNode;
 use DartSass\Parsers\Nodes\ForNode;
 use DartSass\Parsers\Nodes\ListNode;
+use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Parsers\Nodes\OperationNode;
 use DartSass\Values\SassList;
 
@@ -68,7 +69,7 @@ readonly class UserFunctionEvaluator
             if ($arbitrary) {
                 // Collect remaining args as list
                 $remainingArgs = array_slice($callArgs, $argIndex);
-                $variableHandler->define($paramName, new ListNode($remainingArgs, 0, 'comma'));
+                $variableHandler->define($paramName, new ListNode($remainingArgs));
 
                 break; // No more args after arbitrary
             } else {
@@ -90,22 +91,22 @@ readonly class UserFunctionEvaluator
         callable $expression
     ): mixed {
         foreach ($body as $statement) {
-            if ($statement->type === 'variable') {
-                $valueNode = $statement->properties['value'];
+            if ($statement->type === NodeType::VARIABLE) {
+                $valueNode = $statement->value;
                 $value     = $expression($valueNode);
 
                 $variableHandler->define(
-                    $statement->properties['name'],
+                    $statement->name,
                     $value,
                     $statement->global ?? false,
                     $statement->default ?? false,
                 );
-            } elseif ($statement->type === 'for') {
+            } elseif ($statement->type === NodeType::FOR) {
                 $this->executeFor($statement, $args, $variableHandler, $expression);
-            } elseif ($statement->type === 'each') {
+            } elseif ($statement->type === NodeType::EACH) {
                 $this->executeEach($statement, $args, $variableHandler, $expression);
-            } elseif ($statement->type === 'return') {
-                $returnValue = $statement->properties['value'];
+            } elseif ($statement->type === NodeType::RETURN) {
+                $returnValue = $statement->value;
 
                 if ($this->isMultiplicationOperation($returnValue)) {
                     return $this->handleMultiplication($returnValue, $args);
@@ -120,24 +121,22 @@ readonly class UserFunctionEvaluator
 
     private function isMultiplicationOperation(mixed $returnValue): bool
     {
-        if (! is_object($returnValue) || $returnValue->type !== 'operation') {
+        if (! is_object($returnValue) || $returnValue->type !== NodeType::OPERATION) {
             return false;
         }
 
-        $props = $returnValue->properties ?? [];
-
-        if (($props['operator'] ?? null) !== '*') {
+        if (($returnValue->operator ?? null) !== '*') {
             return false;
         }
 
-        return ($props['left']->type ?? null) === 'variable'
-            && ($props['right']->type ?? null) === 'number';
+        return ($returnValue->left->type ?? null) === NodeType::VARIABLE
+            && ($returnValue->right->type ?? null) === NodeType::NUMBER;
     }
 
     private function handleMultiplication(OperationNode $returnValue, array $args): array|int|float
     {
         $argValue   = $args[0] ?? 0;
-        $multiplier = $returnValue->properties['right']->properties['value'];
+        $multiplier = $returnValue->right->value ?? '';
 
         if (is_array($argValue) && isset($argValue['value'])) {
             $result = $argValue['value'] * $multiplier;
@@ -155,12 +154,12 @@ readonly class UserFunctionEvaluator
         VariableHandler $variableHandler,
         callable $expression
     ): void {
-        $from = (int) $expression($node->properties['from']);
-        $to   = (int) $expression($node->properties['to']);
+        $from = (int) $expression($node->from);
+        $to   = (int) $expression($node->to);
 
-        $varName   = $node->properties['variable'];
-        $inclusive = $node->properties['inclusive'] ?? false;
-        $body      = $node->properties['body'];
+        $varName   = $node->variable;
+        $inclusive = $node->inclusive ?? false;
+        $body      = $node->body;
 
         $end  = $inclusive ? $to : $to - 1;
         $step = $from <= $end ? 1 : -1;
@@ -184,9 +183,9 @@ readonly class UserFunctionEvaluator
         VariableHandler $variableHandler,
         callable $expression
     ): void {
-        $variables = $node->properties['variables'];
-        $condition = $expression($node->properties['condition']);
-        $body      = $node->properties['body'];
+        $variables = $node->variables;
+        $condition = $expression($node->condition);
+        $body      = $node->body;
 
         $items = $this->extractItems($condition);
 

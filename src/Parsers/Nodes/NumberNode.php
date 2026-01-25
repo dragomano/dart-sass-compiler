@@ -6,8 +6,8 @@ namespace DartSass\Parsers\Nodes;
 
 final class NumberNode extends AstNode
 {
-    public function __construct(public float $value, public int $line = 0, public ?string $unit = null)
+    public function __construct(public float $value, public ?string $unit = null, int $line = 0)
     {
-        parent::__construct('number', ['value' => $value, 'line' => $line, 'unit' => $unit]);
+        parent::__construct(NodeType::NUMBER, $line);
     }
 }

@@ -33,15 +33,15 @@
     "bugo/sass-embedded-php": "^0.4",
     "dg/bypass-finals": "^1.9",
     "friendsofphp/php-cs-fixer": "^3.92",
-    "mockery/mockery": "^2.0.x-dev",
+    "mockery/mockery": "dev-bugfix/spy-generics",
     "pestphp/pest": "^3.8|^4.3",
     "rector/rector": "^2.3",
     "scssphp/scssphp": "^2.1",
     "symfony/var-dumper": "^7.4|^8.0"
   },
   "scripts": {
-    "fix": "./vendor/bin/php-cs-fixer fix",
-    "test-fix": "./vendor/bin/php-cs-fixer check",
+    "fix": "vendor/bin/php-cs-fixer fix",
+    "test-fix": "vendor/bin/php-cs-fixer check",
     "rector": "vendor/bin/rector process --clear-cache",
     "check": "vendor/bin/rector process --dry-run --clear-cache",
     "benchmark": "php benchmark.php",
@@ -49,7 +49,7 @@
     "tests-coverage": "vendor/bin/pest --colors=always --coverage --min=94",
     "tests-coverage-clover": "vendor/bin/pest --colors=always --min=94 --coverage-clover coverage.xml",
     "tests-coverage-html": "vendor/bin/pest --colors=always --min=94 --coverage-html coverage",
-    "tests-mutate": "vendor/bin/pest --colors=always --mutate --covered-only --parallel --path=src/Values/SassNumber.php"
+    "tests-mutate": "vendor/bin/pest --colors=always --mutate --covered-only -d memory_limit=1G --path=src/Utils/SourceMapGenerator.php"
   },
   "config": {
     "optimize-autoloader": true,

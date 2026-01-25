@@ -5,6 +5,7 @@ declare(strict_types=1);
 use DartSass\Handlers\ModuleForwarder;
 use DartSass\Handlers\ModuleLoader;
 use DartSass\Loaders\LoaderInterface;
+use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Parsers\ParserFactory;
 use Tests\ReflectionAccessor;
 
@@ -19,7 +20,7 @@ describe('ModuleForwarder', function () {
 
     describe('processAst method', function () {
         it('calls onVariable for variable nodes', function () {
-            $variableNode = (object) ['type' => 'variable'];
+            $variableNode = (object) ['type' => NodeType::VARIABLE];
             $ast = [$variableNode];
 
             $called = false;
@@ -35,7 +36,7 @@ describe('ModuleForwarder', function () {
         });
 
         it('calls onMixin for mixin nodes', function () {
-            $mixinNode = (object) ['type' => 'mixin'];
+            $mixinNode = (object) ['type' => NodeType::MIXIN];
             $ast = [$mixinNode];
 
             $called = false;
@@ -51,7 +52,7 @@ describe('ModuleForwarder', function () {
         });
 
         it('calls onFunction for function nodes', function () {
-            $functionNode = (object) ['type' => 'function'];
+            $functionNode = (object) ['type' => NodeType::FUNCTION];
             $ast = [$functionNode];
 
             $called = false;
@@ -67,7 +68,7 @@ describe('ModuleForwarder', function () {
         });
 
         it('calls onCssNode for other nodes', function () {
-            $cssNode = (object) ['type' => 'rule'];
+            $cssNode = (object) ['type' => NodeType::RULE];
             $ast = [$cssNode];
 
             $called = false;
@@ -112,11 +113,9 @@ describe('ModuleForwarder', function () {
     describe('forwardCallable method', function () {
         it('forwards callable when allowed', function () {
             $node = (object) [
-                'properties' => [
-                    'name' => 'testMixin',
-                    'args' => ['$param'],
-                    'body' => [],
-                ],
+                'name' => 'testMixin',
+                'args' => ['$param'],
+                'body' => [],
             ];
 
             $result = [];
@@ -131,11 +130,9 @@ describe('ModuleForwarder', function () {
 
         it('does not forward when hidden', function () {
             $node = (object) [
-                'properties' => [
-                    'name' => 'testMixin',
-                    'args' => [],
-                    'body' => [],
-                ],
+                'name' => 'testMixin',
+                'args' => [],
+                'body' => [],
             ];
 
             $result = [];
@@ -149,11 +146,9 @@ describe('ModuleForwarder', function () {
     describe('forwardModule method', function () {
         it('forwards variables from ast', function () {
             $variableNode = (object) [
-                'type'       => 'variable',
-                'properties' => [
-                    'name'  => '$testVar',
-                    'value' => (object) ['type' => 'number', 'properties' => ['value' => 42]],
-                ],
+                'type'  => NodeType::VARIABLE,
+                'name'  => '$testVar',
+                'value' => (object) ['type' => NodeType::NUMBER, 'value' => 42],
             ];
 
             $this->moduleLoader->shouldReceive('loadAst')->andReturn([$variableNode]);
@@ -168,11 +163,9 @@ describe('ModuleForwarder', function () {
 
         it('respects config for variables', function () {
             $variableNode = (object) [
-                'type'       => 'variable',
-                'properties' => [
-                    'name'  => '$testVar',
-                    'value' => (object) ['type' => 'number', 'properties' => ['value' => 42]],
-                ],
+                'type'  => NodeType::VARIABLE,
+                'name'  => '$testVar',
+                'value' => (object) ['type' => NodeType::NUMBER, 'value' => 42],
             ];
 
             $this->moduleLoader->shouldReceive('loadAst')->andReturn([$variableNode]);

@@ -8,6 +8,7 @@ use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\EachNode;
 use DartSass\Parsers\Nodes\ForNode;
 use DartSass\Parsers\Nodes\ListNode;
+use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Parsers\Nodes\NumberNode;
 use DartSass\Parsers\Nodes\OperationNode;
 use DartSass\Parsers\Nodes\StringNode;
@@ -31,7 +32,7 @@ describe('UserFunctionEvaluator', function () {
                     ['name' => 'arg2', 'arbitrary' => false, 'default' => 'defaultValue'],
                 ],
                 'body'    => [
-                    (object) ['type' => 'return', 'properties' => ['value' => 'result']],
+                    (object) ['type' => NodeType::RETURN, 'value' => 'result'],
                 ],
                 'handler' => $this->variableHandler,
             ];
@@ -56,7 +57,7 @@ describe('UserFunctionEvaluator', function () {
                     ['name' => 'arg2', 'arbitrary' => false, 'default' => 'defaultValue'],
                 ],
                 'body'    => [
-                    (object) ['type' => 'return', 'properties' => ['value' => 'result']],
+                    (object) ['type' => NodeType::RETURN, 'value' => 'result'],
                 ],
                 'handler' => $this->variableHandler,
             ];
@@ -81,7 +82,7 @@ describe('UserFunctionEvaluator', function () {
                     ['name' => 'rest', 'arbitrary' => true],
                 ],
                 'body'    => [
-                    (object) ['type' => 'return', 'properties' => ['value' => 'result']],
+                    (object) ['type' => NodeType::RETURN, 'value' => 'result'],
                 ],
                 'handler' => $this->variableHandler,
             ];
@@ -103,7 +104,7 @@ describe('UserFunctionEvaluator', function () {
             $func = [
                 'args'    => ['arg1', 'arg2'],
                 'body'    => [
-                    (object) ['type' => 'return', 'properties' => ['value' => 'result']],
+                    (object) ['type' => NodeType::RETURN, 'value' => 'result'],
                 ],
                 'handler' => $this->variableHandler,
             ];
@@ -127,7 +128,7 @@ describe('UserFunctionEvaluator', function () {
             $func = [
                 'args'    => $funcArgs,
                 'body'    => [
-                    (object) ['type' => 'return', 'properties' => ['value' => 'result']],
+                    (object) ['type' => NodeType::RETURN, 'value' => 'result'],
                 ],
                 'handler' => $this->variableHandler,
             ];
@@ -149,8 +150,8 @@ describe('UserFunctionEvaluator', function () {
             $func = [
                 'args'    => [],
                 'body'    => [
-                    (object) ['type' => 'variable', 'properties' => ['name' => 'var1', 'value' => 'value1'], 'global' => false, 'default' => false],
-                    (object) ['type' => 'return', 'properties' => ['value' => 'result']],
+                    (object) ['type' => NodeType::VARIABLE, 'name' => 'var1', 'value' => 'value1', 'global' => false, 'default' => false],
+                    (object) ['type' => NodeType::RETURN, 'value' => 'result'],
                 ],
                 'handler' => $this->variableHandler,
             ];
@@ -173,10 +174,10 @@ describe('UserFunctionEvaluator', function () {
                 'body'    => [
                     new ForNode(
                         'i',
-                        new NumberNode(1.0, 0),
-                        new NumberNode(3.0, 0),
+                        new NumberNode(1.0),
+                        new NumberNode(3.0),
                         true,
-                        [new VariableDeclarationNode('temp', new StringNode('loop', 0), 0, false, false)],
+                        [new VariableDeclarationNode('temp', new StringNode('loop', 0))],
                         0
                     ),
                 ],
@@ -206,10 +207,10 @@ describe('UserFunctionEvaluator', function () {
                 'body'    => [
                     new ForNode(
                         'i',
-                        new NumberNode(3.0, 0),
-                        new NumberNode(1.0, 0),
+                        new NumberNode(3.0),
+                        new NumberNode(1.0),
                         true,
-                        [new VariableDeclarationNode('temp', new StringNode('reverse', 0), 0, false, false)],
+                        [new VariableDeclarationNode('temp', new StringNode('reverse', 0))],
                         0
                     ),
                 ],
@@ -243,7 +244,7 @@ describe('UserFunctionEvaluator', function () {
                     new EachNode(
                         ['item'],
                         $conditionMock,
-                        [new VariableDeclarationNode('temp', new StringNode('each', 0), 0, false, false)],
+                        [new VariableDeclarationNode('temp', new StringNode('each', 0))],
                         0
                     ),
                 ],
@@ -268,7 +269,7 @@ describe('UserFunctionEvaluator', function () {
         });
 
         it('executes each loop with multiple variables', function () {
-            $listNode = new ListNode([new ListNode(['x', 'y'], 0, 'comma'), new ListNode(['a', 'b'], 0, 'comma')], 0, 'comma');
+            $listNode = new ListNode([new ListNode(['x', 'y']), new ListNode(['a', 'b'])]);
             $conditionMock = mock(AstNode::class);
 
             $func = [
@@ -277,7 +278,7 @@ describe('UserFunctionEvaluator', function () {
                     new EachNode(
                         ['var1', 'var2'],
                         $conditionMock,
-                        [new VariableDeclarationNode('temp', new StringNode('each', 0), 0, false, false)],
+                        [new VariableDeclarationNode('temp', new StringNode('each', 0))],
                         0
                     ),
                 ],
@@ -310,7 +311,7 @@ describe('UserFunctionEvaluator', function () {
                     new EachNode(
                         ['item'],
                         $conditionMock,
-                        [new VariableDeclarationNode('temp', new StringNode('array_each', 0), 0, false, false)],
+                        [new VariableDeclarationNode('temp', new StringNode('array_each', 0))],
                         0
                     ),
                 ],
@@ -344,7 +345,7 @@ describe('UserFunctionEvaluator', function () {
                     new EachNode(
                         ['item'],
                         $conditionMock,
-                        [new VariableDeclarationNode('temp', new StringNode('scalar_each', 0), 0, false, false)],
+                        [new VariableDeclarationNode('temp', new StringNode('scalar_each', 0))],
                         0
                     ),
                 ],
@@ -369,7 +370,7 @@ describe('UserFunctionEvaluator', function () {
             $func = [
                 'args'    => [],
                 'body'    => [
-                    (object) ['type' => 'return', 'properties' => ['value' => 'returnValue']],
+                    (object) ['type' => NodeType::RETURN, 'value' => 'returnValue'],
                 ],
                 'handler' => $this->variableHandler,
             ];
@@ -389,14 +390,14 @@ describe('UserFunctionEvaluator', function () {
             $multiplicationNode = new OperationNode(
                 new VariableNode('dummy', 0),
                 '*',
-                new NumberNode(2.0, 0),
+                new NumberNode(2.0),
                 0
             );
 
             $func = [
                 'args'    => [],
                 'body'    => [
-                    (object) ['type' => 'return', 'properties' => ['value' => $multiplicationNode]],
+                    (object) ['type' => NodeType::RETURN, 'value' => $multiplicationNode],
                 ],
                 'handler' => $this->variableHandler,
             ];
@@ -416,14 +417,14 @@ describe('UserFunctionEvaluator', function () {
             $multiplicationNode = new OperationNode(
                 new VariableNode('dummy', 0),
                 '*',
-                new NumberNode(3.0, 0),
+                new NumberNode(3.0),
                 0
             );
 
             $func = [
                 'args'    => [],
                 'body'    => [
-                    (object) ['type' => 'return', 'properties' => ['value' => $multiplicationNode]],
+                    (object) ['type' => NodeType::RETURN, 'value' => $multiplicationNode],
                 ],
                 'handler' => $this->variableHandler,
             ];
@@ -443,7 +444,7 @@ describe('UserFunctionEvaluator', function () {
             $func = [
                 'args'    => [],
                 'body'    => [
-                    (object) ['type' => 'variable', 'properties' => ['name' => 'var1', 'value' => 'value1'], 'global' => false, 'default' => false],
+                    (object) ['type' => NodeType::VARIABLE, 'name' => 'var1', 'value' => 'value1', 'global' => false, 'default' => false],
                 ],
                 'handler' => $this->variableHandler,
             ];

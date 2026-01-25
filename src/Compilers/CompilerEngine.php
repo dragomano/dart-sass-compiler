@@ -13,6 +13,7 @@ use DartSass\Compilers\Nodes\RuleNodeCompiler;
 use DartSass\Compilers\Nodes\UseNodeCompiler;
 use DartSass\Compilers\Nodes\VariableNodeCompiler;
 use DartSass\Exceptions\CompilationException;
+use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Parsers\Nodes\OperationNode;
 use DartSass\Parsers\Nodes\VariableDeclarationNode;
 use DartSass\Parsers\Syntax;
@@ -102,17 +103,17 @@ class CompilerEngine implements CompilerEngineInterface
         return $this->context;
     }
 
-    public function findNodeCompiler(string $nodeType): ?NodeCompiler
+    public function findNodeCompiler(NodeType $nodeType): ?NodeCompiler
     {
-        if (isset($this->compilerInstances[$nodeType])) {
-            return $this->compilerInstances[$nodeType];
+        if (isset($this->compilerInstances[$nodeType->value])) {
+            return $this->compilerInstances[$nodeType->value];
         }
 
         foreach (self::NODE_COMPILER_CLASSES as $className) {
             $compiler = new $className();
 
             if ($compiler instanceof NodeCompiler && $compiler->canCompile($nodeType)) {
-                $this->compilerInstances[$nodeType] = $compiler;
+                $this->compilerInstances[$nodeType->value] = $compiler;
 
                 return $compiler;
             }
@@ -132,15 +133,15 @@ class CompilerEngine implements CompilerEngineInterface
                 continue;
             }
 
-            if ($node->type === 'at-rule' && ($node->name ?? '') === '@extend') {
+            if ($node->type === NodeType::AT_RULE && ($node->name ?? '') === '@extend') {
                 $targetSelector = trim((string) $this->evaluateExpression($node->value ?? ''));
                 $this->context->extendHandler->registerExtend($parentSelector, $targetSelector);
 
                 continue;
             }
 
-            if ($node->type === 'at-rule' && ($node->properties['name'] ?? '') === '@import') {
-                $path = $node->properties['value'] ?? '';
+            if ($node->type === NodeType::AT_RULE && ($node->name ?? '') === '@import') {
+                $path = $node->value ?? '';
                 $path = $this->evaluateInterpolationsInString($path);
 
                 if (str_starts_with($path, 'url(') || str_contains($path, ' ')) {
@@ -153,10 +154,10 @@ class CompilerEngine implements CompilerEngineInterface
                 continue;
             }
 
-            if ($node->type === 'comment') {
-                if (str_starts_with($node->properties['value'], '/*')) {
+            if ($node->type === NodeType::COMMENT) {
+                if (str_starts_with($node->value, '/*')) {
                     $indent = $this->getIndent($nestingLevel);
-                    $commentValue = $node->properties['value'];
+                    $commentValue = $node->value;
 
                     // Extract content between /* and */
                     $content = substr($commentValue, 2, -2);
@@ -240,16 +241,16 @@ class CompilerEngine implements CompilerEngineInterface
     private function compileSpecialNode($node, string $parentSelector, int $nestingLevel): string
     {
         return match ($node->type) {
-            'if',
-            'each',
-            'for',
-            'while' => $this->compileFlowControlNode($node, $nestingLevel),
-            'media',
-            'container',
-            'keyframes',
-            'at-rule' => $this->compileAtRuleNode($node, $parentSelector, $nestingLevel),
-            'include' => $this->compileIncludeNode($node, $parentSelector, $nestingLevel),
-            default => throw new CompilationException("Unknown AST node type: $node->type"),
+            NodeType::IF,
+            NodeType::EACH,
+            NodeType::FOR,
+            NodeType::WHILE => $this->compileFlowControlNode($node, $nestingLevel),
+            NodeType::MEDIA,
+            NodeType::CONTAINER,
+            NodeType::KEYFRAMES,
+            NodeType::AT_RULE => $this->compileAtRuleNode($node, $parentSelector, $nestingLevel),
+            NodeType::INCLUDE => $this->compileIncludeNode($node, $parentSelector, $nestingLevel),
+            default => throw new CompilationException("Unknown AST node type: {$node->type->value}"),
         };
     }
 
@@ -295,7 +296,7 @@ class CompilerEngine implements CompilerEngineInterface
         $moduleVars = $this->context->moduleHandler->getVariables($namespace);
         foreach ($moduleVars as $name => $varNode) {
             if ($varNode instanceof VariableDeclarationNode) {
-                $value = $this->evaluateExpression($varNode->properties['value']);
+                $value = $this->evaluateExpression($varNode->value);
                 $this->context->variableHandler->define($name, $value);
             }
         }

@@ -50,7 +50,7 @@ describe('InterpolationEvaluator', function () {
             };
 
             $parser = mock(ParserInterface::class);
-            $parser->allows()->parseExpression()->andReturn(mock(AstNode::class)); // AST mock
+            $parser->allows()->parseExpression()->andReturn(mock(AstNode::class));
 
             $this->parserFactory->allows()->create('1+1', Syntax::SCSS)->andReturn($parser);
             $this->formatter->allows()->format('value with processed')->andReturns('formatted');
@@ -151,6 +151,7 @@ describe('InterpolationEvaluator', function () {
                         return 'outer-ast-result';
                     }
                 }
+
                 return $arg;
             };
 

@@ -8,17 +8,10 @@ final class ListNode extends AstNode
 {
     public function __construct(
         public array $values,
-        public ?int $line = 0,
         public string $separator = 'comma',
-        public bool $bracketed = false
+        public bool $bracketed = false,
+        int $line = 0
     ) {
-        $line ??= 0;
-
-        parent::__construct('list', [
-            'values'    => $values,
-            'line'      => $line,
-            'separator' => $separator,
-            'bracketed' => $bracketed,
-        ]);
+        parent::__construct(NodeType::LIST, $line);
     }
 }

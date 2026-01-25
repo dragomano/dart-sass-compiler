@@ -10,13 +10,8 @@ final class OperationNode extends AstNode
         public AstNode $left,
         public string $operator,
         public AstNode $right,
-        public int $line
+        int $line = 0
     ) {
-        parent::__construct('operation', [
-            'left'     => $left,
-            'operator' => $operator,
-            'right'    => $right,
-            'line'     => $line,
-        ]);
+        parent::__construct(NodeType::OPERATION, $line);
     }
 }

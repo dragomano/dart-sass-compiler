@@ -6,6 +6,7 @@ namespace DartSass\Compilers\Nodes;
 
 use DartSass\Compilers\CompilerContext;
 use DartSass\Parsers\Nodes\AstNode;
+use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Parsers\Nodes\UseNode;
 use DartSass\Parsers\Nodes\VariableDeclarationNode;
 
@@ -18,19 +19,19 @@ class UseNodeCompiler extends AbstractNodeCompiler
         return UseNode::class;
     }
 
-    protected function getNodeType(): string
+    protected function getNodeType(): NodeType
     {
-        return 'use';
+        return NodeType::USE;
     }
 
     protected function compileNode(
-        AstNode $node,
+        UseNode|AstNode $node,
         CompilerContext $context,
         string $parentSelector = '',
         int $nestingLevel = 0
     ): string {
-        $path      = $node->properties['path'];
-        $namespace = $node->properties['namespace'] ?? null;
+        $path      = $node->path;
+        $namespace = $node->namespace ?? null;
 
         if (! $context->moduleHandler->isModuleLoaded($path)) {
             $result          = $context->moduleHandler->loadModule($path, $namespace ?? '');
@@ -42,7 +43,7 @@ class UseNodeCompiler extends AbstractNodeCompiler
             $moduleVars = $context->moduleHandler->getVariables($actualNamespace);
             foreach ($moduleVars as $name => $varNode) {
                 if ($varNode instanceof VariableDeclarationNode) {
-                    $value = $context->engine->evaluateExpression($varNode->properties['value']);
+                    $value = $context->engine->evaluateExpression($varNode->value);
                     $context->variableHandler->define($name, $value);
                 } elseif (is_array($varNode) && isset($varNode['type']) && $varNode['type'] === 'mixin') {
                     $context->mixinHandler->define($name, $varNode['args'], $varNode['body']);

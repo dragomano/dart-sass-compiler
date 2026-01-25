@@ -56,7 +56,7 @@ class ModuleHandler
                 $cssAst[] = $node;
             },
             onVariable: function ($node) use ($namespace): void {
-                $name = $node->properties['name'];
+                $name = $node->name;
 
                 if ($namespace === '*') {
                     $this->globalVariables[$name] = $node;
@@ -65,17 +65,17 @@ class ModuleHandler
                 }
             },
             onMixin: function ($node) use ($namespace): void {
-                $this->forwardedProperties[$namespace][$node->properties['name']] = [
+                $this->forwardedProperties[$namespace][$node->name] = [
                     'type' => 'mixin',
-                    'args' => $node->properties['args'],
-                    'body' => $node->properties['body'],
+                    'args' => $node->args,
+                    'body' => $node->body,
                 ];
             },
             onFunction: function ($node) use ($namespace): void {
-                $this->forwardedProperties[$namespace][$node->properties['name']] = [
+                $this->forwardedProperties[$namespace][$node->name] = [
                     'type' => 'function',
-                    'args' => $node->properties['args'],
-                    'body' => $node->properties['body'],
+                    'args' => $node->args,
+                    'body' => $node->body,
                 ];
             },
         );
@@ -122,7 +122,7 @@ class ModuleHandler
             $property = $this->forwardedProperties[$namespace][$name];
 
             if ($property instanceof VariableDeclarationNode && $expression) {
-                return $expression($property->properties['value']);
+                return $expression($property->value);
             }
 
             return $property;

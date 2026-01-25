@@ -19,6 +19,7 @@ use DartSass\Parsers\Nodes\InterpolationNode;
 use DartSass\Parsers\Nodes\ListNode;
 use DartSass\Parsers\Nodes\MapNode;
 use DartSass\Parsers\Nodes\MixinNode;
+use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Parsers\Nodes\NullNode;
 use DartSass\Parsers\Nodes\NumberNode;
 use DartSass\Parsers\Nodes\OperationNode;
@@ -245,8 +246,8 @@ class Parser implements TokenAwareParserInterface
             $selector,
             $block['declarations'],
             $block['nested'],
-            $selector->properties['line'],
-            $selector->properties['column'] ?? 0
+            $selector->line,
+            $selector->column
         );
     }
 
@@ -306,7 +307,7 @@ class Parser implements TokenAwareParserInterface
 
         if ($hasMultipleValues) {
             $separator = $isCommaSeparated ? 'comma' : 'space';
-            $value = new ListNode($values, $value->properties['line'] ?? 0, $separator);
+            $value     = new ListNode($values, $separator, line: $value->line ?? 0);
         }
 
         // Check for !important modifier using dedicated token
@@ -314,7 +315,7 @@ class Parser implements TokenAwareParserInterface
         if ($token && $token->type === 'important_modifier') {
             $this->consume('important_modifier');
 
-            $value->properties['important'] = true;
+            $value->important = true;
         } elseif ($token && $token->type === 'operator' && $token->value === '!') {
             // Regular ! operator - just consume it
             $this->consume('operator');
@@ -324,8 +325,8 @@ class Parser implements TokenAwareParserInterface
             $this->stream->consumeIf('newline');
         }
 
-        $value->properties['property_line']   = $propertyToken->line;
-        $value->properties['property_column'] = $propertyToken->column;
+        $value->line   = $propertyToken->line;
+        $value->column = $propertyToken->column;
 
         return [$property => $value];
     }
@@ -339,7 +340,7 @@ class Parser implements TokenAwareParserInterface
 
         $this->skipWhitespace();
 
-        if ($left->type === 'property_access' && $this->peek('semicolon')) {
+        if ($left->type === NodeType::PROPERTY_ACCESS && $this->peek('semicolon')) {
             return $left;
         }
 
@@ -371,7 +372,7 @@ class Parser implements TokenAwareParserInterface
                 }
             }
 
-            return new ListNode($values, $left->properties['line'] ?? 0, 'comma');
+            return new ListNode($values, line: $left->line ?? 0);
         }
 
         if ($token && $token->type === 'operator' && $token->value === '!') {
@@ -406,7 +407,7 @@ class Parser implements TokenAwareParserInterface
                 }
 
                 // Check if we have variable followed by colon (named parameter)
-                if ($left->type === 'variable') {
+                if ($left->type === NodeType::VARIABLE) {
                     if ($nextToken && $nextToken->type === 'colon') {
                         $this->setTokenIndex($currentPos);
 
@@ -424,6 +425,7 @@ class Parser implements TokenAwareParserInterface
                     && ! ($this->stream->current()->type === 'operator' && $this->stream->current()->value === ',')
                 ) {
                     $this->skipWhitespace();
+
                     if (
                         isset(self::BLOCK_END_TYPES[$this->stream->current()->type])
                         || $this->stream->current()->type === 'paren_close'
@@ -433,11 +435,12 @@ class Parser implements TokenAwareParserInterface
                     }
 
                     $values[] = $this->parseBinaryExpression(0);
+
                     $this->skipWhitespace();
                 }
 
                 if (count($values) > 1) {
-                    return new ListNode($values, $left->properties['line'] ?? 0, 'space');
+                    return new ListNode($values, 'space', line: $left->line ?? 0);
                 }
             } else {
                 $this->setTokenIndex($this->getTokenIndex() - 1);
@@ -458,14 +461,16 @@ class Parser implements TokenAwareParserInterface
             // Skip whitespace at the start of each iteration
             if ($token->type === 'whitespace') {
                 $this->skipWhitespace();
+
                 $token = $this->stream->current();
                 if (! $token || $token->type === 'brace_close') {
                     break;
                 }
             }
 
-            $tokenType = $token->type;
             $item = null;
+
+            $tokenType = $token->type;
 
             switch ($tokenType) {
                 case 'at_rule':
@@ -474,6 +479,7 @@ class Parser implements TokenAwareParserInterface
                         '@include' => $this->parseInclude(),
                         default    => $this->parseAtRule(),
                     };
+
                     $nested[] = $item;
 
                     break;
@@ -494,6 +500,7 @@ class Parser implements TokenAwareParserInterface
 
                 case 'comment':
                     $item = new CommentNode($token->value, $token->line, $token->column);
+
                     $declarations[] = $item;
 
                     $this->advanceToken();
@@ -527,6 +534,7 @@ class Parser implements TokenAwareParserInterface
 
                 case 'identifier':
                     $savedPos = $this->getTokenIndex();
+
                     $this->advanceToken();
                     $this->skipWhitespace();
 
@@ -702,9 +710,9 @@ class Parser implements TokenAwareParserInterface
         return new VariableDeclarationNode(
             $token->value,
             $value,
-            $token->line,
             $global,
-            $default
+            $default,
+            $token->line,
         );
     }
 
@@ -1265,7 +1273,7 @@ class Parser implements TokenAwareParserInterface
                 if ($this->peek('paren_close')) {
                     $this->consume('paren_close');
 
-                    return new ListNode([], $token->line, 'space');
+                    return new ListNode([], 'space', line: $token->line);
                 }
 
                 // Check if this looks like a map: (key: value, key2: value2)
@@ -1309,7 +1317,7 @@ class Parser implements TokenAwareParserInterface
                     }
                 }
 
-                return new ListNode($values, $token->line, 'comma', true);
+                return new ListNode($values, bracketed: true, line: $token->line);
             })(),
 
             'operator', 'asterisk', 'colon', 'semicolon' => new OperatorNode($token->value, $token->line),
@@ -1457,7 +1465,7 @@ class Parser implements TokenAwareParserInterface
                 $this->skipWhitespace();
             }
 
-            return new ListNode($values, $arg->properties['line'] ?? 0, 'space');
+            return new ListNode($values, 'space', line: $arg->line ?? 0);
         }
 
         return $arg;
@@ -1495,7 +1503,7 @@ class Parser implements TokenAwareParserInterface
         $components = [];
         foreach ($args as $arg) {
             if ($arg instanceof ListNode) {
-                foreach ($arg->properties['values'] as $value) {
+                foreach ($arg->values as $value) {
                     $components[] = $this->extractColorComponent($value);
                 }
             } else {
@@ -1518,19 +1526,17 @@ class Parser implements TokenAwareParserInterface
     private function extractColorComponent(AstNode $node): string|int|float
     {
         return match ($node->type) {
-            'number',
-            'identifier',
-            'string'    => $node->properties['value'],
-            'operation' => $this->extractOperationComponent($node),
-            default     => (string) $node,
+            NodeType::NUMBER    => $node->value ?? '',
+            NodeType::OPERATION => $this->extractOperationComponent($node),
+            default             => (string) $node,
         };
     }
 
-    private function extractOperationComponent(AstNode $node): string
+    private function extractOperationComponent(OperationNode|AstNode $node): string
     {
-        if ($node->properties['operator'] === '/') {
-            $left = $this->extractColorComponent($node->properties['left']);
-            $right = $this->extractColorComponent($node->properties['right']);
+        if ($node->operator === '/') {
+            $left  = $this->extractColorComponent($node->left);
+            $right = $this->extractColorComponent($node->right);
 
             return "$left/$right";
         }
@@ -1566,7 +1572,7 @@ class Parser implements TokenAwareParserInterface
 
     private function createAtRuleParser(): AtRuleParser
     {
-        $token = $this->stream->current();
+        $token    = $this->stream->current();
         $ruleType = $token->value;
 
         return match ($ruleType) {
@@ -1599,36 +1605,32 @@ class Parser implements TokenAwareParserInterface
 
     private function formatExpressionForSelector(AstNode $expr): string
     {
-        if ($expr->type === 'variable') {
-            return $expr->properties['name'];
+        if ($expr instanceof VariableNode) {
+            return $expr->name;
         }
 
-        if ($expr->type === 'identifier') {
-            return $expr->properties['value'];
+        if ($expr instanceof IdentifierNode || $expr instanceof NumberNode) {
+            return $expr->value;
         }
 
-        if ($expr->type === 'number') {
-            return $expr->properties['value'];
-        }
+        if ($expr instanceof StringNode) {
+            $value = $expr->value;
 
-        if ($expr->type === 'string') {
-            $value = $expr->properties['value'];
-
-            if (str_starts_with((string) $value, '"') && str_ends_with((string) $value, '"')) {
-                $value = trim((string) $value, '"');
+            if (str_starts_with($value, '"') && str_ends_with($value, '"')) {
+                $value = trim($value, '"');
             }
 
             return $value;
         }
 
-        if ($expr->type === 'interpolation') {
-            return StringFormatter::concatMultiple(['#{', $this->formatExpressionForSelector($expr->properties['expression']), '}']);
+        if ($expr instanceof InterpolationNode) {
+            return StringFormatter::concatMultiple(['#{', $this->formatExpressionForSelector($expr->expression), '}']);
         }
 
         return 'expression';
     }
 
-    private function parseNumber(Token $token): AstNode
+    private function parseNumber(Token $token): NumberNode
     {
         $valueStr = $token->value;
 
@@ -1640,7 +1642,7 @@ class Parser implements TokenAwareParserInterface
             $unit  = null;
         }
 
-        return new NumberNode($value, $token->line, $unit);
+        return new NumberNode($value, $unit, $token->line);
     }
 
     /**

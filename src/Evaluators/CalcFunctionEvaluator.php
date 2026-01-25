@@ -75,10 +75,10 @@ readonly class CalcFunctionEvaluator
         if ($node instanceof OperationNode) {
             $node = $this->ensurePrecedence($node);
 
-            $left  = $this->resolveNode($node->properties['left'], $expression);
-            $right = $this->resolveNode($node->properties['right'], $expression);
+            $left  = $this->resolveNode($node->left, $expression);
+            $right = $this->resolveNode($node->right, $expression);
 
-            $operator = $node->properties['operator'];
+            $operator = $node->operator;
 
             return $this->computeOperation($left, $operator, $right);
         }
@@ -92,20 +92,20 @@ readonly class CalcFunctionEvaluator
 
     private function ensurePrecedence(OperationNode $node): OperationNode
     {
-        $left  = $node->properties['left'];
-        $right = $node->properties['right'];
+        $left  = $node->left;
+        $right = $node->right;
 
-        $operator = $node->properties['operator'];
+        $operator = $node->operator;
 
         if (($operator === '*' || $operator === '/') && $left instanceof OperationNode) {
-            $subOp = $left->properties['operator'];
+            $subOp = $left->operator;
 
             if ($subOp === '+' || $subOp === '-') {
-                $newLeft = $left->properties['left'];
-                $mid     = $left->properties['right'];
+                $newLeft = $left->left;
+                $mid     = $left->right;
 
-                $newRight = new OperationNode($mid, $operator, $right, $node->properties['line']);
-                $node     = new OperationNode($newLeft, $subOp, $newRight, $node->properties['line']);
+                $newRight = new OperationNode($mid, $operator, $right, $node->line);
+                $node     = new OperationNode($newLeft, $subOp, $newRight, $node->line);
             }
         }
 

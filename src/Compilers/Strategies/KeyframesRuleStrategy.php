@@ -6,6 +6,8 @@ namespace DartSass\Compilers\Strategies;
 
 use DartSass\Compilers\CompilerContext;
 use DartSass\Parsers\Nodes\AstNode;
+use DartSass\Parsers\Nodes\KeyframesNode;
+use DartSass\Parsers\Nodes\NodeType;
 use InvalidArgumentException;
 
 use function current;
@@ -15,13 +17,13 @@ use function str_repeat;
 
 readonly class KeyframesRuleStrategy implements RuleCompilationStrategy
 {
-    public function canHandle(string $ruleType): bool
+    public function canHandle(NodeType $ruleType): bool
     {
-        return $ruleType === 'keyframes';
+        return $ruleType === NodeType::KEYFRAMES;
     }
 
     public function compile(
-        AstNode $node,
+        KeyframesNode|AstNode $node,
         CompilerContext $context,
         int $currentNestingLevel,
         string $parentSelector,
@@ -33,8 +35,8 @@ readonly class KeyframesRuleStrategy implements RuleCompilationStrategy
             throw new InvalidArgumentException('Missing required parameters for keyframes rule compilation');
         }
 
-        $name             = $node->properties['name'];
-        $keyframes        = $node->properties['keyframes'];
+        $name             = $node->name;
+        $keyframes        = $node->keyframes;
         $bodyNestingLevel = $currentNestingLevel + 1;
 
         $body = '';

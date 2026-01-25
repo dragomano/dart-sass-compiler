@@ -85,6 +85,13 @@ describe('ValueComparator', function () {
                 ->and(ValueComparator::equals($list1, $list4))->toBeFalse();
         });
 
+        it('compares SassLists with different separators', function () {
+            $list1 = new SassList([1, 2, 3], 'space');
+            $list2 = new SassList([1, 2, 3], 'comma');
+
+            expect(ValueComparator::equals($list1, $list2))->toBeTrue();
+        });
+
         it('compares SassMaps', function () {
             $map1 = new SassMap(['a' => 1, 'b' => 2]);
             $map2 = new SassMap(['a' => 1, 'b' => 2]);

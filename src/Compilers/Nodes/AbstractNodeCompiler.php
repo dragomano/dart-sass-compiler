@@ -6,10 +6,11 @@ namespace DartSass\Compilers\Nodes;
 
 use DartSass\Compilers\CompilerContext;
 use DartSass\Parsers\Nodes\AstNode;
+use DartSass\Parsers\Nodes\NodeType;
 
 abstract class AbstractNodeCompiler implements NodeCompiler
 {
-    public function canCompile(string $nodeType): bool
+    public function canCompile(NodeType $nodeType): bool
     {
         return $nodeType === $this->getNodeType();
     }
@@ -29,7 +30,7 @@ abstract class AbstractNodeCompiler implements NodeCompiler
 
     abstract protected function getNodeClass(): string;
 
-    abstract protected function getNodeType(): string;
+    abstract protected function getNodeType(): NodeType;
 
     abstract protected function compileNode(
         AstNode $node,

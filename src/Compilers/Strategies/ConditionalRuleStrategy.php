@@ -6,6 +6,9 @@ namespace DartSass\Compilers\Strategies;
 
 use DartSass\Compilers\CompilerContext;
 use DartSass\Parsers\Nodes\AstNode;
+use DartSass\Parsers\Nodes\ContainerNode;
+use DartSass\Parsers\Nodes\MediaNode;
+use DartSass\Parsers\Nodes\NodeType;
 use InvalidArgumentException;
 
 use function array_map;
@@ -20,17 +23,17 @@ use function substr;
 
 abstract readonly class ConditionalRuleStrategy implements RuleCompilationStrategy
 {
-    abstract protected function getRuleName(): string;
+    abstract protected function getRuleName(): NodeType;
 
     abstract protected function getAtSymbol(): string;
 
-    public function canHandle(string $ruleType): bool
+    public function canHandle(NodeType $ruleType): bool
     {
         return $ruleType === $this->getRuleName();
     }
 
     public function compile(
-        AstNode $node,
+        ContainerNode|MediaNode|AstNode $node,
         CompilerContext $context,
         int $currentNestingLevel,
         string $parentSelector,
@@ -42,17 +45,17 @@ abstract readonly class ConditionalRuleStrategy implements RuleCompilationStrate
 
         if (! $evaluateInterpolations || ! $compileDeclarations || ! $compileAst) {
             throw new InvalidArgumentException(
-                'Missing required parameters for ' . $this->getRuleName() . ' rule compilation'
+                'Missing required parameters for ' . $this->getRuleName()->value . ' rule compilation'
             );
         }
 
-        $query = $node->properties['query'];
+        $query = $node->query;
         $query = $evaluateInterpolations($query);
         $query = $context->resultFormatter->format($query);
 
         $bodyNestingLevel = $currentNestingLevel + 1;
-        $bodyDeclarations = $node->properties['body']['declarations'] ?? [];
-        $bodyNested       = $node->properties['body']['nested'] ?? [];
+        $bodyDeclarations = $node->body['declarations'] ?? [];
+        $bodyNested       = $node->body['nested'] ?? [];
 
         $declarationsCss = '';
         if (! empty($bodyDeclarations) && ! empty($parentSelector)) {

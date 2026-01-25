@@ -7,6 +7,8 @@ namespace DartSass\Compilers\Nodes;
 use DartSass\Compilers\CompilerContext;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\IncludeNode;
+use DartSass\Parsers\Nodes\MediaNode;
+use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Parsers\Nodes\RuleNode;
 use DartSass\Parsers\Nodes\SelectorNode;
 
@@ -27,19 +29,19 @@ class RuleNodeCompiler extends AbstractNodeCompiler
         return RuleNode::class;
     }
 
-    protected function getNodeType(): string
+    protected function getNodeType(): NodeType
     {
-        return 'rule';
+        return NodeType::RULE;
     }
 
     protected function compileNode(
-        AstNode $node,
+        RuleNode|AstNode $node,
         CompilerContext $context,
         string $parentSelector = '',
         int $nestingLevel = 0
     ): string {
-        $selectorString = $node->properties['selector'] instanceof SelectorNode
-            ? $node->properties['selector']->value
+        $selectorString = $node->selector instanceof SelectorNode
+            ? $node->selector->value
             : null;
 
         $selectorString = $this->evaluateInterpolationsInString($selectorString, $context);
@@ -56,14 +58,14 @@ class RuleNodeCompiler extends AbstractNodeCompiler
 
         foreach ($node->nested ?? [] as $nestedItem) {
             $itemCss = match ($nestedItem->type) {
-                'include' => $this->compileIncludeNode($nestedItem, $context, $selector, $nestingLevel + 1),
-                'media'   => $this->bubbleMediaQuery($nestedItem, $selector, $nestingLevel, $context),
-                default   => $compileAstClosure([$nestedItem], $selector, $nestingLevel),
+                NodeType::INCLUDE => $this->compileIncludeNode($nestedItem, $context, $selector, $nestingLevel + 1),
+                NodeType::MEDIA   => $this->bubbleMediaQuery($nestedItem, $selector, $nestingLevel, $context),
+                default           => $compileAstClosure([$nestedItem], $selector, $nestingLevel),
             };
 
             $trimmedCss = trim($itemCss);
 
-            if ($nestedItem->type === 'include' && ! str_starts_with($trimmedCss, '@')) {
+            if ($nestedItem->type === NodeType::INCLUDE && ! str_starts_with($trimmedCss, '@')) {
                 $lines        = explode("\n", rtrim($itemCss));
                 $braceLevel   = 0;
                 $inNestedRule = false;
@@ -100,7 +102,7 @@ class RuleNodeCompiler extends AbstractNodeCompiler
 
                 $includesCss .= $declarationsPart;
                 $otherNestedCss .= $nestedPart;
-            } elseif (in_array($nestedItem->type, ['if', 'each', 'for', 'while'], true)) {
+            } elseif (in_array($nestedItem->type, [NodeType::IF, NodeType::EACH, NodeType::FOR, NodeType::WHILE], true)) {
                 $flowControlCss .= $itemCss;
             } else {
                 $otherNestedCss .= $itemCss;
@@ -169,35 +171,35 @@ class RuleNodeCompiler extends AbstractNodeCompiler
         );
     }
 
-    private function evaluateInterpolationsInString(?string $string, CompilerContext $context): ?string
+    private function evaluateInterpolationsInString(?string $string, CompilerContext $context): string
     {
         if ($string === null) {
-            return null;
+            return '';
         }
 
         return $context->interpolationEvaluator->evaluate($string, $context->engine->evaluateExpression(...));
     }
 
     private function bubbleMediaQuery(
-        AstNode $mediaNode,
+        MediaNode|AstNode $mediaNode,
         string $parentSelector,
         int $nestingLevel,
         CompilerContext $context
     ): string {
-        $query = $mediaNode->properties['query'];
+        $query = $mediaNode->query;
         $query = $this->evaluateInterpolationsInString($query, $context);
         $query = $context->resultFormatter->format($query);
 
-        $declarations = $mediaNode->properties['body']['declarations'] ?? [];
+        $declarations = $mediaNode->body['declarations'] ?? [];
 
         $hasDirectContent = ! empty($declarations);
 
         $includesCss = '';
 
-        $nested = $mediaNode->properties['body']['nested'] ?? [];
+        $nested = $mediaNode->body['nested'] ?? [];
 
         foreach ($nested as $item) {
-            if ($item->type === 'include') {
+            if ($item->type === NodeType::INCLUDE) {
                 $includeCss = $this->compileIncludeNode($item, $context, $parentSelector, $nestingLevel + 2);
                 $includesCss .= $includeCss;
                 $hasDirectContent = true;
@@ -225,9 +227,8 @@ class RuleNodeCompiler extends AbstractNodeCompiler
         }
 
         foreach ($nested as $item) {
-            if ($item->type !== 'include') {
-                $itemCss = $context->engine->compileAst([$item], $parentSelector, $nestingLevel + 1);
-                $css .= $itemCss;
+            if ($item->type !== NodeType::INCLUDE) {
+                $css .= $context->engine->compileAst([$item], $parentSelector, $nestingLevel + 1);
             }
         }
 

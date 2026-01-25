@@ -7,7 +7,6 @@ namespace DartSass\Parsers\Rules;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\MediaNode;
 
-use function in_array;
 use function preg_match;
 use function trim;
 
@@ -54,7 +53,7 @@ class MediaRuleParser extends AtRuleParser
                 $nested[] = $this->parser->parseVariable();
             } elseif ($this->peek('selector')) {
                 $nested[] = $this->parser->parseRule();
-            } elseif ($this->peek('operator') && in_array($this->currentToken()->value, ['&', '.', '#'], true)) {
+            } elseif ($this->peek('operator')) {
                 $nested[] = $this->parser->parseRule();
             } elseif ($this->peek('identifier')) {
                 $this->handleIdentifierInBlock($declarations, $nested);
@@ -101,7 +100,9 @@ class MediaRuleParser extends AtRuleParser
 
             $this->setTokenIndex($savedIndex);
 
-            $isSelector ? $nested[] = $this->parser->parseRule() : $declarations[] = $this->parser->parseDeclaration();
+            $isSelector
+                ? $nested[] = $this->parser->parseRule()
+                : $declarations[] = $this->parser->parseDeclaration();
         } else {
             $this->parser->setTokenIndex($savedIndex);
 

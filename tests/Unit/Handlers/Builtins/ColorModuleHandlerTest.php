@@ -89,8 +89,8 @@ describe('ColorModuleHandler', function () {
         });
 
         it('throws exception for non-existent method in ColorModule', function () {
-            expect(fn() => $this->handler->handle('nonexistentmethod', ['#ff0000']))
-                ->toThrow(CompilationException::class, 'Unknown color function: nonexistentmethod');
+            expect(fn() => $this->handler->handle('unknown', ['#ff0000']))
+                ->toThrow(CompilationException::class, 'Unknown color function: unknown');
         });
 
         it('handles valid color functions correctly', function () {

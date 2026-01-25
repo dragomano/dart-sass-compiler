@@ -6,15 +6,8 @@ namespace DartSass\Parsers\Nodes;
 
 final class PropertyAccessNode extends AstNode
 {
-    public function __construct(
-        public AstNode $namespace,
-        public AstNode $property,
-        public int $line
-    ) {
-        parent::__construct('property_access', [
-            'namespace' => $this->namespace,
-            'property'  => $this->property,
-            'line'      => $line,
-        ]);
+    public function __construct(public AstNode $namespace, public AstNode $property, int $line = 0)
+    {
+        parent::__construct(NodeType::PROPERTY_ACCESS, $line);
     }
 }

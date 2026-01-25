@@ -6,8 +6,8 @@ namespace DartSass\Parsers\Nodes;
 
 final class CssCustomPropertyNode extends AstNode
 {
-    public function __construct(public string $name, public int $line)
+    public function __construct(public string $name, int $line = 0)
     {
-        parent::__construct('css_custom_property', ['name' => $name, 'line' => $line]);
+        parent::__construct(NodeType::CSS_CUSTOM_PROPERTY, $line);
     }
 }

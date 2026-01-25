@@ -6,6 +6,7 @@ namespace DartSass\Compilers;
 
 use Closure;
 use DartSass\Parsers\Nodes\AstNode;
+use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Utils\PositionTracker;
 use DartSass\Utils\ResultFormatterInterface;
 use DartSass\Utils\StringFormatter;
@@ -35,10 +36,10 @@ readonly class DeclarationCompiler
 
         foreach ($declarations as $declaration) {
             if ($declaration instanceof AstNode) {
-                if ($declaration->type === 'comment') {
+                if ($declaration->type === NodeType::COMMENT) {
                     $indent = str_repeat('  ', $nestingLevel);
 
-                    $commentCss = StringFormatter::concatMultiple([$indent, $declaration->properties['value'], "\n"]);
+                    $commentCss = StringFormatter::concatMultiple([$indent, $declaration->value ?? '', "\n"]);
 
                     $css .= $commentCss;
 
@@ -59,6 +60,10 @@ readonly class DeclarationCompiler
                 }
 
                 $formattedValue = $this->resultFormatter->format($evaluatedValue);
+                if ($value->important ?? false) {
+                    $formattedValue .= ' !important';
+                }
+
                 $declarationCss = StringFormatter::concatMultiple([$indent, $property, ': ', $formattedValue, ";\n"]);
 
                 $css .= $declarationCss;
@@ -72,8 +77,8 @@ readonly class DeclarationCompiler
                     ];
 
                     $originalPosition = [
-                        'line'   => max(0, ($value->properties['property_line'] ?? 1) - 1),
-                        'column' => max(0, ($value->properties['property_column'] ?? 1) - 1),
+                        'line'   => max(0, ($value->line ?? 1) - 1),
+                        'column' => max(0, ($value->column ?? 1) - 1),
                     ];
 
                     $context->mappings[] = [

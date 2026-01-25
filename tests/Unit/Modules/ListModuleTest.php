@@ -154,7 +154,7 @@ describe('ListModule', function () {
         });
 
         it('gets length of ListNode', function () {
-            $listNode = new ListNode(['x', 'y', 'z'], 0, 'space', false);
+            $listNode = new ListNode(['x', 'y', 'z'], 'space');
 
             $result = $this->listModule->length([$listNode]);
 
@@ -239,7 +239,7 @@ describe('ListModule', function () {
         });
 
         it('gets separator from ListNode', function () {
-            $listNode = new ListNode(['a', 'b', 'c'], 0, 'comma', true);
+            $listNode = new ListNode(['a', 'b', 'c'], bracketed: true);
 
             $result = $this->listModule->separator([$listNode]);
 
@@ -395,7 +395,7 @@ describe('ListModule', function () {
         });
 
         it('parses list argument with ListNode object', function () {
-            $listNode = new ListNode(['x', 'y', 'z'], 0, 'space', false);
+            $listNode = new ListNode(['x', 'y', 'z'], 'space');
 
             $result = $this->accessor->callMethod('parseListArg', [$listNode]);
 
@@ -437,7 +437,7 @@ describe('ListModule', function () {
         });
 
         it('parses wrapped value with ListNode object', function () {
-            $listNode = new ListNode(['x', 'y'], 0, 'comma', false);
+            $listNode = new ListNode(['x', 'y']);
 
             $result = $this->accessor->callMethod('parseWrappedValue', [$listNode]);
 

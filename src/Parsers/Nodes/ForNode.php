@@ -12,15 +12,8 @@ final class ForNode extends AstNode
         public AstNode $to,
         public bool $inclusive,
         public array $body,
-        public int $line
+        int $line = 0
     ) {
-        parent::__construct('for', [
-            'variable'  => $variable,
-            'from'      => $from,
-            'to'        => $to,
-            'inclusive' => $inclusive,
-            'body'      => $body,
-            'line'      => $line,
-        ]);
+        parent::__construct(NodeType::FOR, $line);
     }
 }

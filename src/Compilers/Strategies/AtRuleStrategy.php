@@ -6,6 +6,8 @@ namespace DartSass\Compilers\Strategies;
 
 use DartSass\Compilers\CompilerContext;
 use DartSass\Parsers\Nodes\AstNode;
+use DartSass\Parsers\Nodes\AtRuleNode;
+use DartSass\Parsers\Nodes\NodeType;
 use InvalidArgumentException;
 
 use function rtrim;
@@ -13,13 +15,13 @@ use function str_repeat;
 
 readonly class AtRuleStrategy implements RuleCompilationStrategy
 {
-    public function canHandle(string $ruleType): bool
+    public function canHandle(NodeType $ruleType): bool
     {
-        return $ruleType === 'at-rule';
+        return $ruleType === NodeType::AT_RULE;
     }
 
     public function compile(
-        AstNode $node,
+        AtRuleNode|AstNode $node,
         CompilerContext $context,
         int $currentNestingLevel,
         string $parentSelector,
@@ -33,11 +35,11 @@ readonly class AtRuleStrategy implements RuleCompilationStrategy
             throw new InvalidArgumentException('Missing required parameters for at-rule compilation');
         }
 
-        $value = $expression($node->properties['value'] ?? '');
+        $value = $expression($node->value ?? '');
 
         $bodyNestingLevel = $currentNestingLevel + 1;
-        $bodyDeclarations = $node->properties['body']['declarations'] ?? [];
-        $bodyNested       = $node->properties['body']['nested'] ?? [];
+        $bodyDeclarations = $node->body['declarations'] ?? [];
+        $bodyNested       = $node->body['nested'] ?? [];
 
         $declarationsCss = $compileDeclarations($bodyDeclarations, $bodyNestingLevel);
         $nestedCss       = $compileAst($bodyNested, '', $bodyNestingLevel);
@@ -47,6 +49,6 @@ readonly class AtRuleStrategy implements RuleCompilationStrategy
 
         $valuePart = $value !== '' ? " $value" : '';
 
-        return "$indent{$node->properties['name']}$valuePart {\n$body\n$indent}\n";
+        return "$indent$node->name$valuePart {\n$body\n$indent}\n";
     }
 }
