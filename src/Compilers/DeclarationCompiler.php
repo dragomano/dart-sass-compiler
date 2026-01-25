@@ -6,7 +6,7 @@ namespace DartSass\Compilers;
 
 use Closure;
 use DartSass\Parsers\Nodes\AstNode;
-use DartSass\Parsers\Nodes\NodeType;
+use DartSass\Parsers\Nodes\CommentNode;
 use DartSass\Utils\PositionTracker;
 use DartSass\Utils\ResultFormatterInterface;
 use DartSass\Utils\StringFormatter;
@@ -26,8 +26,8 @@ readonly class DeclarationCompiler
 
     public function compile(
         array $declarations,
-        int $nestingLevel,
         string $parentSelector,
+        int $nestingLevel,
         CompilerContext $context,
         Closure $compileAst,
         Closure $expression
@@ -36,10 +36,18 @@ readonly class DeclarationCompiler
 
         foreach ($declarations as $declaration) {
             if ($declaration instanceof AstNode) {
-                if ($declaration->type === NodeType::COMMENT) {
-                    $indent = str_repeat('  ', $nestingLevel);
+                if ($declaration instanceof CommentNode) {
+                    $indent  = str_repeat('  ', $nestingLevel);
+                    $comment = $declaration->value;
 
-                    $commentCss = StringFormatter::concatMultiple([$indent, $declaration->value ?? '', "\n"]);
+                    if (str_starts_with($comment, '/*')) {
+                        $content = substr($comment, 2, -2);
+                        $content = $context->interpolationEvaluator->evaluate($content, $expression);
+
+                        $commentCss = StringFormatter::concatMultiple([$indent, '/*' . $content . '*/', "\n"]);
+                    } else {
+                        $commentCss = StringFormatter::concatMultiple([$indent, $comment ?? '', "\n"]);
+                    }
 
                     $css .= $commentCss;
 

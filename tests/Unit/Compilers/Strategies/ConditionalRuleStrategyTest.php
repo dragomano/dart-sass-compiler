@@ -24,7 +24,7 @@ describe('ConditionalRuleStrategy', function () {
             'nested'       => [],
         ], 1);
 
-        expect(fn() => $strategy->compile($node, $this->context, 0, ''))
+        expect(fn() => $strategy->compile($node, $this->context, '', 0))
             ->toThrow(
                 InvalidArgumentException::class,
                 'Missing required parameters for media rule compilation'
@@ -49,8 +49,8 @@ describe('ConditionalRuleStrategy', function () {
         $result = $strategy->compile(
             $node,
             $this->context,
-            0,
             '',
+            0,
             fn($query) => $query,
             fn() => "  color: red;\n",
             fn() => ''
@@ -74,8 +74,8 @@ describe('ConditionalRuleStrategy', function () {
         $result = $strategy->compile(
             $node,
             $this->context,
-            0,
             '',
+            0,
             fn($query) => $query,
             fn() => "    color: blue;\n",
             fn() => "  .class1, .class2 {\n    color: blue;\n  }\n"

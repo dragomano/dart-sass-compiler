@@ -11,7 +11,7 @@ final readonly class SassUserFunction implements Stringable
 {
     public function __construct(
         private FunctionHandler $functionHandler,
-        private string          $functionName
+        private string $functionName
     ) {}
 
     public function __invoke(mixed ...$args)

@@ -24,9 +24,9 @@ interface CompilerEngineInterface
 
     public function compileAst(array $ast, string $parentSelector = '', int $nestingLevel = 0): string;
 
-    public function compileDeclarations(array $declarations, int $nestingLevel, string $parentSelector = ''): string;
+    public function compileDeclarations(array $declarations, string $parentSelector = '', int $nestingLevel = 0): string;
 
-    public function formatRule(string $selector, string $content, int $nestingLevel): string;
+    public function formatRule(string $content, string $selector, int $nestingLevel): string;
 
     public function getIndent(int $level): string;
 }

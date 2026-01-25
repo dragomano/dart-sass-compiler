@@ -23,11 +23,11 @@ readonly class AtRuleStrategy implements RuleCompilationStrategy
     public function compile(
         AtRuleNode|AstNode $node,
         CompilerContext $context,
-        int $currentNestingLevel,
         string $parentSelector,
+        int $currentNestingLevel,
         ...$params
     ): string {
-        $expression  = $params[0] ?? null;
+        $expression          = $params[0] ?? null;
         $compileDeclarations = $params[1] ?? null;
         $compileAst          = $params[2] ?? null;
 
@@ -41,8 +41,8 @@ readonly class AtRuleStrategy implements RuleCompilationStrategy
         $bodyDeclarations = $node->body['declarations'] ?? [];
         $bodyNested       = $node->body['nested'] ?? [];
 
-        $declarationsCss = $compileDeclarations($bodyDeclarations, $bodyNestingLevel);
-        $nestedCss       = $compileAst($bodyNested, '', $bodyNestingLevel);
+        $declarationsCss = $compileDeclarations($bodyDeclarations, nestingLevel: $bodyNestingLevel);
+        $nestedCss       = $compileAst($bodyNested, $parentSelector, nestingLevel: $bodyNestingLevel);
 
         $body   = rtrim($declarationsCss . $nestedCss);
         $indent = str_repeat('  ', $currentNestingLevel);

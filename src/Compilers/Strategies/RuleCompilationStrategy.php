@@ -15,8 +15,8 @@ interface RuleCompilationStrategy
     public function compile(
         AstNode $node,
         CompilerContext $context,
-        int $currentNestingLevel,
         string $parentSelector,
+        int $currentNestingLevel,
         ...$params
     ): string;
 }

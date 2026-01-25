@@ -181,7 +181,9 @@ class MixinHandler
             }
 
             $value = $this->resolveArgumentValue($argName, $argIndex, $arguments, $defaultValue, $usedKeys);
+
             $this->compilerEngine->getContext()->variableHandler->define($argName, $value);
+
             $argIndex++;
         }
     }
@@ -261,11 +263,11 @@ class MixinHandler
 
         foreach ($content as $item) {
             if (is_array($item)) {
-                $declarationCss .= $this->compilerEngine->compileDeclarations([$item], $nestingLevel + 2);
+                $declarationCss .= $this->compilerEngine->compileDeclarations([$item], nestingLevel: $nestingLevel + 2);
             }
         }
 
-        $compiledContent = $this->compilerEngine->formatRule($parentSelector, $declarationCss, $nestingLevel);
+        $compiledContent = $this->compilerEngine->formatRule($declarationCss, $parentSelector, $nestingLevel);
 
         return preg_replace('/^}$/m', '  }', $compiledContent);
     }
@@ -276,8 +278,7 @@ class MixinHandler
 
         foreach ($content as $item) {
             if (is_array($item)) {
-                $result = $this->compilerEngine->compileDeclarations([$item], 1);
-                $compiledContent .= $result;
+                $compiledContent .= $this->compilerEngine->compileDeclarations([$item], nestingLevel: 1);
             }
         }
 
@@ -290,11 +291,9 @@ class MixinHandler
 
         foreach ($body as $item) {
             if (is_array($item)) {
-                $result = $this->compilerEngine->compileDeclarations([$item], 1);
-                $css .= $result;
+                $css .= $this->compilerEngine->compileDeclarations([$item], nestingLevel: 1);
             } elseif ($item instanceof AstNode) {
-                $result = $this->compilerEngine->compileAst([$item], $parentSelector);
-                $css .= $result;
+                $css .= $this->compilerEngine->compileAst([$item], $parentSelector);
             }
         }
 

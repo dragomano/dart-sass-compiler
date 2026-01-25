@@ -40,125 +40,186 @@ class RuleNodeCompiler extends AbstractNodeCompiler
         string $parentSelector = '',
         int $nestingLevel = 0
     ): string {
-        $selectorString = $node->selector instanceof SelectorNode
-            ? $node->selector->value
-            : null;
-
+        $selectorString = $node->selector instanceof SelectorNode ? $node->selector->value : null;
         $selectorString = $this->evaluateInterpolationsInString($selectorString, $context);
-
-        $selector = $context->nestingHandler->resolveSelector($selectorString, $parentSelector);
-
-        $compileAstClosure = $context->engine->compileAst(...);
+        $selector       = $context->nestingHandler->resolveSelector($selectorString, $parentSelector);
 
         $context->variableHandler->enterScope();
 
-        $includesCss    = '';
-        $flowControlCss = '';
-        $otherNestedCss = '';
+        [$includes, $nested, $postDecl] = $this->processNestedItems($node, $context, $selector, $nestingLevel);
 
-        foreach ($node->nested ?? [] as $nestedItem) {
-            $itemCss = match ($nestedItem->type) {
-                NodeType::INCLUDE => $this->compileIncludeNode($nestedItem, $context, $selector, $nestingLevel + 1),
-                NodeType::MEDIA   => $this->bubbleMediaQuery($nestedItem, $selector, $nestingLevel, $context),
-                default           => $compileAstClosure([$nestedItem], $selector, $nestingLevel),
-            };
+        $ruleCss = $this->buildRule($node, $context, $selector, $nestingLevel, $includes, $postDecl);
 
-            $trimmedCss = trim($itemCss);
+        $context->extendHandler->addDefinedSelector($selector);
+        $context->variableHandler->exitScope();
 
-            if ($nestedItem->type === NodeType::INCLUDE && ! str_starts_with($trimmedCss, '@')) {
-                $lines        = explode("\n", rtrim($itemCss));
-                $braceLevel   = 0;
-                $inNestedRule = false;
+        return $ruleCss . $nested;
+    }
 
-                $nestedPart = $declarationsPart = '';
+    private function processNestedItems(
+        RuleNode $node,
+        CompilerContext $context,
+        string $selector,
+        int $nestingLevel
+    ): array {
+        $includes = $nested = $postDecl = '';
 
-                foreach ($lines as $line) {
-                    $trimmedLine = trim($line);
-                    $openBraces  = substr_count($line, '{');
-                    $closeBraces = substr_count($line, '}');
+        foreach ($node->nested ?? [] as $item) {
+            $itemCss = $this->compileNestedItem($item, $context, $selector, $nestingLevel);
 
-                    if (
-                        ! $inNestedRule
-                        && (
-                            preg_match('/^[a-zA-Z.#-]/', $trimmedLine)
-                            || str_starts_with($trimmedLine, '@')
-                        ) && $openBraces > 0
-                    ) {
-                        $inNestedRule = true;
-                        $nestedPart .= $line . "\n";
-                        $braceLevel += $openBraces - $closeBraces;
-                    } elseif ($inNestedRule) {
-                        $nestedPart .= $line . "\n";
-                        $braceLevel += $openBraces - $closeBraces;
+            if (in_array($item->type, [NodeType::IF, NodeType::EACH, NodeType::FOR, NodeType::WHILE], true)) {
+                $extracted = $this->extractDeclarations(trim($itemCss), $selector, $nestingLevel);
+                $postDecl .= $extracted;
+                $itemCss   = $extracted ? '' : $itemCss;
+            }
 
-                        if ($braceLevel <= 0) {
-                            $inNestedRule = false;
-                            $braceLevel = 0;
-                        }
-                    } else {
-                        $declarationsPart .= $line . "\n";
-                    }
-                }
-
-                $includesCss .= $declarationsPart;
-                $otherNestedCss .= $nestedPart;
-            } elseif (in_array($nestedItem->type, [NodeType::IF, NodeType::EACH, NodeType::FOR, NodeType::WHILE], true)) {
-                $flowControlCss .= $itemCss;
+            if ($item->type === NodeType::INCLUDE && ! str_starts_with(trim($itemCss), '@')) {
+                [$declPart, $nestedPart] = $this->separateIncludeContent($itemCss);
+                $includes .= $declPart;
+                $nested   .= $nestedPart;
             } else {
-                $otherNestedCss .= $itemCss;
+                $nested .= $itemCss;
             }
         }
 
-        $expression = $context->engine->evaluateExpression(...);
-        $indent     = str_repeat('  ', $nestingLevel);
-        $ruleStart  = "$indent$selector {\n";
-        $ruleEnd    = "$indent}\n";
+        return [$includes, $nested, $postDecl];
+    }
+
+    private function compileNestedItem(
+        AstNode $item,
+        CompilerContext $context,
+        string $selector,
+        int $nestingLevel
+    ): string {
+        return match ($item->type) {
+            NodeType::EACH,
+            NodeType::IF,
+            NodeType::FOR,
+            NodeType::WHILE   => $this->compileFlowControlNode($item, $context, $selector, $nestingLevel + 1),
+            NodeType::INCLUDE => $this->compileIncludeNode($item, $context, $selector, $nestingLevel + 1),
+            NodeType::MEDIA   => $this->compileMediaNode($item, $selector, $nestingLevel, $context),
+            default           => $context->engine->compileAst([$item], $selector, $nestingLevel + 1),
+        };
+    }
+
+    private function extractDeclarations(string $css, string $selector, int $nestingLevel): string
+    {
+        if ($css === '' || str_contains($css, $selector)) {
+            return '';
+        }
+
+        foreach (explode("\n", $css) as $line) {
+            $line = trim($line);
+            if ($line !== '' && str_contains($line, ':') && str_ends_with($line, ';')) {
+                return str_repeat('  ', $nestingLevel + 1) . rtrim($css) . "\n";
+            }
+        }
+
+        return '';
+    }
+
+    private function separateIncludeContent(string $css): array
+    {
+        $lines      = explode("\n", rtrim($css));
+        $decl       = '';
+        $nested     = '';
+        $braceLevel = 0;
+        $inNested   = false;
+
+        foreach ($lines as $line) {
+            $trimmed = trim($line);
+            $opens   = substr_count($line, '{');
+            $closes  = substr_count($line, '}');
+
+            $isRuleStart = ! $inNested
+                && (preg_match('/^[a-zA-Z.#-]/', $trimmed) || str_starts_with($trimmed, '@'))
+                && $opens > 0;
+
+            if ($isRuleStart) {
+                $inNested = true;
+            }
+
+            if ($inNested) {
+                $nested     .= $line . "\n";
+                $braceLevel += $opens - $closes;
+
+                if ($braceLevel <= 0) {
+                    $inNested   = false;
+                    $braceLevel = 0;
+                }
+            } else {
+                $decl .= $line . "\n";
+            }
+        }
+
+        return [$decl, $nested];
+    }
+
+    private function buildRule(
+        RuleNode $node,
+        CompilerContext $context,
+        string $selector,
+        int $nestingLevel,
+        string $includes,
+        string $postDecl
+    ): string {
+        $indent    = str_repeat('  ', $nestingLevel);
+        $ruleStart = "$indent$selector {\n";
 
         if ($context->options['sourceMap'] ?? false) {
-            $generatedPosition = $context->positionTracker->getCurrentPosition();
-
-            $originalPosition = [
+            $genPos = $context->positionTracker->getCurrentPosition();
+            $orgPos = [
                 'line'   => max(0, ($node->line ?? 1) - 1),
                 'column' => max(0, ($node->column ?? 1) - 1),
             ];
 
             $context->mappings[] = [
-                'generated'   => ['line' => $generatedPosition['line'] - 1, 'column' => $generatedPosition['column']],
-                'original'    => ['line' => $originalPosition['line'], 'column' => $originalPosition['column']],
+                'generated'   => ['line' => $genPos['line'] - 1, 'column' => $genPos['column']],
+                'original'    => ['line' => $orgPos['line'], 'column' => $orgPos['column']],
                 'sourceIndex' => 0,
             ];
         }
 
         $context->positionTracker->updatePosition($ruleStart);
 
-        $combinedRuleCss = $includesCss . $context->declarationCompiler->compile(
+        $decl = $context->declarationCompiler->compile(
             $node->declarations ?? [],
-            $nestingLevel + 1,
             $selector,
+            $nestingLevel + 1,
             $context,
-            $compileAstClosure,
-            $expression
-        ) . $flowControlCss;
+            $context->engine->compileAst(...),
+            $context->engine->evaluateExpression(...)
+        );
 
-        $css = '';
-        if (trim($combinedRuleCss) !== '') {
-            $css .= $ruleStart;
-            $css .= $combinedRuleCss;
-            $css .= $ruleEnd;
+        $content = $includes . $decl . $postDecl;
 
-            $context->positionTracker->updatePosition($ruleEnd);
+        if (trim($content) === '') {
+            return '';
         }
 
-        $css .= $otherNestedCss;
+        $ruleEnd = "$indent}\n";
+        $context->positionTracker->updatePosition($ruleEnd);
 
-        $context->extendHandler->addDefinedSelector($selector);
-        $context->variableHandler->exitScope();
+        return $ruleStart . rtrim($content) . "\n" . $ruleEnd;
+    }
 
-        return $css;
+    private function compileFlowControlNode(
+        AstNode $node,
+        CompilerContext $context,
+        string $parentSelector,
+        int $nestingLevel
+    ): string {
+        return $context->flowControlCompiler->compile(
+            $node,
+            $parentSelector,
+            $nestingLevel,
+            $context->engine->evaluateExpression(...),
+            $context->engine->compileAst(...)
+        );
     }
 
     private function compileIncludeNode(
-        IncludeNode $node,
+        IncludeNode|AstNode $node,
         CompilerContext $context,
         string $parentSelector,
         int $nestingLevel
@@ -171,54 +232,37 @@ class RuleNodeCompiler extends AbstractNodeCompiler
         );
     }
 
-    private function evaluateInterpolationsInString(?string $string, CompilerContext $context): string
-    {
-        if ($string === null) {
-            return '';
-        }
-
-        return $context->interpolationEvaluator->evaluate($string, $context->engine->evaluateExpression(...));
-    }
-
-    private function bubbleMediaQuery(
+    private function compileMediaNode(
         MediaNode|AstNode $mediaNode,
         string $parentSelector,
         int $nestingLevel,
         CompilerContext $context
     ): string {
-        $query = $mediaNode->query;
-        $query = $this->evaluateInterpolationsInString($query, $context);
-        $query = $context->resultFormatter->format($query);
-
+        $query        = $this->evaluateInterpolationsInString($mediaNode->query, $context);
+        $query        = $context->resultFormatter->format($query);
         $declarations = $mediaNode->body['declarations'] ?? [];
-
-        $hasDirectContent = ! empty($declarations);
+        $nested       = $mediaNode->body['nested'] ?? [];
 
         $includesCss = '';
-
-        $nested = $mediaNode->body['nested'] ?? [];
-
         foreach ($nested as $item) {
             if ($item->type === NodeType::INCLUDE) {
-                $includeCss = $this->compileIncludeNode($item, $context, $parentSelector, $nestingLevel + 2);
-                $includesCss .= $includeCss;
-                $hasDirectContent = true;
+                $includesCss .= $this->compileIncludeNode($item, $context, $parentSelector, $nestingLevel + 2);
             }
         }
 
-        $indent = str_repeat('  ', $nestingLevel);
+        $hasContent = ! empty($declarations) || $includesCss !== '';
+        $indent     = str_repeat('  ', $nestingLevel);
+        $css        = "$indent@media $query {\n";
 
-        $css = "$indent@media $query {\n";
-
-        if ($hasDirectContent) {
+        if ($hasContent) {
             $bodyIndent = str_repeat('  ', $nestingLevel + 1);
 
             $css .= "$bodyIndent$parentSelector {\n";
             $css .= $includesCss;
             $css .= $context->declarationCompiler->compile(
                 $declarations,
-                $nestingLevel + 2,
                 $parentSelector,
+                $nestingLevel + 2,
                 $context,
                 $context->engine->compileAst(...),
                 $context->engine->evaluateExpression(...)
@@ -235,5 +279,14 @@ class RuleNodeCompiler extends AbstractNodeCompiler
         $css .= "$indent}\n";
 
         return $css;
+    }
+
+    private function evaluateInterpolationsInString(?string $string, CompilerContext $context): string
+    {
+        if ($string === null) {
+            return '';
+        }
+
+        return $context->interpolationEvaluator->evaluate($string, $context->engine->evaluateExpression(...));
     }
 }

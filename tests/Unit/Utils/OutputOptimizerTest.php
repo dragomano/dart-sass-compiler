@@ -196,6 +196,7 @@ dataset('complex scenarios', [
 
 it('optimizes zero units for all CSS', function (string $input, string $expected) {
     $optimizer = new OutputOptimizer('expanded');
+
     $result = $optimizer->optimize($input);
 
     expect($result)->toEqualCss($expected);
@@ -203,6 +204,7 @@ it('optimizes zero units for all CSS', function (string $input, string $expected
 
 it('optimizes compressed style', function (string $input, string $expected) {
     $optimizer = new OutputOptimizer('compressed');
+
     $result = $optimizer->optimize($input);
 
     expect($result)->toEqualCss($expected);
@@ -210,6 +212,7 @@ it('optimizes compressed style', function (string $input, string $expected) {
 
 it('optimizes expanded style', function (string $input, string $expected) {
     $optimizer = new OutputOptimizer('expanded');
+
     $result = $optimizer->optimize($input);
 
     expect($result)->toEqualCss($expected);
@@ -217,6 +220,7 @@ it('optimizes expanded style', function (string $input, string $expected) {
 
 it('handles redundant properties correctly', function (string $input, string $expected) {
     $optimizer = new OutputOptimizer('expanded');
+
     $result = $optimizer->optimize($input);
 
     expect($result)->toEqualCss($expected);
@@ -224,13 +228,14 @@ it('handles redundant properties correctly', function (string $input, string $ex
 
 it('handles complex scenarios', function (string $input, string $expected) {
     $optimizer = new OutputOptimizer('expanded');
+
     $result = $optimizer->optimize($input);
 
     expect($result)->toEqualCss($expected);
 })->with('complex scenarios');
 
 it('initializes with different styles', function () {
-    $expandedOptimizer = new OutputOptimizer('expanded');
+    $expandedOptimizer   = new OutputOptimizer('expanded');
     $compressedOptimizer = new OutputOptimizer('compressed');
 
     expect($expandedOptimizer)->toBeInstanceOf(OutputOptimizer::class)
@@ -238,19 +243,30 @@ it('initializes with different styles', function () {
 });
 
 it('preserves calc functions with zero units', function () {
-    $css = '.test { width: calc(100% - 0px); }';
-    $expected = '.test { width: calc(100% - 0px); }';
+    $css       = '.test { width: calc(100% - 0px); }';
+    $expected  = '.test { width: calc(100% - 0px); }';
     $optimizer = new OutputOptimizer('expanded');
+
     $result = $optimizer->optimize($css);
 
     expect($result)->toEqualCss($expected);
 });
 
 it('handles properties with complex values and zero units', function () {
-    $css = '.test { background: url(image.png) no-repeat 0px 0px; width: 0px; }';
-    $expected = '.test { background: url(image.png) no-repeat 0 0; width: 0; }';
+    $css       = '.test { background: url(image.png) no-repeat 0px 0px; width: 0px; }';
+    $expected  = '.test { background: url(image.png) no-repeat 0 0; width: 0; }';
     $optimizer = new OutputOptimizer('expanded');
+
     $result = $optimizer->optimize($css);
 
     expect($result)->toEqualCss($expected);
+});
+
+it('returns CSS unchanged for unsupported styles', function () {
+    $css       = '.test { width: 10px; height: 20px; }';
+    $optimizer = new OutputOptimizer('unsupported');
+
+    $result = $optimizer->optimize($css);
+
+    expect($result)->toEqualCss($css);
 });

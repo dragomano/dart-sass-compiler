@@ -9,6 +9,13 @@ use DartSass\Normalizers\SassNormalizer;
 
 final class ParserFactory
 {
+    private const NORMALIZERS = [
+        NoOpNormalizer::class,
+        SassNormalizer::class,
+    ];
+
+    private array $normalizerInstances = [];
+
     public function __construct(private ?LexerInterface $lexer = null)
     {
         $this->lexer ??= new Lexer();
@@ -36,9 +43,12 @@ final class ParserFactory
 
     private function getNormalizers(): array
     {
-        return [
-            new NoOpNormalizer(),
-            new SassNormalizer(),
-        ];
+        if (empty($this->normalizerInstances)) {
+            foreach (self::NORMALIZERS as $normalizerClass) {
+                $this->normalizerInstances[] = new $normalizerClass();
+            }
+        }
+
+        return $this->normalizerInstances;
     }
 }

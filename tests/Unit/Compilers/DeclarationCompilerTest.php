@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use DartSass\Compilers\CompilerContext;
 use DartSass\Compilers\DeclarationCompiler;
+use DartSass\Parsers\Nodes\CommentNode;
 use DartSass\Parsers\Nodes\IdentifierNode;
 use DartSass\Parsers\Nodes\RuleNode;
 use DartSass\Utils\PositionTracker;
@@ -47,8 +48,8 @@ describe('DeclarationCompiler', function () {
 
             $result = $this->declarationCompiler->compile(
                 $declarations,
-                $nestingLevel,
                 $parentSelector,
+                $nestingLevel,
                 $this->context,
                 $compileAst,
                 $expression
@@ -74,8 +75,8 @@ describe('DeclarationCompiler', function () {
 
             $result = $this->declarationCompiler->compile(
                 $declarations,
-                $nestingLevel,
                 $parentSelector,
+                $nestingLevel,
                 $this->context,
                 $compileAst,
                 $expression
@@ -114,14 +115,41 @@ describe('DeclarationCompiler', function () {
 
             $result = $this->declarationCompiler->compile(
                 $declarations,
-                $nestingLevel,
                 $parentSelector,
+                $nestingLevel,
                 $this->context,
                 $compileAst,
                 $expression
             );
 
             expect($result)->toBe("color: red !important;\n");
+        });
+
+        it('compiles comment without /* as plain text', function () {
+            $commentNode = new CommentNode('// comment');
+
+            $declarations   = [$commentNode];
+            $nestingLevel   = 0;
+            $parentSelector = '';
+
+            $this->positionTracker
+                ->shouldReceive('updatePosition')
+                ->once()
+                ->with("// comment\n");
+
+            $compileAst = fn() => 'should not be called';
+            $expression = fn() => 'value';
+
+            $result = $this->declarationCompiler->compile(
+                $declarations,
+                $parentSelector,
+                $nestingLevel,
+                $this->context,
+                $compileAst,
+                $expression
+            );
+
+            expect($result)->toBe("// comment\n");
         });
     });
 });

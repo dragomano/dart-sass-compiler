@@ -106,53 +106,72 @@ readonly class CompilerBuilder
 
     private function initializeFunctionHandlers(CompilerContext $context): void
     {
-        $customFunctionHandler = new CustomFunctionHandler();
-        $moduleRegistry        = $this->createModuleRegistry($context, $customFunctionHandler);
-        $functionRouter        = new FunctionRouter($moduleRegistry, $context->resultFormatter);
-        $userFunctionEvaluator = new UserFunctionEvaluator();
+        $customHandler  = new CustomFunctionHandler();
+        $moduleRegistry = $this->createModuleRegistry($context, $customHandler);
+
+        $this->registerMetaModule($moduleRegistry, $context);
 
         $context->functionHandler = new FunctionHandler(
             $context->moduleHandler,
-            $functionRouter,
-            $customFunctionHandler,
-            $userFunctionEvaluator,
+            new FunctionRouter($moduleRegistry, $context->resultFormatter),
+            $customHandler,
+            new UserFunctionEvaluator(),
             fn($expr): mixed => $context->engine->evaluateExpression($expr)
         );
-
-        $metaModule = new MetaModule(
-            $moduleRegistry,
-            $context,
-            fn($expr): mixed => $context->engine->evaluateExpression($expr)
-        );
-
-        $moduleRegistry->register(new MetaModuleHandler($metaModule));
     }
 
     private function createModuleRegistry(
         CompilerContext $context,
-        CustomFunctionHandler $customFunctionHandler
+        CustomFunctionHandler $customHandler
     ): ModuleRegistry {
-        $moduleRegistry = new ModuleRegistry();
+        $registry = new ModuleRegistry();
 
-        $moduleRegistry->register(new IfFunctionHandler(
+        $this->registerCoreHandlers($registry, $context);
+        $this->registerModuleHandlers($registry, $context);
+        $this->registerCustomHandlers($registry, $customHandler);
+
+        return $registry;
+    }
+
+    private function registerCoreHandlers(ModuleRegistry $registry, CompilerContext $context): void
+    {
+        $registry->register(new IfFunctionHandler(fn($expr): mixed => $context->engine->evaluateExpression($expr)));
+        $registry->register(new UrlFunctionHandler());
+        $registry->register(new FormatFunctionHandler($context->resultFormatter));
+        $registry->register(new LinearGradientFunctionHandler($context->resultFormatter));
+    }
+
+    private function registerModuleHandlers(ModuleRegistry $registry, CompilerContext $context): void
+    {
+        $cssColorHandler = new CssColorFunctionHandler();
+
+        $registry->register($cssColorHandler);
+        $registry->register(new ColorModuleHandler(new ColorModule(), $cssColorHandler));
+        $registry->register(new StringModuleHandler(new StringModule()));
+        $registry->register(new ListModuleHandler(new ListModule()));
+        $registry->register(new MapModuleHandler(new MapModule()));
+        $registry->register(new MathModuleHandler(new MathModule(), $context->resultFormatter));
+        $registry->register(new SelectorModuleHandler(new SelectorModule()));
+    }
+
+    private function registerCustomHandlers(
+        ModuleRegistry $registry,
+        CustomFunctionHandler $customFunctionHandler
+    ): void {
+        $registry->register($customFunctionHandler);
+
+        $customFunctionHandler->setRegistry($registry);
+    }
+
+    private function registerMetaModule(ModuleRegistry $registry, CompilerContext $context): void
+    {
+        $metaModule = new MetaModule(
+            $registry,
+            $context,
             fn($expr): mixed => $context->engine->evaluateExpression($expr)
-        ));
+        );
 
-        $moduleRegistry->register(new UrlFunctionHandler());
-        $moduleRegistry->register(new FormatFunctionHandler($context->resultFormatter));
-        $moduleRegistry->register($cssColorFunctionHandler = new CssColorFunctionHandler());
-        $moduleRegistry->register(new ColorModuleHandler(new ColorModule(), $cssColorFunctionHandler));
-        $moduleRegistry->register(new StringModuleHandler(new StringModule()));
-        $moduleRegistry->register(new ListModuleHandler(new ListModule()));
-        $moduleRegistry->register(new MapModuleHandler(new MapModule()));
-        $moduleRegistry->register(new MathModuleHandler(new MathModule(), $context->resultFormatter));
-        $moduleRegistry->register(new SelectorModuleHandler(new SelectorModule()));
-        $moduleRegistry->register(new LinearGradientFunctionHandler($context->resultFormatter));
-        $moduleRegistry->register($customFunctionHandler);
-
-        $customFunctionHandler->setRegistry($moduleRegistry);
-
-        return $moduleRegistry;
+        $registry->register(new MetaModuleHandler($metaModule));
     }
 
     private function initializeUtils(CompilerContext $context): void

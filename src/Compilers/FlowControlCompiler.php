@@ -29,21 +29,23 @@ readonly class FlowControlCompiler
 
     public function compile(
         AstNode $node,
+        string $parentSelector,
         int $nestingLevel,
         Closure $expression,
         Closure $compileAst
     ): string {
         return match (true) {
-            $node instanceof IfNode    => $this->compileIf($node, $nestingLevel, $expression, $compileAst),
-            $node instanceof EachNode  => $this->compileEach($node, $nestingLevel, $expression, $compileAst),
-            $node instanceof ForNode   => $this->compileFor($node, $nestingLevel, $expression, $compileAst),
-            $node instanceof WhileNode => $this->compileWhile($node, $nestingLevel, $expression, $compileAst),
-            default => throw new CompilationException('Unknown control flow node type: ' . $node::class),
+            $node instanceof IfNode    => $this->compileIf($node, $parentSelector, $nestingLevel, $expression, $compileAst),
+            $node instanceof EachNode  => $this->compileEach($node, $parentSelector, $nestingLevel, $expression, $compileAst),
+            $node instanceof ForNode   => $this->compileFor($node, $parentSelector, $nestingLevel, $expression, $compileAst),
+            $node instanceof WhileNode => $this->compileWhile($node, $parentSelector, $nestingLevel, $expression, $compileAst),
+            default                    => throw new CompilationException('Unknown control flow node type: ' . $node::class),
         };
     }
 
     private function compileIf(
         IfNode $node,
+        string $parentSelector,
         int $nestingLevel,
         Closure $expression,
         Closure $compileAst
@@ -51,9 +53,24 @@ readonly class FlowControlCompiler
         $condition = $expression($node->condition);
 
         if (ValueComparator::isTruthy($condition)) {
-            return $compileAst($node->body, '', $nestingLevel + 1);
+            if (is_array($node->body) && count($node->body) > 0) {
+                $firstItem = $node->body[0];
+                if (is_array($firstItem) && isset($firstItem[0]) && is_string($firstItem[0])) {
+                    $result = '';
+                    foreach ($node->body as $decl) {
+                        if (is_array($decl) && count($decl) >= 2) {
+                            $indent = str_repeat('  ', $nestingLevel + 1);
+                            $result .= "$indent$decl[0]: $decl[1];\n";
+                        }
+                    }
+
+                    return $result;
+                } else {
+                    return $compileAst($node->body, $parentSelector, $nestingLevel + 1);
+                }
+            }
         } elseif (is_array($node->else) && count($node->else) > 0) {
-            return $compileAst($node->else, '', $nestingLevel + 1);
+            return $compileAst($node->else, $parentSelector, $nestingLevel + 1);
         }
 
         return '';
@@ -61,6 +78,7 @@ readonly class FlowControlCompiler
 
     private function compileEach(
         EachNode $node,
+        string $parentSelector,
         int $nestingLevel,
         Closure $expression,
         Closure $compileAst
@@ -87,7 +105,7 @@ readonly class FlowControlCompiler
             $varName = $variables[0];
             foreach ($list as $value) {
                 $this->variableHandler->define($varName, $value);
-                $css .= $compileAst($node->body, '', $nestingLevel);
+                $css .= $compileAst($node->body, $parentSelector, $nestingLevel);
             }
         } else {
             // For multiple variables, assume map or list of lists
@@ -105,11 +123,13 @@ readonly class FlowControlCompiler
                         if (isset($value['value']) && isset($value['unit'])) {
                             // This is a number with unit, format as string
                             $formattedValue = $value['value'] . $value['unit'];
+
                             $this->variableHandler->define($variables[0], $key);
                             $this->variableHandler->define($variables[1], $formattedValue);
                         } else {
                             // List of pairs
                             [$val1, $val2] = array_values($value);
+
                             $this->variableHandler->define($variables[0], $val1);
                             $this->variableHandler->define($variables[1], $val2);
                         }
@@ -129,7 +149,7 @@ readonly class FlowControlCompiler
                     throw new CompilationException('Multiple variables in @each with more than 2 not supported');
                 }
 
-                $css .= $compileAst($node->body, '', $nestingLevel);
+                $css .= $compileAst($node->body, $parentSelector, $nestingLevel);
             }
         }
 
@@ -140,6 +160,7 @@ readonly class FlowControlCompiler
 
     private function compileFor(
         ForNode $node,
+        string $parentSelector,
         int $nestingLevel,
         Closure $expression,
         Closure $compileAst
@@ -160,12 +181,14 @@ readonly class FlowControlCompiler
         if ($step > 0) {
             for ($i = $from; $i <= $end; $i += $step) {
                 $this->variableHandler->define($varName, $i);
-                $css .= $compileAst($node->body, '', $nestingLevel);
+
+                $css .= $compileAst($node->body, $parentSelector, $nestingLevel);
             }
         } else {
             for ($i = $from; $i >= $end; $i += $step) {
                 $this->variableHandler->define($varName, $i);
-                $css .= $compileAst($node->body, '', $nestingLevel);
+
+                $css .= $compileAst($node->body, $parentSelector, $nestingLevel);
             }
         }
 
@@ -176,6 +199,7 @@ readonly class FlowControlCompiler
 
     private function compileWhile(
         WhileNode $node,
+        string $parentSelector,
         int $nestingLevel,
         Closure $expression,
         Closure $compileAst
@@ -183,17 +207,17 @@ readonly class FlowControlCompiler
         $css = '';
 
         $maxIterations = 1000;
-        $iteration     = 0;
 
         $this->variableHandler->enterScope();
 
+        $iteration = 0;
         while ($iteration < $maxIterations) {
             $condition = $expression($node->condition);
             if (! ValueComparator::isTruthy($condition)) {
                 break;
             }
 
-            $css .= $compileAst($node->body, '', $nestingLevel);
+            $css .= $compileAst($node->body, $parentSelector, $nestingLevel);
             $iteration++;
         }
 
