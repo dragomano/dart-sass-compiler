@@ -8,6 +8,7 @@ use DartSass\Handlers\ModuleForwarder;
 use DartSass\Handlers\ModuleHandler;
 use DartSass\Handlers\ModuleLoader;
 use DartSass\Loaders\LoaderInterface;
+use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Parsers\Nodes\StringNode;
 use DartSass\Parsers\Nodes\VariableDeclarationNode;
 use DartSass\Parsers\ParserFactory;
@@ -48,9 +49,9 @@ describe('ModuleHandler', function () {
 
         it('loads regular module and processes ast', function () {
             $ast = [
-                (object) ['type' => 'variable', 'properties' => ['name' => '$var', 'value' => 'val']],
-                (object) ['type' => 'mixin', 'properties' => ['name' => 'testMixin', 'args' => [], 'body' => []]],
-                (object) ['type' => 'function', 'properties' => ['name' => 'testFunc', 'args' => [], 'body' => []]],
+                (object) ['type' => NodeType::VARIABLE, 'name' => '$var', 'value' => 'val'],
+                (object) ['type' => NodeType::MIXIN, 'name' => 'testMixin', 'args' => [], 'body' => []],
+                (object) ['type' => NodeType::FUNCTION, 'name' => 'testFunc', 'args' => [], 'body' => []],
             ];
             $this->moduleLoader->shouldReceive('loadAst')->andReturn($ast);
 
@@ -62,7 +63,7 @@ describe('ModuleHandler', function () {
         });
 
         it('handles global variables for namespace *', function () {
-            $ast = [(object) ['type' => 'variable', 'properties' => ['name' => '$global', 'value' => 'val']]];
+            $ast = [(object) ['type' => NodeType::VARIABLE, 'name' => '$global', 'value' => 'val']];
             $this->moduleLoader->shouldReceive('loadAst')->andReturn($ast);
 
             $this->handler->loadModule('test.scss', '*');
@@ -72,7 +73,7 @@ describe('ModuleHandler', function () {
         });
 
         it('loads module with css nodes', function () {
-            $cssNode = (object) ['type' => 'rule', 'properties' => ['selector' => '.test']];
+            $cssNode = (object) ['type' => NodeType::RULE, 'selector' => '.test'];
             $ast     = [$cssNode];
             $this->moduleLoader->shouldReceive('loadAst')->andReturn($ast);
 
@@ -122,7 +123,7 @@ describe('ModuleHandler', function () {
         });
 
         it('evaluates VariableDeclarationNode', function () {
-            $node = new VariableDeclarationNode('$prop', new StringNode('expr', 1), 1);
+            $node = new VariableDeclarationNode('$prop', new StringNode('expr', 1), line: 1);
 
             // Simulate property
             $properties = $this->accessor->getProperty('forwardedProperties');

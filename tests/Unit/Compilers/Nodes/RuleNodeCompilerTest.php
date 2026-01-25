@@ -11,6 +11,7 @@ use DartSass\Handlers\ExtendHandler;
 use DartSass\Handlers\NestingHandler;
 use DartSass\Handlers\VariableHandler;
 use DartSass\Parsers\Nodes\AstNode;
+use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Parsers\Nodes\RuleNode;
 use DartSass\Parsers\Nodes\StringNode;
 use DartSass\Parsers\ParserFactory;
@@ -24,22 +25,18 @@ describe('RuleNodeCompiler', function () {
         $this->accessor = new ReflectionAccessor($this->compiler);
     });
 
-    it('returns null when string is null in evaluateInterpolationsInString', function () {
+    it('returns empty string when string is null in evaluateInterpolationsInString', function () {
         $context = mock(CompilerContext::class);
 
         $result = $this->accessor->callMethod('evaluateInterpolationsInString', [null, $context]);
 
-        expect($result)->toBeNull();
+        expect($result)->toBe('');
     });
 
     it('sets selectorString to null when selector is not SelectorNode and calls resolveSelector with null', function () {
-        $node = new RuleNode(
-            mock(AstNode::class), // dummy selector
-            [], // declarations
-            [], // nested
-            0, // line
-        );
-        $node->properties['selector'] = 'not a SelectorNode'; // Non-SelectorNode value
+        $selectorNode = mock(AstNode::class);
+        $selectorNode->type = NodeType::UNKNOWN;
+        $node = new RuleNode($selectorNode, [], [], 0);
 
         $nestingHandler = mock(NestingHandler::class);
         $nestingHandler->shouldReceive('resolveSelector')

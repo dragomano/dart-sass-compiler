@@ -83,5 +83,45 @@ describe('DeclarationCompiler', function () {
 
             expect($result)->toBe('');
         });
+
+        it('adds !important when value has important flag', function () {
+            $value = new IdentifierNode('red', 1);
+            $value->important = true;
+
+            $declaration    = ['color' => $value];
+            $declarations   = [$declaration];
+            $nestingLevel   = 0;
+            $parentSelector = '';
+
+            $this->resultFormatter
+                ->shouldReceive('format')
+                ->once()
+                ->with($value)
+                ->andReturn('red');
+
+            $this->positionTracker
+                ->shouldReceive('getCurrentPosition')
+                ->once()
+                ->andReturn(['line' => 1, 'column' => 0]);
+
+            $this->positionTracker
+                ->shouldReceive('updatePosition')
+                ->once()
+                ->with("color: red !important;\n");
+
+            $compileAst = fn() => 'should not be called';
+            $expression = fn($val) => $val;
+
+            $result = $this->declarationCompiler->compile(
+                $declarations,
+                $nestingLevel,
+                $parentSelector,
+                $this->context,
+                $compileAst,
+                $expression
+            );
+
+            expect($result)->toBe("color: red !important;\n");
+        });
     });
 });

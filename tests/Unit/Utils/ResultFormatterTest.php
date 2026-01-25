@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use DartSass\Parsers\Nodes\AtRuleNode;
 use DartSass\Parsers\Nodes\IdentifierNode;
+use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Parsers\Nodes\OperationNode;
 use DartSass\Parsers\Nodes\VariableNode;
 use DartSass\Utils\LazyValue;
@@ -354,7 +355,7 @@ describe('ResultFormatter', function () {
 
             $result = $this->reflectionAccessor->callMethod('formatAstNode', [$atRule]);
 
-            expect($result)->toBe('[at-rule]');
+            expect($result)->toBe('[' . NodeType::AT_RULE->value . ']');
         });
     });
 });

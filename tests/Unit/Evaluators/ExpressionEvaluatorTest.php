@@ -4,12 +4,22 @@ declare(strict_types=1);
 
 use DartSass\Compilers\CompilerContext;
 use DartSass\Evaluators\ExpressionEvaluator;
+use DartSass\Evaluators\InterpolationEvaluator;
 use DartSass\Exceptions\CompilationException;
 use DartSass\Handlers\FunctionHandler;
 use DartSass\Handlers\ModuleHandler;
 use DartSass\Handlers\VariableHandler;
 use DartSass\Parsers\Nodes\AstNode;
+use DartSass\Parsers\Nodes\FunctionNode;
+use DartSass\Parsers\Nodes\IdentifierNode;
 use DartSass\Parsers\Nodes\ListNode;
+use DartSass\Parsers\Nodes\NumberNode;
+use DartSass\Parsers\Nodes\OperationNode;
+use DartSass\Parsers\Nodes\OperatorNode;
+use DartSass\Parsers\Nodes\PropertyAccessNode;
+use DartSass\Parsers\Nodes\SelectorNode;
+use DartSass\Parsers\Nodes\StringNode;
+use DartSass\Parsers\Nodes\UnaryNode;
 use DartSass\Parsers\Nodes\VariableNode;
 use DartSass\Values\SassList;
 use Tests\ReflectionAccessor;
@@ -21,6 +31,8 @@ describe('ExpressionEvaluator', function () {
         $this->accessor  = new ReflectionAccessor($this->evaluator);
 
         $this->context->expressionEvaluator = $this->evaluator;
+        $this->context->interpolationEvaluator = mock(InterpolationEvaluator::class);
+        $this->context->interpolationEvaluator->shouldReceive('evaluate')->andReturnUsing(fn($value) => $value);
     });
 
     describe('supports()', function () {
@@ -59,8 +71,8 @@ describe('ExpressionEvaluator', function () {
 
     describe('evaluate()', function () {
         it('handles VariableNode property and calls getProperty', function () {
-            $propertyNode = mock(VariableNode::class);
-            $propertyNode->properties = ['name' => '$prop'];
+            $propertyNode  = new VariableNode('$prop');
+            $namespaceNode = new IdentifierNode('module');
 
             $moduleHandler = mock(ModuleHandler::class);
             $moduleHandler->shouldReceive('getProperty')
@@ -69,32 +81,7 @@ describe('ExpressionEvaluator', function () {
 
             $this->context->moduleHandler = $moduleHandler;
 
-            $node = mock(AstNode::class);
-            $node->type = 'property_access';
-            $node->properties = [
-                'namespace' => 'module',
-                'property' => $propertyNode,
-            ];
-
-            $result = $this->evaluator->evaluate($node);
-
-            expect($result)->toBe('value');
-        });
-
-        it('handles string property and calls getProperty', function () {
-            $moduleHandler = mock(ModuleHandler::class);
-            $moduleHandler->shouldReceive('getProperty')
-                ->with('module', '$prop', Mockery::type('callable'))
-                ->andReturn('value');
-
-            $this->context->moduleHandler = $moduleHandler;
-
-            $node = mock(AstNode::class);
-            $node->type = 'property_access';
-            $node->properties = [
-                'namespace' => 'module',
-                'property' => '$prop',
-            ];
+            $node = new PropertyAccessNode($namespaceNode, $propertyNode);
 
             $result = $this->evaluator->evaluate($node);
 
@@ -102,9 +89,8 @@ describe('ExpressionEvaluator', function () {
         });
 
         it('handles other property node and calls getProperty', function () {
-            $propertyNode = mock(AstNode::class);
-            $propertyNode->type = 'identifier';
-            $propertyNode->properties = ['value' => '$prop'];
+            $propertyNode  = new IdentifierNode('$prop');
+            $namespaceNode = new IdentifierNode('module');
 
             $moduleHandler = mock(ModuleHandler::class);
             $moduleHandler->shouldReceive('getProperty')
@@ -113,12 +99,7 @@ describe('ExpressionEvaluator', function () {
 
             $this->context->moduleHandler = $moduleHandler;
 
-            $node = mock(AstNode::class);
-            $node->type = 'property_access';
-            $node->properties = [
-                'namespace' => 'module',
-                'property' => $propertyNode,
-            ];
+            $node = new PropertyAccessNode($namespaceNode, $propertyNode);
 
             $result = $this->evaluator->evaluate($node);
 
@@ -126,16 +107,10 @@ describe('ExpressionEvaluator', function () {
         });
 
         it('returns namespace when namespace is string not starting with $', function () {
-            $propertyNode = mock(AstNode::class);
-            $propertyNode->type = 'identifier';
-            $propertyNode->properties = ['value' => 'prop'];
+            $propertyNode  = new IdentifierNode('prop');
+            $namespaceNode = new IdentifierNode('namespace');
 
-            $node = mock(AstNode::class);
-            $node->type = 'property_access';
-            $node->properties = [
-                'namespace' => 'namespace',
-                'property' => $propertyNode,
-            ];
+            $node = new PropertyAccessNode($namespaceNode, $propertyNode);
 
             $result = $this->evaluator->evaluate($node);
 
@@ -143,14 +118,9 @@ describe('ExpressionEvaluator', function () {
         });
 
         it('handles unary + with SassNumber without unit', function () {
-            $operand = 5.0;
+            $operand = new NumberNode(5.0);
 
-            $node = mock(AstNode::class);
-            $node->type = 'unary';
-            $node->properties = [
-                'operator' => '+',
-                'operand'  => $operand,
-            ];
+            $node = new UnaryNode('+', $operand);
 
             $result = $this->evaluator->evaluate($node);
 
@@ -158,14 +128,9 @@ describe('ExpressionEvaluator', function () {
         });
 
         it('handles unary + with SassNumber with unit', function () {
-            $operand = ['value' => 5.0, 'unit' => 'px'];
+            $operand = new NumberNode(5.0, 'px');
 
-            $node = mock(AstNode::class);
-            $node->type = 'unary';
-            $node->properties = [
-                'operator' => '+',
-                'operand'  => $operand,
-            ];
+            $node = new UnaryNode('+', $operand);
 
             $result = $this->evaluator->evaluate($node);
 
@@ -173,14 +138,9 @@ describe('ExpressionEvaluator', function () {
         });
 
         it('handles unary not with SassNumber', function () {
-            $operand = 5.0;
+            $operand = new NumberNode(5.0);
 
-            $node = mock(AstNode::class);
-            $node->type = 'unary';
-            $node->properties = [
-                'operator' => 'not',
-                'operand'  => $operand,
-            ];
+            $node = new UnaryNode('not', $operand);
 
             $result = $this->evaluator->evaluate($node);
 
@@ -188,14 +148,9 @@ describe('ExpressionEvaluator', function () {
         });
 
         it('handles unary not with other operand', function () {
-            $operand = 'string';
+            $operand = new StringNode('string');
 
-            $node = mock(AstNode::class);
-            $node->type = 'unary';
-            $node->properties = [
-                'operator' => 'not',
-                'operand'  => $operand,
-            ];
+            $node = new UnaryNode('not', $operand);
 
             $result = $this->evaluator->evaluate($node);
 
@@ -203,9 +158,8 @@ describe('ExpressionEvaluator', function () {
         });
 
         it('throws exception when namespace is string starting with $', function () {
-            $propertyNode = mock(AstNode::class);
-            $propertyNode->type = 'identifier';
-            $propertyNode->properties = ['value' => 'prop'];
+            $propertyNode  = new IdentifierNode('prop');
+            $namespaceNode = new IdentifierNode('$namespace');
 
             $variableHandler = mock(VariableHandler::class);
             $variableHandler->shouldReceive('get')
@@ -214,31 +168,61 @@ describe('ExpressionEvaluator', function () {
 
             $this->context->variableHandler = $variableHandler;
 
-            $node = mock(AstNode::class);
-            $node->type = 'property_access';
-            $node->properties = [
-                'namespace' => '$namespace',
-                'property' => $propertyNode,
-            ];
+            $node = new PropertyAccessNode($namespaceNode, $propertyNode);
 
             expect(fn() => $this->evaluator->evaluate($node))
                 ->toThrow(CompilationException::class);
         });
 
         it('throws exception when namespace is not string', function () {
-            $propertyNode = mock(AstNode::class);
-            $propertyNode->type = 'identifier';
-            $propertyNode->properties = ['value' => 'prop'];
+            $propertyNode  = new IdentifierNode('prop');
+            $namespaceNode = new NumberNode(123.0);
 
-            $node = mock(AstNode::class);
-            $node->type = 'property_access';
-            $node->properties = [
-                'namespace' => 123,
-                'property'  => $propertyNode,
-            ];
+            $node = new PropertyAccessNode($namespaceNode, $propertyNode);
 
             expect(fn() => $this->evaluator->evaluate($node))
                 ->toThrow(CompilationException::class);
+        });
+
+        it('handles SelectorNode by returning its value', function () {
+            $node = new SelectorNode('.my-class');
+
+            $result = $this->evaluator->evaluate($node);
+
+            expect($result)->toBe('.my-class');
+        });
+
+        it('handles OperatorNode by returning its value', function () {
+            $node = new OperatorNode('+');
+
+            $result = $this->evaluator->evaluate($node);
+
+            expect($result)->toBe('+');
+        });
+    });
+
+    describe('evaluateFunctionExpression()', function () {
+        it('calls evaluateFunctionWithSlashSeparator when hasSlashSeparator returns true', function () {
+            $functionHandler = mock(FunctionHandler::class);
+            $functionHandler->shouldReceive('call')
+                ->with('hsl', [120, ['value' => 50.0, 'unit' => '%'], ['value' => 50.0, 'unit' => '%'], 0.5])
+                ->andReturn('hsl(120 50% 50% / 0.5)');
+
+            $this->context->functionHandler = $functionHandler;
+
+            $leftNode = new NumberNode(50);
+            $leftNode->unit = '%';
+            $rightNode = new NumberNode(0.5);
+
+            $operationNode = new OperationNode($leftNode, '/', $rightNode, 0);
+
+            $args = [120, '50%', $operationNode];
+
+            $expr = new FunctionNode('hsl', $args);
+
+            $result = $this->accessor->callMethod('evaluateFunctionExpression', [$expr]);
+
+            expect($result)->toBe('hsl(120 50% 50% / 0.5)');
         });
     });
 
@@ -303,7 +287,7 @@ describe('ExpressionEvaluator', function () {
         });
 
         it('handles ListNode', function () {
-            $listNode = new ListNode(['node1', 'node2'], 0, 'comma');
+            $listNode = new ListNode(['node1', 'node2']);
             $processedArgs = ['existing'];
 
             $result = $this->accessor->callMethod('appendSpreadValues', [$processedArgs, $listNode]);
@@ -481,38 +465,9 @@ describe('ExpressionEvaluator', function () {
         });
     });
 
-    describe('evaluateNumberExpression()', function () {
-        it('extracts value from array when value is array', function () {
-            $node = mock(AstNode::class);
-            $node->type = 'number';
-            $node->properties = [
-                'value' => ['value' => 123.0, 'unit' => 'px'],
-                'unit' => 'px',
-            ];
-
-            $result = $this->accessor->callMethod('evaluateNumberExpression', [$node]);
-
-            expect($result)->toEqual(['value' => 123.0, 'unit' => 'px']);
-        });
-
-        it('parses string with number and unit when unit is empty', function () {
-            $node = mock(AstNode::class);
-            $node->type = 'number';
-            $node->properties = [
-                'value' => '123px',
-                'unit' => '',
-            ];
-
-            $result = $this->accessor->callMethod('evaluateNumberExpression', [$node]);
-
-            expect($result)->toEqual(['value' => 123.0, 'unit' => 'px']);
-        });
-    });
-
     describe('evaluateIdentifierExpression()', function () {
         it('evaluates "true" to boolean true', function () {
-            $node = mock(AstNode::class);
-            $node->properties = ['value' => 'true'];
+            $node = new IdentifierNode('true');
 
             $result = $this->accessor->callMethod('evaluateIdentifierExpression', [$node]);
 
@@ -520,8 +475,7 @@ describe('ExpressionEvaluator', function () {
         });
 
         it('evaluates "false" to boolean false', function () {
-            $node = mock(AstNode::class);
-            $node->properties = ['value' => 'false'];
+            $node = new IdentifierNode('false');
 
             $result = $this->accessor->callMethod('evaluateIdentifierExpression', [$node]);
 
@@ -529,8 +483,7 @@ describe('ExpressionEvaluator', function () {
         });
 
         it('evaluates "null" to null', function () {
-            $node = mock(AstNode::class);
-            $node->properties = ['value' => 'null'];
+            $node = new IdentifierNode('null');
 
             $result = $this->accessor->callMethod('evaluateIdentifierExpression', [$node]);
 
@@ -538,21 +491,11 @@ describe('ExpressionEvaluator', function () {
         });
 
         it('evaluates other string to itself', function () {
-            $node = mock(AstNode::class);
-            $node->properties = ['value' => 'someValue'];
+            $node = new IdentifierNode('someValue');
 
             $result = $this->accessor->callMethod('evaluateIdentifierExpression', [$node]);
 
             expect($result)->toBe('someValue');
-        });
-
-        it('evaluates non-string value to itself', function () {
-            $node = mock(AstNode::class);
-            $node->properties = ['value' => 42];
-
-            $result = $this->accessor->callMethod('evaluateIdentifierExpression', [$node]);
-
-            expect($result)->toBe(42);
         });
     });
 
@@ -603,13 +546,11 @@ describe('ExpressionEvaluator', function () {
 
             $this->context->functionHandler = $functionHandler;
 
-            $operationNode = mock(AstNode::class);
-            $operationNode->type = 'operation';
-            $operationNode->properties = [
-                'operator' => '/',
-                'left' => '50%',
-                'right' => 0.5,
-            ];
+            $leftNode = new NumberNode(50);
+            $leftNode->unit = '%';
+            $rightNode = new NumberNode(0.5);
+
+            $operationNode = new OperationNode($leftNode, '/', $rightNode, 0);
 
             $args = [120, '50%', $operationNode];
 

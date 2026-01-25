@@ -40,8 +40,8 @@
     "symfony/var-dumper": "^7.4|^8.0"
   },
   "scripts": {
-    "fix": "./vendor/bin/php-cs-fixer fix",
-    "test-fix": "./vendor/bin/php-cs-fixer check",
+    "fix": "vendor/bin/php-cs-fixer fix",
+    "test-fix": "vendor/bin/php-cs-fixer check",
     "rector": "vendor/bin/rector process --clear-cache",
     "check": "vendor/bin/rector process --dry-run --clear-cache",
     "benchmark": "php benchmark.php",

@@ -11,6 +11,7 @@ use DartSass\Handlers\FunctionRouter;
 use DartSass\Handlers\ModuleHandler;
 use DartSass\Handlers\ModuleRegistry;
 use DartSass\Handlers\VariableHandler;
+use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Parsers\Nodes\NumberNode;
 use DartSass\Parsers\Nodes\OperationNode;
 use DartSass\Parsers\Nodes\VariableNode;
@@ -178,15 +179,13 @@ describe('FunctionHandler', function () {
                 'double',
                 ['$value'],
                 [(object) [
-                    'type' => 'return',
-                    'properties' => [
-                        'value' => new OperationNode(
-                            new VariableNode('value', 1),
-                            '*',
-                            new NumberNode(2, 1),
-                            1
-                        ),
-                    ],
+                    'type'  => NodeType::RETURN,
+                    'value' => new OperationNode(
+                        new VariableNode('value', 1),
+                        '*',
+                        new NumberNode(2, line: 1),
+                        1
+                    ),
                 ]],
                 $variableHandler
             );
@@ -209,7 +208,7 @@ describe('FunctionHandler', function () {
             $this->functionHandler->defineUserFunction(
                 'noReturn',
                 [],
-                [(object) ['type' => 'other']],
+                [(object) ['type' => NodeType::UNKNOWN]],
                 $variableHandler
             );
 
@@ -261,7 +260,7 @@ describe('FunctionHandler', function () {
             $this->functionHandler->defineUserFunction(
                 'testFunc',
                 ['$param'],
-                [['type' => 'return', 'properties' => ['value' => '$param']]],
+                [['type' => NodeType::RETURN, 'value' => '$param']],
                 $variableHandler
             );
 
