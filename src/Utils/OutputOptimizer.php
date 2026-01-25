@@ -5,15 +5,21 @@ declare(strict_types=1);
 namespace DartSass\Utils;
 
 use function array_key_last;
+use function array_keys;
+use function array_values;
+use function count;
 use function explode;
 use function implode;
 use function max;
 use function preg_match;
 use function preg_replace;
 use function preg_replace_callback;
+use function rtrim;
 use function str_contains;
 use function str_ends_with;
 use function str_repeat;
+use function str_replace;
+use function str_starts_with;
 use function strtolower;
 use function substr;
 use function trim;
@@ -61,73 +67,106 @@ readonly class OutputOptimizer
 
     public function optimize(string $css): string
     {
-        if (preg_match('/[^\x00-\x7F]/u', $css)) {
-            $css = '@charset "UTF-8";' . "\n" . $css;
-        }
-
+        $css = $this->addCharsetIfNeeded($css);
         $css = $this->removeRedundantProperties($css);
-
-        if ($this->style === 'expanded') {
-            $css = $this->formatLongSelectors($css);
-
-            $lines = explode("\n", $css);
-            $depth = 0;
-
-            foreach ($lines as &$line) {
-                $trimmed = trim($line);
-
-                if ($trimmed === '') {
-                    $line = '';
-
-                    continue;
-                }
-
-                if ($trimmed === '}') {
-                    $depth = max(0, $depth - 1);
-                    $line = str_repeat('  ', $depth) . '}';
-
-                    continue;
-                }
-
-                $line = str_repeat('  ', $depth) . $trimmed;
-
-                if (str_ends_with($trimmed, '{')) {
-                    $depth++;
-                }
-            }
-
-            $css = implode("\n", $lines);
-        }
-
-        if ($this->style === 'compressed') {
-            // Remove /* comments */ but preserve sourceMappingURL and /*! comments
-            $css = preg_replace('/\/\*(?!#?\s*sourceMappingURL|\s*!).*?\*\//s', '', $css);
-
-            // All whitespace → single space
-            $css = preg_replace('/\s+/', ' ', $css);
-
-            // Remove spaces around { } : ; ,
-            $css = preg_replace('/\s*([{}:;,])\s*/', '$1', $css);
-
-            // ,selector{ → ,selector{
-            $css = preg_replace('/,([^}]*){/', ',$1{', $css);
-
-            // ;;;} → }
-            $css = preg_replace('/;+\s*}/', '}', $css);
-
-            // Trim start/end spaces
-            $css = trim($css);
-        }
-
-        // Clean up multiple consecutive commas
+        $css = $this->applyStyleFormat($css);
         $css = preg_replace('/,+/', ',', $css);
 
         return $this->optimizeZeroUnits($css);
     }
 
+    private function addCharsetIfNeeded(string $css): string
+    {
+        if (preg_match('/[^\x00-\x7F]/u', $css)) {
+            return '@charset "UTF-8";' . "\n" . $css;
+        }
+
+        return $css;
+    }
+
+    private function applyStyleFormat(string $css): string
+    {
+        if ($this->style === 'expanded') {
+            return $this->formatExpanded($css);
+        }
+
+        if ($this->style === 'compressed') {
+            return $this->formatCompressed($css);
+        }
+
+        return $css;
+    }
+
+    private function formatExpanded(string $css): string
+    {
+        $css = $this->formatLongSelectors($css);
+
+        $lines = explode("\n", $css);
+        $depth = 0;
+
+        foreach ($lines as &$line) {
+            $trimmed = trim($line);
+
+            if ($trimmed === '') {
+                $line = '';
+
+                continue;
+            }
+
+            if ($trimmed === '}') {
+                $depth = max(0, $depth - 1);
+                $line  = str_repeat('  ', $depth) . '}';
+
+                continue;
+            }
+
+            $line = str_repeat('  ', $depth) . $trimmed;
+
+            if (str_ends_with($trimmed, '{')) {
+                $depth++;
+            }
+        }
+
+        return implode("\n", $lines);
+    }
+
+    private function formatCompressed(string $css): string
+    {
+        $css = preg_replace('/\/\*(?!#?\s*sourceMappingURL|\s*!).*?\*\//s', '', $css);
+        $css = preg_replace('/\s+/', ' ', $css);
+        $css = preg_replace('/\s*([{}:;,])\s*/', '$1', $css);
+        $css = preg_replace('/,([^}]*){/', ',$1{', $css);
+        $css = preg_replace('/;+\s*}/', '}', $css);
+
+        return trim($css);
+    }
+
     private function optimizeZeroUnits(string $css): string
     {
-        // More flexible regex to handle properties with spaces and special characters
+        $comments = [];
+
+        $css = $this->extractComments($css, $comments);
+        $css = $this->replaceZeroUnits($css);
+
+        return str_replace(array_keys($comments), array_values($comments), $css);
+    }
+
+    private function extractComments(string $css, array &$comments): string
+    {
+        return preg_replace_callback(
+            '/\/\*.*?\*\//s',
+            function ($match) use (&$comments) {
+                $placeholder = '___COMMENT_' . count($comments) . '___';
+                $comments[$placeholder] = $match[0];
+
+                return $placeholder;
+            },
+            $css
+        );
+    }
+
+    private function replaceZeroUnits(string $css): string
+    {
         return preg_replace_callback(
             '/([a-zA-Z-]+)(\s*:\s*)([^;{}]+)(?=[;}])/m',
             function ($matches) {
@@ -156,10 +195,7 @@ readonly class OutputOptimizer
             $trimmed = trim($line);
 
             if (str_ends_with($trimmed, '{')) {
-                if ($inBlock) {
-                    $buffer = [];
-                }
-
+                $resultLines = $this->flushBuffer($buffer, $resultLines, $inBlock);
                 $resultLines[] = $line;
                 $inBlock = true;
 
@@ -167,18 +203,9 @@ readonly class OutputOptimizer
             }
 
             if ($trimmed === '}') {
-                if ($inBlock) {
-                    $optimizedBuffer = $this->optimizeBuffer($buffer);
-
-                    foreach ($optimizedBuffer as $bufLine) {
-                        $resultLines[] = $bufLine;
-                    }
-
-                    $buffer = [];
-                    $inBlock = false;
-                }
-
+                $resultLines = $this->flushBuffer($buffer, $resultLines, $inBlock);
                 $resultLines[] = $line;
+                $inBlock = false;
 
                 continue;
             }
@@ -193,26 +220,50 @@ readonly class OutputOptimizer
         return implode("\n", $resultLines);
     }
 
+    private function flushBuffer(array &$buffer, array $resultLines, bool $inBlock): array
+    {
+        if ($inBlock && ! empty($buffer)) {
+            $optimizedBuffer = $this->optimizeBuffer($buffer);
+
+            foreach ($optimizedBuffer as $bufLine) {
+                $resultLines[] = $bufLine;
+            }
+
+            $buffer = [];
+        }
+
+        return $resultLines;
+    }
+
     private function optimizeBuffer(array $buffer): array
     {
-        $final   = [];
-        $propMap = [];
+        $final = $propMap = [];
 
         foreach ($buffer as $line) {
             $trimmed = trim($line);
-            $parts   = explode(':', $trimmed, 2);
-            $prop    = trim($parts[0]);
 
-            if (isset(self::UNSAFE_PROPERTIES[$prop])) {
+            if (str_starts_with($trimmed, '/*')) {
                 $final[] = $line;
-            } else {
-                if (isset($propMap[$prop])) {
-                    unset($final[$propMap[$prop]]);
+
+                continue;
+            }
+
+            if (str_contains($trimmed, ':') && ! str_ends_with($trimmed, '{')) {
+                $parts = explode(':', $trimmed, 2);
+                $prop  = trim($parts[0]);
+
+                if (isset(self::UNSAFE_PROPERTIES[$prop])) {
+                    $final[] = $line;
+                } else {
+                    if (isset($propMap[$prop])) {
+                        $final[$propMap[$prop]] = $line;
+                    } else {
+                        $final[] = $line;
+                        $propMap[$prop] = array_key_last($final);
+                    }
                 }
-
+            } else {
                 $final[] = $line;
-                end($final);
-                $propMap[$prop] = array_key_last($final);
             }
         }
 
@@ -227,36 +278,43 @@ readonly class OutputOptimizer
         foreach ($lines as $line) {
             $trimmed = trim($line);
 
-            if (str_ends_with($trimmed, '{')) {
-                $selector = rtrim(substr($trimmed, 0, -1));
-
-                if (str_starts_with($selector, '@')) {
-                    $result[] = $line;
-                } elseif (str_contains($selector, ',')) {
-                    preg_match('/^(\s*)/', $line, $matches);
-
-                    $indent = $matches[1] ?? '';
-                    $parts  = explode(',', $selector);
-
-                    $formatted = [];
-                    foreach ($parts as $i => $part) {
-                        $part = trim($part);
-                        if ($i === count($parts) - 1) {
-                            $formatted[] = $indent . $part . ' {';
-                        } else {
-                            $formatted[] = $indent . $part . ',';
-                        }
-                    }
-
-                    $result[] = implode("\n", $formatted);
-                } else {
-                    $result[] = $line;
-                }
-            } else {
+            if (! str_ends_with($trimmed, '{')) {
                 $result[] = $line;
+
+                continue;
             }
+
+            $selector = rtrim(substr($trimmed, 0, -1));
+
+            if (str_starts_with($selector, '@') || ! str_contains($selector, ',')) {
+                $result[] = $line;
+
+                continue;
+            }
+
+            $result[] = $this->splitSelector($line, $selector);
         }
 
         return implode("\n", $result);
+    }
+
+    private function splitSelector(string $line, string $selector): string
+    {
+        preg_match('/^(\s*)/', $line, $matches);
+
+        $indent = $matches[1] ?? '';
+        $parts  = explode(',', $selector);
+
+        $formatted = [];
+        foreach ($parts as $i => $part) {
+            $part = trim($part);
+            if ($i === count($parts) - 1) {
+                $formatted[] = $indent . $part . ' {';
+            } else {
+                $formatted[] = $indent . $part . ',';
+            }
+        }
+
+        return implode("\n", $formatted);
     }
 }

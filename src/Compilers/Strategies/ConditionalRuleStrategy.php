@@ -35,8 +35,8 @@ abstract readonly class ConditionalRuleStrategy implements RuleCompilationStrate
     public function compile(
         ContainerNode|MediaNode|AstNode $node,
         CompilerContext $context,
-        int $currentNestingLevel,
         string $parentSelector,
+        int $currentNestingLevel,
         ...$params
     ): string {
         $evaluateInterpolations = $params[0] ?? null;
@@ -59,11 +59,11 @@ abstract readonly class ConditionalRuleStrategy implements RuleCompilationStrate
 
         $declarationsCss = '';
         if (! empty($bodyDeclarations) && ! empty($parentSelector)) {
-            $declarationsCss = $compileDeclarations($bodyDeclarations, $bodyNestingLevel + 1, $parentSelector);
+            $declarationsCss = $compileDeclarations($bodyDeclarations, $parentSelector, $bodyNestingLevel + 1);
             $indent          = str_repeat('  ', $bodyNestingLevel);
             $declarationsCss = $indent . $parentSelector . " {\n" . $declarationsCss . $indent . "}\n";
         } elseif (! empty($bodyDeclarations)) {
-            $declarationsCss = $compileDeclarations($bodyDeclarations, $bodyNestingLevel, $parentSelector);
+            $declarationsCss = $compileDeclarations($bodyDeclarations, $parentSelector, $bodyNestingLevel);
         }
 
         if (! empty($bodyNested)) {

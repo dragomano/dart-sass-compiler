@@ -61,9 +61,7 @@ class CompilerEngine implements CompilerEngineInterface
         $ast = $parser->parse();
 
         $compiled = $this->compileAst($ast);
-
         $compiled = $this->context->extendHandler->applyExtends($compiled);
-
         $compiled = $this->generateSourceMapIfNeeded($compiled, $string);
 
         return $this->context->outputOptimizer->optimize($compiled);
@@ -128,7 +126,7 @@ class CompilerEngine implements CompilerEngineInterface
 
         foreach ($ast as $node) {
             if (is_array($node)) {
-                $css .= $this->compileDeclarations([$node], $nestingLevel, $parentSelector);
+                $css .= $this->compileDeclarations([$node], $parentSelector, $nestingLevel);
 
                 continue;
             }
@@ -184,19 +182,19 @@ class CompilerEngine implements CompilerEngineInterface
         return $css;
     }
 
-    public function compileDeclarations(array $declarations, int $nestingLevel, string $parentSelector = ''): string
+    public function compileDeclarations(array $declarations, string $parentSelector = '', int $nestingLevel = 0): string
     {
         return $this->context->declarationCompiler->compile(
             $declarations,
-            $nestingLevel,
             $parentSelector,
+            $nestingLevel,
             $this->context,
             $this->compileAst(...),
             $this->evaluateExpression(...)
         );
     }
 
-    public function formatRule(string $selector, string $content, int $nestingLevel): string
+    public function formatRule(string $content, string $selector, int $nestingLevel): string
     {
         $indent  = $this->getIndent($nestingLevel);
         $content = rtrim($content, "\n");
@@ -244,7 +242,7 @@ class CompilerEngine implements CompilerEngineInterface
             NodeType::IF,
             NodeType::EACH,
             NodeType::FOR,
-            NodeType::WHILE => $this->compileFlowControlNode($node, $nestingLevel),
+            NodeType::WHILE => $this->compileFlowControlNode($node, $parentSelector, $nestingLevel),
             NodeType::MEDIA,
             NodeType::CONTAINER,
             NodeType::KEYFRAMES,
@@ -254,10 +252,11 @@ class CompilerEngine implements CompilerEngineInterface
         };
     }
 
-    private function compileFlowControlNode($node, int $nestingLevel): string
+    private function compileFlowControlNode($node, string $parentSelector, int $nestingLevel): string
     {
         return $this->context->flowControlCompiler->compile(
             $node,
+            $parentSelector,
             $nestingLevel,
             $this->evaluateExpression(...),
             $this->compileAst(...)
@@ -268,8 +267,8 @@ class CompilerEngine implements CompilerEngineInterface
     {
         return $this->context->atRuleCompiler->compile(
             $node,
-            $nestingLevel,
             $parentSelector,
+            $nestingLevel,
             $this->evaluateExpression(...),
             $this->compileDeclarations(...),
             $this->compileAst(...),
@@ -289,14 +288,13 @@ class CompilerEngine implements CompilerEngineInterface
 
     private function compileImportAst(string $path, string $parentSelector, int $nestingLevel): string
     {
-        $result = $this->context->moduleHandler->loadModule($path);
+        $result     = $this->context->moduleHandler->loadModule($path);
+        $moduleVars = $this->context->moduleHandler->getVariables($result['namespace']);
 
-        $namespace = $result['namespace'];
-
-        $moduleVars = $this->context->moduleHandler->getVariables($namespace);
         foreach ($moduleVars as $name => $varNode) {
             if ($varNode instanceof VariableDeclarationNode) {
                 $value = $this->evaluateExpression($varNode->value);
+
                 $this->context->variableHandler->define($name, $value);
             }
         }

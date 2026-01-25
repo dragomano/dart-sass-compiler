@@ -13,8 +13,8 @@ readonly class AtRuleCompiler
 
     public function compile(
         AstNode $node,
-        int $nestingLevel,
         string $parentSelector,
+        int $nestingLevel,
         Closure $expression,
         Closure $compileDeclarations,
         Closure $compileAst,
@@ -23,8 +23,8 @@ readonly class AtRuleCompiler
         $css = $this->context->ruleCompiler->compileRule(
             $node,
             $this->context,
-            $nestingLevel,
             $parentSelector,
+            $nestingLevel,
             $evaluateInterpolationsInString,
             $compileDeclarations,
             $compileAst,

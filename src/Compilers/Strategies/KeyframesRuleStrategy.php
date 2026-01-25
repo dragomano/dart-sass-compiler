@@ -25,8 +25,8 @@ readonly class KeyframesRuleStrategy implements RuleCompilationStrategy
     public function compile(
         KeyframesNode|AstNode $node,
         CompilerContext $context,
-        int $currentNestingLevel,
         string $parentSelector,
+        int $currentNestingLevel,
         ...$params
     ): string {
         $expression = $params[3] ?? $params[0] ?? null;

@@ -1656,22 +1656,42 @@ class Parser implements TokenAwareParserInterface
             return null;
         }
 
+        $startPosition = $this->getTokenIndex();
+
         switch ($token->type) {
             case 'number':
                 $this->advanceToken();
 
                 return $this->parseNumber($token);
+
             case 'string':
                 $this->advanceToken();
 
                 return new StringNode(trim($token->value, "'\""), $token->line);
+
             case 'identifier':
                 $this->advanceToken();
 
                 return new IdentifierNode($token->value, $token->line);
-            default:
-                // Fall back to regular expression parsing for complex values
+
+            case 'hex_color':
+                $this->advanceToken();
+
+                return new HexColorNode($token->value, $token->line);
+
+            case 'paren_open':
                 return $this->parseExpression();
+
+            default:
+                $value = $this->parseExpression();
+
+                if ($value instanceof ListNode) {
+                    $this->setTokenIndex($startPosition);
+
+                    return null;
+                }
+
+                return $value;
         }
     }
 
@@ -1693,6 +1713,7 @@ class Parser implements TokenAwareParserInterface
             }
 
             $key = $keyToken->value;
+
             $this->advanceToken();
 
             if (! $this->peek('colon')) {
@@ -1703,7 +1724,43 @@ class Parser implements TokenAwareParserInterface
 
             $this->consume('colon');
 
+            $valueStartPos = $this->getTokenIndex();
+
             $value = $this->parseMapValue();
+
+            if ($value === null) {
+                $this->setTokenIndex($position);
+
+                return null;
+            }
+
+            if ($value instanceof ListNode || $value instanceof CssPropertyNode) {
+                $this->setTokenIndex($valueStartPos);
+
+                $parenLevel = 0;
+
+                while (
+                    $this->stream->current()
+                    && (! $this->peek('operator') || $this->stream->current()?->value !== ',' || $parenLevel > 0)
+                ) {
+                    if ($this->peek('paren_open')) {
+                        $parenLevel++;
+                    } elseif ($this->peek('paren_close')) {
+                        $parenLevel--;
+                    }
+
+                    if ($parenLevel === 0 && $this->peek('operator') && $this->stream->current()?->value === ',') {
+                        break;
+                    }
+
+                    $this->advanceToken();
+                }
+
+                $this->setTokenIndex($valueStartPos);
+
+                $value = $this->parseExpression();
+            }
+
             $pairs[] = [$key, $value];
 
             if ($this->peek('operator') && $this->stream->current()?->value === ',') {
