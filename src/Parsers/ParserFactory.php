@@ -6,6 +6,8 @@ namespace DartSass\Parsers;
 
 use DartSass\Normalizers\NoOpNormalizer;
 use DartSass\Normalizers\SassNormalizer;
+use DartSass\Parsers\Tokens\Lexer;
+use DartSass\Parsers\Tokens\LexerInterface;
 
 final class ParserFactory
 {

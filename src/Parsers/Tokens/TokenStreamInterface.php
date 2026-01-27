@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Parsers;
+namespace DartSass\Parsers\Tokens;
 
 interface TokenStreamInterface
 {

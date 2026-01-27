@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace DartSass\Parsers\Rules;
 
 use DartSass\Parsers\Nodes\AstNode;
-use DartSass\Parsers\Token;
-use DartSass\Parsers\TokenAwareParserInterface;
+use DartSass\Parsers\Tokens\Token;
+use DartSass\Parsers\Tokens\TokenAwareParserInterface;
 
 abstract class AtRuleParser
 {
