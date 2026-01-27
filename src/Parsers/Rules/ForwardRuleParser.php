@@ -35,7 +35,8 @@ class ForwardRuleParser extends AtRuleParser
 
         if ($this->peek('string')) {
             $pathToken = $this->consume('string');
-            $path = trim(trim($pathToken->value, '\'"'));
+
+            $path = trim(trim($pathToken->value, '"\''));
         } else {
             throw new SyntaxException(
                 'Expected string path for @forward',
@@ -49,9 +50,8 @@ class ForwardRuleParser extends AtRuleParser
         }
 
         $namespace = null;
-        $config    = [];
-        $hide      = [];
-        $show      = [];
+
+        $config = $hide = $show = [];
 
         while ($this->currentToken() && ! $this->peek('semicolon')) {
             if ($this->peek('identifier')) {
@@ -146,6 +146,7 @@ class ForwardRuleParser extends AtRuleParser
 
             if ($this->peek('variable')) {
                 $keyToken = $this->consume('variable');
+
                 $key = ltrim($keyToken->value, '$');
 
                 while ($this->currentToken() && $this->peek('whitespace')) {
@@ -167,6 +168,7 @@ class ForwardRuleParser extends AtRuleParser
                 }
 
                 $value = $this->consumeUntilCommaOrParenClose();
+
                 $config[$key] = trim($value);
 
                 while ($this->currentToken() && $this->peek('whitespace')) {
@@ -189,7 +191,6 @@ class ForwardRuleParser extends AtRuleParser
     private function parseVariableList(): array
     {
         $variables = [];
-
         $hasParens = $this->peek('paren_open');
 
         if ($hasParens) {
@@ -203,6 +204,7 @@ class ForwardRuleParser extends AtRuleParser
 
             if ($this->peek('variable')) {
                 $varToken = $this->consume('variable');
+
                 $variables[] = $varToken->value;
 
                 while ($this->currentToken() && $this->peek('whitespace')) {

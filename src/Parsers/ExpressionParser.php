@@ -187,15 +187,13 @@ class ExpressionParser extends AbstractParser
         $this->skipWhitespace();
 
         $token = $this->currentToken();
-        if ($token && (isset(self::UNARY_OPERATORS[$token->value]) || $token->type === 'unary_operator')) {
-            $operator = $token->value;
-            $line     = $token->line;
 
+        if ($token && (isset(self::UNARY_OPERATORS[$token->value]) || $token->type === 'unary_operator')) {
             $this->advanceToken();
 
             $operand = $this->parseBinaryExpression(5);
 
-            return new UnaryNode($operator, $operand, $line);
+            return new UnaryNode($token->value, $operand, $token->line);
         }
 
         $left = $this->parsePrimaryExpression();
@@ -289,35 +287,23 @@ class ExpressionParser extends AbstractParser
         $this->advanceToken();
 
         return match ($token->type) {
-            'number' => $this->parseNumber($token),
-            'identifier' => (function () use ($token) {
-                if ($this->peek('colon')) {
-                    $this->setTokenIndex($this->getTokenIndex() - 1);
-
-                    return $this->parseCssPropertyValue();
-                }
-
-                return new IdentifierNode($token->value, $token->line);
-            })(),
-            'hex_color' => new HexColorNode($token->value, $token->line),
-            'string' => new StringNode(trim($token->value, '"\''), $token->line),
-            'variable' => new VariableNode($token->value, $token->line),
+            'operator',
+            'asterisk',
+            'colon',
+            'semicolon'           => new OperatorNode($token->value, $token->line),
+            'hex_color'           => new HexColorNode($token->value, $token->line),
+            'string'              => new StringNode(trim($token->value, '"\''), $token->line),
+            'variable'            => new VariableNode($token->value, $token->line),
             'css_custom_property' => new CssCustomPropertyNode($token->value, $token->line),
-            'function' => $this->parseFunctionCall($token),
-            'url_function' => (function () use ($token) {
-                $fullContent = preg_replace('/^url\((.*)\)$/s', '$1', $token->value);
-                $fullContent = trim($fullContent);
-
-                $urlNode = new StringNode($fullContent, $token->line);
-
-                return new FunctionNode('url', [$urlNode], line: $token->line);
-            })(),
-            'paren_open' => $this->parseParenthesizedExpression($token),
-            'interpolation_open' => $this->parseInterpolation($token),
-            'attribute_selector' => $this->parseAttributeSelector($token),
-            'operator', 'asterisk', 'colon', 'semicolon' => new OperatorNode($token->value, $token->line),
-            'important_modifier' => new IdentifierNode('!important', $token->line),
-            'spread_operator' => throw new SyntaxException(
+            'important_modifier'  => new IdentifierNode('!important', $token->line),
+            'number'              => $this->parseNumber($token),
+            'identifier'          => $this->parseIdentifierOrCssProperty($token),
+            'function'            => $this->parseFunctionCall($token),
+            'url_function'        => $this->parseUrlFunction($token),
+            'paren_open'          => $this->parseParenthesizedExpression($token),
+            'interpolation_open'  => $this->parseInterpolation($token),
+            'attribute_selector'  => $this->parseAttributeSelector($token),
+            'spread_operator'     => throw new SyntaxException(
                 'Spread operator (...) can only be used in function calls',
                 $token->line,
                 $token->column
@@ -477,6 +463,30 @@ class ExpressionParser extends AbstractParser
     /**
      * @throws SyntaxException
      */
+    private function parseIdentifierOrCssProperty(Token $token): AstNode
+    {
+        if ($this->peek('colon')) {
+            $this->setTokenIndex($this->getTokenIndex() - 1);
+
+            return $this->parseCssPropertyValue();
+        }
+
+        return new IdentifierNode($token->value, $token->line);
+    }
+
+    private function parseUrlFunction(Token $token): FunctionNode
+    {
+        $fullContent = preg_replace('/^url\((.*)\)$/s', '$1', $token->value);
+        $fullContent = trim($fullContent);
+
+        $urlNode = new StringNode($fullContent, $token->line);
+
+        return new FunctionNode('url', [$urlNode], line: $token->line);
+    }
+
+    /**
+     * @throws SyntaxException
+     */
     private function tryParseNamedArgument(): ?array
     {
         if (! $this->peek('variable')) {
@@ -595,7 +605,9 @@ class ExpressionParser extends AbstractParser
             $lastComponent = $components[count($components) - 1];
             if (is_string($lastComponent) && str_contains($lastComponent, '/')) {
                 [$colorPart, $alphaPart] = explode('/', $lastComponent, 2);
+
                 $components[count($components) - 1] = trim($colorPart);
+
                 $alpha = (float) trim($alphaPart);
             }
         }

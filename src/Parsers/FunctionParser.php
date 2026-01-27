@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace DartSass\Parsers;
 
+use Closure;
 use DartSass\Exceptions\SyntaxException;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\FunctionNode;
 use DartSass\Parsers\Nodes\MixinNode;
 use DartSass\Parsers\Nodes\NullNode;
+use DartSass\Parsers\Tokens\TokenStreamInterface;
 
 use function array_filter;
 use function array_merge;
@@ -16,6 +18,14 @@ use function is_array;
 
 class FunctionParser extends AbstractParser
 {
+    public function __construct(
+        TokenStreamInterface     $stream,
+        private readonly Closure $parseBlock,
+        private readonly Closure $parseBinaryExpression
+    ) {
+        parent::__construct($stream);
+    }
+
     /**
      * @throws SyntaxException
      */
@@ -54,9 +64,11 @@ class FunctionParser extends AbstractParser
 
                 if ($this->peek('spread_operator')) {
                     $this->consume('spread_operator');
+
                     $arbitrary = true;
 
                     $this->skipWhitespace();
+
                     if (! $this->peek('paren_close')) {
                         throw new SyntaxException(
                             'Arbitrary argument (...) must be the last parameter',
@@ -70,7 +82,8 @@ class FunctionParser extends AbstractParser
                     $this->consume('colon');
 
                     $defaultValue = $this->parseBinaryExpression();
-                    $args[]       = ['name' => $argName, 'arbitrary' => $arbitrary, 'default' => $defaultValue];
+
+                    $args[] = ['name' => $argName, 'arbitrary' => $arbitrary, 'default' => $defaultValue];
                 } else {
                     $args[] = ['name' => $argName, 'arbitrary' => $arbitrary];
                 }
@@ -90,9 +103,7 @@ class FunctionParser extends AbstractParser
         }
 
         $this->consume('paren_close');
-
         $this->skipWhitespace();
-
         $this->consume('brace_open');
 
         $content = $this->parseBody();
@@ -100,9 +111,6 @@ class FunctionParser extends AbstractParser
         return new FunctionNode($name, $args, $content);
     }
 
-    /**
-     * @throws SyntaxException
-     */
     public function parseMixin(): AstNode
     {
         [$name, $args] = $this->parseNameAndInit();
@@ -131,6 +139,7 @@ class FunctionParser extends AbstractParser
 
                         if ($this->peek('spread_operator')) {
                             $this->consume('spread_operator');
+
                             $argName .= '...';
                         }
 
@@ -166,7 +175,6 @@ class FunctionParser extends AbstractParser
         }
 
         $this->skipWhitespace();
-
         $this->consume('brace_open');
 
         $content = $this->parseBody();
@@ -194,23 +202,14 @@ class FunctionParser extends AbstractParser
         return [$name, $args];
     }
 
-    /**
-     * @throws SyntaxException
-     */
     private function parseBinaryExpression(): AstNode
     {
-        $parser = new ExpressionParser($this->getStream());
-
-        return $parser->parseBinaryExpression(0);
+        return ($this->parseBinaryExpression)();
     }
 
-    /**
-     * @throws SyntaxException
-     */
     private function parseBody(): array
     {
-        $parser = new BlockParser($this->getStream());
-        $body   = $parser->parse();
+        $body = ($this->parseBlock)();
 
         return $body['items'] ?? array_merge($body['declarations'], $body['nested']);
     }

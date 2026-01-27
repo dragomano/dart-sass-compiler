@@ -16,6 +16,11 @@ abstract class AbstractParser implements TokenAwareParserInterface, ParserInterf
 
     abstract public function parse(): mixed;
 
+    public function parseExpression(): mixed
+    {
+        return null;
+    }
+
     protected function getStream(): TokenStreamInterface
     {
         return $this->stream;

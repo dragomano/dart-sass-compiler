@@ -76,6 +76,7 @@ class TokenStream implements TokenStreamInterface, IteratorAggregate
     {
         if ($this->matches($type)) {
             $token = $this->current();
+
             $this->advance();
 
             return $token;

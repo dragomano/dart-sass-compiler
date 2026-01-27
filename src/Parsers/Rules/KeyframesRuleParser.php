@@ -4,26 +4,36 @@ declare(strict_types=1);
 
 namespace DartSass\Parsers\Rules;
 
+use Closure;
 use DartSass\Exceptions\SyntaxException;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\KeyframesNode;
+use DartSass\Parsers\Tokens\TokenStreamInterface;
 
 use function sprintf;
 use function trim;
 
 class KeyframesRuleParser extends AtRuleParser
 {
+    public function __construct(
+        TokenStreamInterface     $stream,
+        private readonly Closure $parseExpression
+    )
+    {
+        parent::__construct($stream);
+    }
+
     /**
      * @throws SyntaxException
      */
     public function parse(): AstNode
     {
         $token = $this->consume('at_rule');
-        $name = $token->value;
+        $name  = $token->value;
 
         $animationName = '';
         while ($this->currentToken() && ! $this->peek('brace_open')) {
-            $currentToken = $this->currentToken();
+            $currentToken   = $this->currentToken();
             $animationName .= $currentToken->value;
 
             $this->incrementTokenIndex();
@@ -94,7 +104,9 @@ class KeyframesRuleParser extends AtRuleParser
             $selector = '';
             while ($this->currentToken() && ! $this->peek('comma') && ! $this->peek('brace_open')) {
                 $currentToken = $this->currentToken();
+
                 $selector .= $currentToken->value;
+
                 $this->incrementTokenIndex();
             }
 
@@ -122,6 +134,7 @@ class KeyframesRuleParser extends AtRuleParser
             }
 
             $propertyToken = $this->consume('identifier');
+
             $property = $propertyToken->value;
 
             $this->consume('colon');
@@ -130,7 +143,7 @@ class KeyframesRuleParser extends AtRuleParser
                 $this->incrementTokenIndex();
             }
 
-            $value = $this->parser->parseExpression();
+            $value = ($this->parseExpression)();
 
             $this->consume('semicolon');
 

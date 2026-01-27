@@ -38,9 +38,15 @@ class UseRuleParser extends AtRuleParser
         }
 
         $namespace = null;
+
         if (! $this->peek('string')) {
             $pathTokens = [];
-            while ($this->currentToken() && ! $this->peek('semicolon') && ! $this->peek('brace_open') && ! $this->peek('as')) {
+            while (
+                $this->currentToken()
+                && ! $this->peek('semicolon')
+                && ! $this->peek('brace_open')
+                && ! $this->peek('as')
+            ) {
                 $pathTokens[] = $this->consume($this->currentToken()->type);
             }
 
@@ -48,6 +54,7 @@ class UseRuleParser extends AtRuleParser
 
             if ($this->currentToken() && $this->peek('as')) {
                 $this->consume('as');
+
                 while ($this->currentToken() && $this->peek('whitespace')) {
                     $this->incrementTokenIndex();
                 }
@@ -60,7 +67,8 @@ class UseRuleParser extends AtRuleParser
             }
         } else {
             $pathToken = $this->consume('string');
-            $path = trim(trim($pathToken->value, '\'"'));
+
+            $path = trim(trim($pathToken->value, '"\''));
 
             while ($this->currentToken() && $this->peek('whitespace')) {
                 $this->incrementTokenIndex();
@@ -85,7 +93,6 @@ class UseRuleParser extends AtRuleParser
 
         $this->consume('semicolon');
 
-        // If no namespace specified, use default (filename without extension and leading underscore)
         if ($namespace === null) {
             $namespace = $this->getDefaultNamespace($path);
         }

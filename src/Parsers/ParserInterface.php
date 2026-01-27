@@ -7,4 +7,6 @@ namespace DartSass\Parsers;
 interface ParserInterface
 {
     public function parse(): mixed;
+
+    public function parseExpression(): mixed;
 }

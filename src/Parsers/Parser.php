@@ -7,40 +7,20 @@ namespace DartSass\Parsers;
 use DartSass\Exceptions\SyntaxException;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\CommentNode;
-use DartSass\Parsers\Rules\AtRuleParser;
-use DartSass\Parsers\Rules\ContainerRuleParser;
-use DartSass\Parsers\Rules\EachRuleParser;
-use DartSass\Parsers\Rules\ForRuleParser;
-use DartSass\Parsers\Rules\ForwardRuleParser;
-use DartSass\Parsers\Rules\GenericAtRuleParser;
-use DartSass\Parsers\Rules\IfRuleParser;
-use DartSass\Parsers\Rules\KeyframesRuleParser;
-use DartSass\Parsers\Rules\MediaRuleParser;
-use DartSass\Parsers\Rules\UseRuleParser;
-use DartSass\Parsers\Rules\WhileRuleParser;
 
 class Parser extends AbstractParser
 {
-    private const PARSER_CLASSES = [
-        'expression' => ExpressionParser::class,
-        'block'      => BlockParser::class,
-        'selector'   => SelectorParser::class,
-        'function'   => FunctionParser::class,
-        'import'     => ImportParser::class,
-    ];
+    use AtRuleParserFactory;
 
-    private array $parsers = [];
+    private ?BlockParser $blockParser = null;
 
-    protected function getParser(string $type): ParserInterface
-    {
-        if (! isset($this->parsers[$type])) {
-            $class = self::PARSER_CLASSES[$type];
+    private ?ExpressionParser $expressionParser = null;
 
-            $this->parsers[$type] = new $class($this->getStream());
-        }
+    private ?SelectorParser $selectorParser = null;
 
-        return $this->parsers[$type];
-    }
+    private ?FunctionParser $functionParser = null;
+
+    private ?ImportParser $importParser = null;
 
     /**
      * @throws SyntaxException
@@ -80,11 +60,6 @@ class Parser extends AbstractParser
 
                     break;
 
-                case 'whitespace':
-                    $this->advanceToken();
-
-                    break;
-
                 default:
                     $this->skipWhitespace();
 
@@ -102,58 +77,62 @@ class Parser extends AbstractParser
      */
     public function parseRule(): AstNode
     {
-        /* @var BlockParser $parser */
-        $parser = $this->getParser('block');
-
-        return $parser->parseRule();
+        return $this->blockParser()->parseRule();
     }
 
-    /**
-     * @throws SyntaxException
-     */
     public function parseDeclaration(): array
     {
-        /* @var BlockParser $parser */
-        $parser = $this->getParser('block');
-
-        return $parser->parseDeclaration();
+        return $this->blockParser()->parseDeclaration();
     }
 
+    /**
+     * @throws SyntaxException
+     */
     public function parseExpression(): AstNode
     {
-        return $this->getParser('expression')->parse();
-    }
-
-    public function parseBlock(): array
-    {
-        return $this->getParser('block')->parse();
+        return $this->expressionParser()->parse();
     }
 
     /**
      * @throws SyntaxException
      */
-    public function parseVariable(): AstNode
+    private function parseBlock(): array
     {
-        /* @var BlockParser $parser */
-        $parser = $this->getParser('block');
-
-        return $parser->parseVariable();
+        return $this->blockParser()->parse();
     }
 
+    private function parseVariable(): AstNode
+    {
+        return $this->blockParser()->parseVariable();
+    }
+
+    /**
+     * @throws SyntaxException
+     */
     private function parseFunction(): AstNode
     {
-        return $this->getParser('function')->parse();
+        return $this->functionParser()->parse();
     }
 
     /**
      * @throws SyntaxException
      */
+    private function parseBinaryExpression(): AstNode
+    {
+        return $this->expressionParser()->parseBinaryExpression(0);
+    }
+
+    /**
+     * @throws SyntaxException
+     */
+    private function parsePrimaryExpression(): AstNode
+    {
+        return $this->expressionParser()->parsePrimaryExpression();
+    }
+
     private function parseMixin(): AstNode
     {
-        /* @var FunctionParser $parser */
-        $parser = $this->getParser('function');
-
-        return $parser->parseMixin();
+        return $this->functionParser()->parseMixin();
     }
 
     /**
@@ -161,40 +140,62 @@ class Parser extends AbstractParser
      */
     private function parseInclude(): AstNode
     {
-        /* @var BlockParser $parser */
-        $parser = $this->getParser('block');
-
-        return $parser->parseInclude();
+        return $this->blockParser()->parseInclude();
     }
 
     private function parseImport(): AstNode
     {
-        return $this->getParser('import')->parse();
+        return $this->importParser()->parse();
     }
 
-    private function parseAtRule(): AstNode
+    /**
+     * @throws SyntaxException
+     */
+    private function parseSelector(): AstNode
     {
-        $parser = $this->createAtRuleParser();
-
-        return $parser->parse();
+        return $this->selectorParser()->parse();
     }
 
-    private function createAtRuleParser(): AtRuleParser
+    /**
+     * @throws SyntaxException
+     */
+    private function parseArgumentExpression(): array
     {
-        $token    = $this->currentToken();
-        $ruleType = $token->value;
+        return $this->expressionParser()->parseArgumentList();
+    }
 
-        return match ($ruleType) {
-            '@use'       => new UseRuleParser($this),
-            '@forward'   => new ForwardRuleParser($this),
-            '@for'       => new ForRuleParser($this),
-            '@while'     => new WhileRuleParser($this),
-            '@if'        => new IfRuleParser($this),
-            '@each'      => new EachRuleParser($this),
-            '@media'     => new MediaRuleParser($this),
-            '@container' => new ContainerRuleParser($this),
-            '@keyframes' => new KeyframesRuleParser($this),
-            default      => new GenericAtRuleParser($this),
-        };
+    private function blockParser(): BlockParser
+    {
+        return $this->blockParser ??= new BlockParser(
+            $this->getStream(),
+            $this->parseExpression(...),
+            $this->parsePrimaryExpression(...),
+            $this->parseArgumentExpression(...),
+            $this->parseSelector(...)
+        );
+    }
+
+    private function expressionParser(): ExpressionParser
+    {
+        return $this->expressionParser ??= new ExpressionParser($this->getStream());
+    }
+
+    private function functionParser(): FunctionParser
+    {
+        return $this->functionParser ??= new FunctionParser(
+            $this->getStream(),
+            $this->parseBlock(...),
+            $this->parseBinaryExpression(...)
+        );
+    }
+
+    private function importParser(): ImportParser
+    {
+        return $this->importParser ??= new ImportParser($this->getStream());
+    }
+
+    private function selectorParser(): SelectorParser
+    {
+        return $this->selectorParser ??= new SelectorParser($this->getStream(), $this->parseExpression(...));
     }
 }

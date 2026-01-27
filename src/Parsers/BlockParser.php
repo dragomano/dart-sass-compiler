@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DartSass\Parsers;
 
+use Closure;
 use DartSass\Exceptions\SyntaxException;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\CommentNode;
@@ -12,24 +13,16 @@ use DartSass\Parsers\Nodes\ListNode;
 use DartSass\Parsers\Nodes\ReturnNode;
 use DartSass\Parsers\Nodes\RuleNode;
 use DartSass\Parsers\Nodes\VariableDeclarationNode;
-use DartSass\Parsers\Rules\AtRuleParser;
-use DartSass\Parsers\Rules\ContainerRuleParser;
-use DartSass\Parsers\Rules\EachRuleParser;
-use DartSass\Parsers\Rules\ForRuleParser;
-use DartSass\Parsers\Rules\ForwardRuleParser;
-use DartSass\Parsers\Rules\GenericAtRuleParser;
-use DartSass\Parsers\Rules\IfRuleParser;
-use DartSass\Parsers\Rules\KeyframesRuleParser;
-use DartSass\Parsers\Rules\MediaRuleParser;
-use DartSass\Parsers\Rules\UseRuleParser;
-use DartSass\Parsers\Rules\WhileRuleParser;
 use DartSass\Parsers\Tokens\Token;
+use DartSass\Parsers\Tokens\TokenStreamInterface;
 use DartSass\Utils\StringFormatter;
 
 use function array_merge;
 
 class BlockParser extends AbstractParser
 {
+    use AtRuleParserFactory;
+
     protected const DECLARATION_VALUE_TYPES = [
         'identifier' => true,
         'number'     => true,
@@ -52,6 +45,16 @@ class BlockParser extends AbstractParser
         '+' => true,
         '~' => true,
     ];
+
+    public function __construct(
+        TokenStreamInterface     $stream,
+        private readonly Closure $parseExpression,
+        private readonly Closure $parsePrimaryExpression,
+        private readonly Closure $parseArgumentExpression,
+        private readonly Closure $parseSelector
+    ) {
+        parent::__construct($stream);
+    }
 
     /**
      * @throws SyntaxException
@@ -92,9 +95,6 @@ class BlockParser extends AbstractParser
         ];
     }
 
-    /**
-     * @throws SyntaxException
-     */
     public function parseDeclaration(): array
     {
         $propertyToken = $this->expectAny('identifier', 'css_custom_property');
@@ -135,14 +135,9 @@ class BlockParser extends AbstractParser
         );
     }
 
-    /**
-     * @throws SyntaxException
-     */
     public function parseExpression(): AstNode
     {
-        $parser = new ExpressionParser($this->getStream());
-
-        return $parser->parse();
+        return ($this->parseExpression)();
     }
 
     /**
@@ -163,16 +158,6 @@ class BlockParser extends AbstractParser
         return new IncludeNode($name, $args, $content);
     }
 
-    public function parseAtRule(): AstNode
-    {
-        $parser = $this->createAtRuleParser();
-
-        return $parser->parse();
-    }
-
-    /**
-     * @throws SyntaxException
-     */
     public function parseVariable(): AstNode
     {
         $token = $this->consume('variable');
@@ -229,9 +214,6 @@ class BlockParser extends AbstractParser
         return $item;
     }
 
-    /**
-     * @throws SyntaxException
-     */
     private function handleVariable(array &$nested): AstNode
     {
         $item = $this->parseVariable();
@@ -320,9 +302,6 @@ class BlockParser extends AbstractParser
         return $this->handleRule($nested);
     }
 
-    /**
-     * @throws SyntaxException
-     */
     private function handleDeclaration(array &$declarations): array
     {
         $item = $this->parseDeclaration();
@@ -332,9 +311,6 @@ class BlockParser extends AbstractParser
         return $item;
     }
 
-    /**
-     * @throws SyntaxException
-     */
     private function parseDeclarationValue(): AstNode
     {
         $value  = $this->parseExpression();
@@ -402,29 +378,16 @@ class BlockParser extends AbstractParser
         }
     }
 
-    /**
-     * @throws SyntaxException
-     */
     private function parsePrimaryExpression(): AstNode
     {
-        $parser = new ExpressionParser($this->getStream());
-
-        return $parser->parsePrimaryExpression();
+        return ($this->parsePrimaryExpression)();
     }
 
-    /**
-     * @throws SyntaxException
-     */
     private function parseSelector(): AstNode
     {
-        $parser = new SelectorParser($this->getStream());
-
-        return $parser->parse();
+        return ($this->parseSelector)();
     }
 
-    /**
-     * @throws SyntaxException
-     */
     private function parseReturn(): AstNode
     {
         $this->consume('at_rule');
@@ -452,9 +415,6 @@ class BlockParser extends AbstractParser
         return $name;
     }
 
-    /**
-     * @throws SyntaxException
-     */
     private function parseIncludeArguments(): array
     {
         $args = [];
@@ -521,33 +481,9 @@ class BlockParser extends AbstractParser
         return [$global, $default];
     }
 
-    private function createAtRuleParser(): AtRuleParser
-    {
-        $token    = $this->currentToken();
-        $ruleType = $token->value;
-
-        return match ($ruleType) {
-            '@use'       => new UseRuleParser($this),
-            '@forward'   => new ForwardRuleParser($this),
-            '@for'       => new ForRuleParser($this),
-            '@while'     => new WhileRuleParser($this),
-            '@if'        => new IfRuleParser($this),
-            '@each'      => new EachRuleParser($this),
-            '@media'     => new MediaRuleParser($this),
-            '@container' => new ContainerRuleParser($this),
-            '@keyframes' => new KeyframesRuleParser($this),
-            default      => new GenericAtRuleParser($this),
-        };
-    }
-
-    /**
-     * @throws SyntaxException
-     */
     private function parseArgumentList(): array
     {
-        $parser = new ExpressionParser($this->getStream());
-
-        return $parser->parseArgumentList();
+        return ($this->parseArgumentExpression)();
     }
 
     /**

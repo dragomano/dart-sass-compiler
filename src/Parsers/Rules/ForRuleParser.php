@@ -4,15 +4,25 @@ declare(strict_types=1);
 
 namespace DartSass\Parsers\Rules;
 
+use Closure;
 use DartSass\Exceptions\SyntaxException;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\ForNode;
+use DartSass\Parsers\Tokens\TokenStreamInterface;
 
 use function array_merge;
 use function sprintf;
 
 class ForRuleParser extends AtRuleParser
 {
+    public function __construct(
+        TokenStreamInterface     $stream,
+        private readonly Closure $parseExpression,
+        private readonly Closure $parseBlock
+    ) {
+        parent::__construct($stream);
+    }
+
     /**
      * @throws SyntaxException
      */
@@ -61,7 +71,7 @@ class ForRuleParser extends AtRuleParser
             $this->incrementTokenIndex();
         }
 
-        $from = $this->parser->parseExpression();
+        $from = ($this->parseExpression)();
 
         while ($this->currentToken() && $this->peek('whitespace')) {
             $this->incrementTokenIndex();
@@ -79,13 +89,13 @@ class ForRuleParser extends AtRuleParser
         }
 
         $limitKeyword = $this->consume('identifier')->value;
-        $inclusive = $limitKeyword === 'through';
+        $inclusive    = $limitKeyword === 'through';
 
         while ($this->currentToken() && $this->peek('whitespace')) {
             $this->incrementTokenIndex();
         }
 
-        $to = $this->parser->parseExpression();
+        $to = ($this->parseExpression)();
 
         while ($this->currentToken() && $this->peek('whitespace')) {
             $this->incrementTokenIndex();
@@ -101,8 +111,8 @@ class ForRuleParser extends AtRuleParser
 
         $this->consume('brace_open');
 
-        $block = $this->parser->parseBlock();
-        $body = array_merge($block['declarations'], $block['nested']);
+        $block = ($this->parseBlock)();
+        $body  = array_merge($block['declarations'], $block['nested']);
 
         return new ForNode(
             $variable,

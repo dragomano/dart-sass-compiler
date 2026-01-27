@@ -5,42 +5,24 @@ declare(strict_types=1);
 namespace DartSass\Parsers\Rules;
 
 use DartSass\Parsers\Nodes\AstNode;
-use DartSass\Parsers\Tokens\Token;
-use DartSass\Parsers\Tokens\TokenAwareParserInterface;
+use DartSass\Parsers\Tokens\TokenStreamHelper;
+use DartSass\Parsers\Tokens\TokenStreamInterface;
 
 abstract class AtRuleParser
 {
-    public function __construct(protected TokenAwareParserInterface $parser) {}
+    use TokenStreamHelper;
+
+    public function __construct(protected readonly TokenStreamInterface $stream) {}
 
     abstract public function parse(): AstNode;
 
-    protected function consume(string $type): Token
+    protected function getStream(): TokenStreamInterface
     {
-        return $this->parser->consume($type);
-    }
-
-    protected function peek(string $type): bool
-    {
-        return $this->parser->peek($type);
-    }
-
-    protected function currentToken(): ?Token
-    {
-        return $this->parser->currentToken();
-    }
-
-    protected function getTokenIndex(): int
-    {
-        return $this->parser->getTokenIndex();
+        return $this->stream;
     }
 
     protected function incrementTokenIndex(): void
     {
-        $this->parser->setTokenIndex($this->parser->getTokenIndex() + 1);
-    }
-
-    protected function setTokenIndex(int $index): void
-    {
-        $this->parser->setTokenIndex($index);
+        $this->setTokenIndex($this->getTokenIndex() + 1);
     }
 }

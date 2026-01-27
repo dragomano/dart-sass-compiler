@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DartSass\Parsers;
 
+use Closure;
 use DartSass\Exceptions\SyntaxException;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\IdentifierNode;
@@ -13,6 +14,7 @@ use DartSass\Parsers\Nodes\SelectorNode;
 use DartSass\Parsers\Nodes\StringNode;
 use DartSass\Parsers\Nodes\VariableNode;
 use DartSass\Parsers\Tokens\Token;
+use DartSass\Parsers\Tokens\TokenStreamInterface;
 use DartSass\Utils\StringFormatter;
 
 use function in_array;
@@ -41,6 +43,13 @@ class SelectorParser extends AbstractParser
     private const ATTRIBUTE_WITH_QUOTES = '/\[([^]=]+)([~*^|$!]?=)(["\']?)([^"\'\s]+)(\3)]/';
 
     private const SAFE_UNQUOTED = '/^[a-zA-Z0-9_-]+$/';
+
+    public function __construct(
+        TokenStreamInterface     $stream,
+        private readonly Closure $parseExpression
+    ) {
+        parent::__construct($stream);
+    }
 
     /**
      * @throws SyntaxException
@@ -112,6 +121,11 @@ class SelectorParser extends AbstractParser
         return new SelectorNode(trim($value), $line);
     }
 
+    public function parseExpression(): AstNode
+    {
+        return ($this->parseExpression)();
+    }
+
     protected function parsePseudoClassFunction(Token $token): string
     {
         $result = $token->value;
@@ -179,9 +193,6 @@ class SelectorParser extends AbstractParser
         return $selector;
     }
 
-    /**
-     * @throws SyntaxException
-     */
     private function parseInterpolationInSelector(): string
     {
         $this->consume('interpolation_open');
@@ -191,16 +202,6 @@ class SelectorParser extends AbstractParser
         $this->consume('brace_close');
 
         return $this->formatExpressionForSelector($expression);
-    }
-
-    /**
-     * @throws SyntaxException
-     */
-    private function parseExpression(): AstNode
-    {
-        $parser = new ExpressionParser($this->getStream());
-
-        return $parser->parse();
     }
 
     private function formatExpressionForSelector(AstNode $expr): string

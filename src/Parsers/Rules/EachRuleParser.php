@@ -4,15 +4,25 @@ declare(strict_types=1);
 
 namespace DartSass\Parsers\Rules;
 
+use Closure;
 use DartSass\Exceptions\SyntaxException;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\EachNode;
+use DartSass\Parsers\Tokens\TokenStreamInterface;
 
 use function array_merge;
 use function sprintf;
 
 class EachRuleParser extends AtRuleParser
 {
+    public function __construct(
+        TokenStreamInterface     $stream,
+        private readonly Closure $parseExpression,
+        private readonly Closure $parseBlock
+    ) {
+        parent::__construct($stream);
+    }
+
     /**
      * @throws SyntaxException
      */
@@ -37,6 +47,7 @@ class EachRuleParser extends AtRuleParser
         do {
             if ($this->peek('variable')) {
                 $varToken = $this->consume('variable');
+
                 $variables[] = $varToken->value;
             } else {
                 throw new SyntaxException(
@@ -79,7 +90,7 @@ class EachRuleParser extends AtRuleParser
             $this->incrementTokenIndex();
         }
 
-        $condition = $this->parser->parseExpression();
+        $condition = ($this->parseExpression)();
 
         while ($this->currentToken() && $this->peek('whitespace')) {
             $this->incrementTokenIndex();
@@ -95,7 +106,7 @@ class EachRuleParser extends AtRuleParser
 
         $this->consume('brace_open');
 
-        $block = $this->parser->parseBlock();
+        $block = ($this->parseBlock)();
         $body  = array_merge($block['declarations'], $block['nested']);
 
         return new EachNode($variables, $condition, $body, $token->line);

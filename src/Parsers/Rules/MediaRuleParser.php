@@ -4,14 +4,27 @@ declare(strict_types=1);
 
 namespace DartSass\Parsers\Rules;
 
+use Closure;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\MediaNode;
+use DartSass\Parsers\Tokens\TokenStreamInterface;
 
 use function preg_match;
 use function trim;
 
 class MediaRuleParser extends AtRuleParser
 {
+    public function __construct(
+        TokenStreamInterface $stream,
+        protected Closure $parseAtRule,
+        protected Closure $parseInclude,
+        protected Closure $parseVariable,
+        protected Closure $parseRule,
+        protected Closure $parseDeclaration
+    ) {
+        parent::__construct($stream);
+    }
+
     public function parse(): AstNode
     {
         $token = $this->consume('at_rule');
@@ -19,7 +32,7 @@ class MediaRuleParser extends AtRuleParser
 
         $this->consume('brace_open');
 
-        $body = $this->parseBlock();
+        $body = $this->parseBlockInternal();
 
         return $this->createNode($query, $body, $token->line);
     }
@@ -30,6 +43,11 @@ class MediaRuleParser extends AtRuleParser
     }
 
     protected function parseBlock(): array
+    {
+        return $this->parseBlockInternal();
+    }
+
+    private function parseBlockInternal(): array
     {
         $declarations = $nested = [];
 
@@ -44,17 +62,18 @@ class MediaRuleParser extends AtRuleParser
 
             if ($this->peek('at_rule')) {
                 $token = $this->currentToken();
+
                 if ($token->value === '@include') {
-                    $nested[] = $this->parser->parseInclude();
+                    $nested[] = ($this->parseInclude)();
                 } else {
-                    $nested[] = $this->parser->parseAtRule();
+                    $nested[] = ($this->parseAtRule)();
                 }
             } elseif ($this->peek('variable')) {
-                $nested[] = $this->parser->parseVariable();
+                $nested[] = ($this->parseVariable)();
             } elseif ($this->peek('selector')) {
-                $nested[] = $this->parser->parseRule();
+                $nested[] = ($this->parseRule)();
             } elseif ($this->peek('operator')) {
-                $nested[] = $this->parser->parseRule();
+                $nested[] = ($this->parseRule)();
             } elseif ($this->peek('identifier')) {
                 $this->handleIdentifierInBlock($declarations, $nested);
             } else {
@@ -79,6 +98,7 @@ class MediaRuleParser extends AtRuleParser
             }
 
             $query .= $currentToken->value;
+
             $this->incrementTokenIndex();
         }
 
@@ -101,12 +121,12 @@ class MediaRuleParser extends AtRuleParser
             $this->setTokenIndex($savedIndex);
 
             $isSelector
-                ? $nested[] = $this->parser->parseRule()
-                : $declarations[] = $this->parser->parseDeclaration();
+                ? $nested[] = ($this->parseRule)()
+                : $declarations[] = ($this->parseDeclaration)();
         } else {
-            $this->parser->setTokenIndex($savedIndex);
+            $this->setTokenIndex($savedIndex);
 
-            $nested[] = $this->parser->parseRule();
+            $nested[] = ($this->parseRule)();
         }
     }
 
@@ -123,8 +143,8 @@ class MediaRuleParser extends AtRuleParser
         $this->setTokenIndex($savedIndex);
 
         $this->peek('colon')
-            ? $declarations[] = $this->parser->parseDeclaration()
-            : $nested[] = $this->parser->parseRule();
+            ? $declarations[] = ($this->parseDeclaration)()
+            : $nested[] = ($this->parseRule)();
     }
 
     private function isPseudoClassSelector(): bool
