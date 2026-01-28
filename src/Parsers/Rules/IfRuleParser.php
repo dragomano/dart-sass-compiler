@@ -42,10 +42,6 @@ class IfRuleParser extends AtRuleParser
 
         $condition = $this->parseCondition();
 
-        while ($this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
-
         if (! $this->peek('brace_open')) {
             $currentToken = $this->currentToken();
 
@@ -72,10 +68,6 @@ class IfRuleParser extends AtRuleParser
 
     private function parseCondition(): AstNode
     {
-        while ($this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
-
         $expression = $this->parseFullConditionExpression();
 
         return new ConditionNode($expression, 1);
@@ -85,10 +77,6 @@ class IfRuleParser extends AtRuleParser
     {
         $left = ($this->parseExpression)();
 
-        while ($this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
-
         while ($this->currentToken() && $this->currentToken()->type === 'logical_operator') {
             $operatorToken = $this->currentToken();
 
@@ -96,17 +84,9 @@ class IfRuleParser extends AtRuleParser
 
             $this->incrementTokenIndex();
 
-            while ($this->peek('whitespace')) {
-                $this->incrementTokenIndex();
-            }
-
             $right = ($this->parseExpression)();
 
             $left = new OperationNode($left, $operator, $right, $operatorToken->line ?? 1);
-
-            while ($this->peek('whitespace')) {
-                $this->incrementTokenIndex();
-            }
 
             if ($this->peek('brace_open')) {
                 break;
@@ -121,28 +101,16 @@ class IfRuleParser extends AtRuleParser
      */
     private function parseElseChain(): ?array
     {
-        while ($this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
-
         if (! $this->peek('at_rule') || $this->currentToken()->value !== '@else') {
             return null;
         }
 
         $this->consume('at_rule');
 
-        while ($this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
-
         if ($this->peek('identifier') && $this->currentToken()->value === 'if') {
             $this->consume('identifier');
 
             $condition = $this->parseCondition();
-
-            while ($this->peek('whitespace')) {
-                $this->incrementTokenIndex();
-            }
 
             if (! $this->peek('brace_open')) {
                 throw new SyntaxException(

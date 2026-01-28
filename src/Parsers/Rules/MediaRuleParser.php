@@ -16,11 +16,11 @@ class MediaRuleParser extends AtRuleParser
 {
     public function __construct(
         TokenStreamInterface $stream,
-        protected Closure $parseAtRule,
-        protected Closure $parseInclude,
-        protected Closure $parseVariable,
-        protected Closure $parseRule,
-        protected Closure $parseDeclaration
+        protected Closure    $parseAtRule,
+        protected Closure    $parseInclude,
+        protected Closure    $parseVariable,
+        protected Closure    $parseRule,
+        protected Closure    $parseDeclaration
     ) {
         parent::__construct($stream);
     }
@@ -32,7 +32,7 @@ class MediaRuleParser extends AtRuleParser
 
         $this->consume('brace_open');
 
-        $body = $this->parseBlockInternal();
+        $body = $this->parseBlock();
 
         return $this->createNode($query, $body, $token->line);
     }
@@ -44,24 +44,12 @@ class MediaRuleParser extends AtRuleParser
 
     protected function parseBlock(): array
     {
-        return $this->parseBlockInternal();
-    }
-
-    private function parseBlockInternal(): array
-    {
         $declarations = $nested = [];
 
-        while ($this->currentToken() && ! $this->peek('brace_close')) {
-            while ($this->peek('whitespace')) {
-                $this->incrementTokenIndex();
-            }
+        $token = $this->currentToken();
 
-            if ($this->peek('brace_close')) {
-                break;
-            }
-
+        while ($token && ! $this->peek('brace_close')) {
             if ($this->peek('at_rule')) {
-                $token = $this->currentToken();
 
                 if ($token->value === '@include') {
                     $nested[] = ($this->parseInclude)();
@@ -70,14 +58,12 @@ class MediaRuleParser extends AtRuleParser
                 }
             } elseif ($this->peek('variable')) {
                 $nested[] = ($this->parseVariable)();
-            } elseif ($this->peek('selector')) {
-                $nested[] = ($this->parseRule)();
             } elseif ($this->peek('operator')) {
                 $nested[] = ($this->parseRule)();
             } elseif ($this->peek('identifier')) {
                 $this->handleIdentifierInBlock($declarations, $nested);
             } else {
-                $this->handleOtherTokensInBlock($declarations, $nested);
+                $this->handleOtherTokensInBlock($nested);
             }
         }
 
@@ -111,10 +97,6 @@ class MediaRuleParser extends AtRuleParser
 
         $this->incrementTokenIndex();
 
-        while ($this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
-
         if ($this->peek('colon')) {
             $isSelector = $this->isPseudoClassSelector();
 
@@ -130,30 +112,19 @@ class MediaRuleParser extends AtRuleParser
         }
     }
 
-    private function handleOtherTokensInBlock(array &$declarations, array &$nested): void
+    private function handleOtherTokensInBlock(array &$nested): void
     {
         $savedIndex = $this->getTokenIndex();
 
         $this->incrementTokenIndex();
-
-        while ($this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
-
         $this->setTokenIndex($savedIndex);
 
-        $this->peek('colon')
-            ? $declarations[] = ($this->parseDeclaration)()
-            : $nested[] = ($this->parseRule)();
+        $nested[] = ($this->parseRule)();
     }
 
     private function isPseudoClassSelector(): bool
     {
         $this->incrementTokenIndex();
-
-        while ($this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
 
         if ($this->peek('function')) {
             return $this->checkFunctionPseudoClass();
@@ -161,10 +132,6 @@ class MediaRuleParser extends AtRuleParser
 
         if ($this->peek('identifier')) {
             $this->incrementTokenIndex();
-
-            while ($this->peek('whitespace')) {
-                $this->incrementTokenIndex();
-            }
 
             return $this->peek('brace_open');
         }
@@ -182,9 +149,7 @@ class MediaRuleParser extends AtRuleParser
             $this->consume('paren_open');
 
             while ($this->currentToken() && $parenLevel > 0) {
-                if ($this->peek('paren_open')) {
-                    $parenLevel++;
-                } elseif ($this->peek('paren_close')) {
+                if ($this->peek('paren_close')) {
                     $parenLevel--;
                 }
 
@@ -192,19 +157,11 @@ class MediaRuleParser extends AtRuleParser
             }
         }
 
-        while ($this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
-
         return $this->peek('brace_open');
     }
 
     private function shouldAddSpace($currentToken, string $query): bool
     {
-        if (preg_match('/\s$/', $query) === 1) {
-            return false;
-        }
-
         if ($currentToken->type === 'logical_operator') {
             return true;
         }
@@ -214,10 +171,6 @@ class MediaRuleParser extends AtRuleParser
         }
 
         if ($currentToken->type === 'identifier') {
-            if (preg_match('/\b(and|or)\b$/', $query) === 1) {
-                return true;
-            }
-
             if (preg_match('/[a-zA-Z0-9_-]+$/', $query) === 1) {
                 return true;
             }
@@ -233,10 +186,6 @@ class MediaRuleParser extends AtRuleParser
 
         if ($currentToken->type === 'number') {
             if (preg_match('/:$/', $query) === 1) {
-                return true;
-            }
-
-            if (preg_match('/\)$/', $query) === 1) {
                 return true;
             }
         }

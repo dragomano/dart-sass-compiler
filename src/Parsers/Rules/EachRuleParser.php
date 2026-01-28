@@ -38,10 +38,6 @@ class EachRuleParser extends AtRuleParser
             );
         }
 
-        while ($this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
-
         $variables = [];
 
         do {
@@ -57,50 +53,34 @@ class EachRuleParser extends AtRuleParser
                 );
             }
 
-            while ($this->currentToken() && $this->peek('whitespace')) {
-                $this->incrementTokenIndex();
-            }
-
             if ($this->peek('operator') && $this->currentToken()->value === ',') {
                 $this->consume('operator');
-
-                while ($this->currentToken() && $this->peek('whitespace')) {
-                    $this->incrementTokenIndex();
-                }
             } else {
                 break;
             }
         } while (true);
 
-        while ($this->currentToken() && $this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
+        $currentToken = $this->currentToken();
 
-        if (! $this->peek('identifier') || $this->currentToken()->value !== 'in') {
+        if (! $this->peek('identifier') || $currentToken->value !== 'in') {
             throw new SyntaxException(
                 'Expected "in" keyword in @each rule',
-                $this->currentToken() ? $this->currentToken()->line : $token->line,
-                $this->currentToken() ? $this->currentToken()->column : $token->column
+                $currentToken ? $currentToken->line : $token->line,
+                $currentToken ? $currentToken->column : $token->column
             );
         }
 
         $this->consume('identifier');
 
-        while ($this->currentToken() && $this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
-
         $condition = ($this->parseExpression)();
 
-        while ($this->currentToken() && $this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
+        $currentToken = $this->currentToken();
 
         if (! $this->peek('brace_open')) {
             throw new SyntaxException(
                 'Expected "{" to start @each block',
-                $this->currentToken() ? $this->currentToken()->line : $token->line,
-                $this->currentToken() ? $this->currentToken()->column : $token->column
+                $currentToken ? $currentToken->line : $token->line,
+                $currentToken ? $currentToken->column : $token->column
             );
         }
 

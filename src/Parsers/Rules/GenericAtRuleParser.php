@@ -10,7 +10,6 @@ use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\AtRuleNode;
 use DartSass\Parsers\Tokens\TokenStreamInterface;
 
-use function in_array;
 use function sprintf;
 use function trim;
 
@@ -35,10 +34,6 @@ class GenericAtRuleParser extends AtRuleParser
         $name  = $token->value;
         $value = '';
         $body  = null;
-
-        while ($this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
 
         while ($this->currentToken() && ! $this->peek('brace_open') && ! $this->peek('semicolon')) {
             $currentToken = $this->currentToken();
@@ -72,10 +67,6 @@ class GenericAtRuleParser extends AtRuleParser
         $declarations = $nested = [];
 
         while ($this->currentToken() && ! $this->peek('brace_close')) {
-            while ($this->peek('whitespace')) {
-                $this->incrementTokenIndex();
-            }
-
             if ($this->peek('brace_close')) {
                 break;
             }
@@ -86,16 +77,12 @@ class GenericAtRuleParser extends AtRuleParser
                 $nested[] = ($this->parseVariable)();
             } elseif ($this->peek('selector')) {
                 $nested[] = ($this->parseRule)();
-            } elseif ($this->peek('operator') && in_array($this->currentToken()->value, ['&', '.', '#'], true)) {
+            } elseif ($this->peek('operator')) {
                 $nested[] = ($this->parseRule)();
             } elseif ($this->peek('identifier')) {
                 $savedIndex = $this->getTokenIndex();
 
                 $this->incrementTokenIndex();
-
-                while ($this->peek('whitespace')) {
-                    $this->incrementTokenIndex();
-                }
 
                 if ($this->peek('colon')) {
                     $this->setTokenIndex($savedIndex);

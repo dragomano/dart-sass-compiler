@@ -49,7 +49,6 @@ class BlockParser extends AbstractParser
     public function __construct(
         TokenStreamInterface     $stream,
         private readonly Closure $parseExpression,
-        private readonly Closure $parsePrimaryExpression,
         private readonly Closure $parseArgumentExpression,
         private readonly Closure $parseSelector
     ) {
@@ -72,15 +71,6 @@ class BlockParser extends AbstractParser
         $declarations = $nested = $items = [];
 
         while (($token = $this->currentToken()) && $token->type !== 'brace_close') {
-            if ($token->type === 'whitespace') {
-                $this->skipWhitespace();
-
-                $token = $this->currentToken();
-                if (! $token || $token->type === 'brace_close') {
-                    break;
-                }
-            }
-
             $item = $this->parseBlockItem($token, $declarations, $nested);
 
             $items[] = $item;
@@ -106,7 +96,6 @@ class BlockParser extends AbstractParser
 
         $value = $this->parseDeclarationValue();
 
-        $this->handleImportantModifier($value);
         $this->consumeDeclarationTerminator();
 
         $value->line   = $propertyToken->line;
@@ -192,7 +181,6 @@ class BlockParser extends AbstractParser
             'variable'           => $this->handleVariable($nested),
             'comment'            => $this->handleComment($token, $declarations),
             'operator'           => $this->handleOperator($token, $declarations, $nested),
-            'function'           => $this->handleFunction($declarations, $nested),
             'identifier'         => $this->handleIdentifier($declarations, $nested),
             default              => $this->handleDeclaration($declarations),
         };
@@ -263,18 +251,6 @@ class BlockParser extends AbstractParser
     /**
      * @throws SyntaxException
      */
-    private function handleFunction(array &$declarations, array &$nested): AstNode|array
-    {
-        if ($this->checkIfSelector()) {
-            return $this->handleRule($nested);
-        }
-
-        return $this->handleDeclaration($declarations);
-    }
-
-    /**
-     * @throws SyntaxException
-     */
     private function handleIdentifier(array &$declarations, array &$nested): AstNode|array
     {
         $savedPos = $this->getTokenIndex();
@@ -320,10 +296,6 @@ class BlockParser extends AbstractParser
         $isCommaSeparated  = false;
 
         while ($this->currentToken() && ! $this->matchesAny('semicolon', 'brace_close')) {
-            if ($this->consumeIf('whitespace')) {
-                continue;
-            }
-
             if (! $hasMultipleValues) {
                 $hasMultipleValues = true;
 
@@ -342,33 +314,19 @@ class BlockParser extends AbstractParser
             } elseif ($token && isset(self::DECLARATION_VALUE_TYPES[$token->type])) {
                 if (isset(self::IDENTIFIER_VARIABLE_TYPES[$token->type])) {
                     $values[] = $this->parseExpression();
-                } else {
-                    $values[] = $this->parsePrimaryExpression();
                 }
-            } else {
-                break;
             }
         }
 
         if ($hasMultipleValues) {
-            $separator = $isCommaSeparated ? 'comma' : 'space';
-            $value     = new ListNode($values, $separator, line: $value->line ?? 0);
+            $value = new ListNode(
+                $values,
+                $isCommaSeparated ? 'comma' : 'space',
+                line: $value->line ?? 0
+            );
         }
 
         return $value;
-    }
-
-    private function handleImportantModifier(AstNode $value): void
-    {
-        $token = $this->currentToken();
-
-        if ($token && $token->type === 'important_modifier') {
-            $this->consume('important_modifier');
-
-            $value->important = true;
-        } elseif ($token && $token->type === 'operator' && $token->value === '!') {
-            $this->consume('operator');
-        }
     }
 
     private function consumeDeclarationTerminator(): void
@@ -376,11 +334,6 @@ class BlockParser extends AbstractParser
         if (! $this->consumeIf('semicolon')) {
             $this->consumeIf('newline');
         }
-    }
-
-    private function parsePrimaryExpression(): AstNode
-    {
-        return ($this->parsePrimaryExpression)();
     }
 
     private function parseSelector(): AstNode
@@ -422,10 +375,6 @@ class BlockParser extends AbstractParser
         while (! $this->matchesAny('semicolon', 'brace_open')) {
             $this->skipWhitespace();
 
-            if ($this->matchesAny('semicolon', 'brace_open')) {
-                break;
-            }
-
             if ($this->peek('paren_open')) {
                 $this->consume('paren_open');
 
@@ -435,8 +384,6 @@ class BlockParser extends AbstractParser
 
                 break;
             }
-
-            $this->advanceToken();
         }
 
         return $args;

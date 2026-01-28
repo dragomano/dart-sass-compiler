@@ -13,11 +13,11 @@ class ContainerRuleParser extends MediaRuleParser
 {
     public function __construct(
         TokenStreamInterface $stream,
-        protected Closure $parseAtRule,
-        protected Closure $parseInclude,
-        protected Closure $parseVariable,
-        protected Closure $parseRule,
-        protected Closure $parseDeclaration
+        protected Closure    $parseAtRule,
+        protected Closure    $parseInclude,
+        protected Closure    $parseVariable,
+        protected Closure    $parseRule,
+        protected Closure    $parseDeclaration
     ) {
         parent::__construct(
             $stream,

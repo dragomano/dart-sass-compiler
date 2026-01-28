@@ -38,10 +38,6 @@ class ForRuleParser extends AtRuleParser
             );
         }
 
-        while ($this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
-
         if ($this->peek('variable')) {
             $varToken = $this->consume('variable');
             $variable = $varToken->value;
@@ -53,59 +49,45 @@ class ForRuleParser extends AtRuleParser
             );
         }
 
-        while ($this->currentToken() && $this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
+        $currentToken = $this->currentToken();
 
-        if (! $this->peek('identifier') || $this->currentToken()->value !== 'from') {
+        if (! $this->peek('identifier') || $currentToken->value !== 'from') {
             throw new SyntaxException(
                 'Expected "from" keyword in @for rule',
-                $this->currentToken() ? $this->currentToken()->line : $token->line,
-                $this->currentToken() ? $this->currentToken()->column : $token->column
+                $currentToken ? $currentToken->line : $token->line,
+                $currentToken ? $currentToken->column : $token->column
             );
         }
 
         $this->consume('identifier');
 
-        while ($this->currentToken() && $this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
-
         $from = ($this->parseExpression)();
 
-        while ($this->currentToken() && $this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
+        $currentToken = $this->currentToken();
 
         if (
             ! $this->peek('identifier')
-            || ($this->currentToken()->value !== 'to' && $this->currentToken()->value !== 'through')
+            || ($currentToken->value !== 'to' && $currentToken->value !== 'through')
         ) {
             throw new SyntaxException(
                 'Expected "to" or "through" keyword in @for rule',
-                $this->currentToken() ? $this->currentToken()->line : $token->line,
-                $this->currentToken() ? $this->currentToken()->column : $token->column
+                $currentToken ? $currentToken->line : $token->line,
+                $currentToken ? $currentToken->column : $token->column
             );
         }
 
         $limitKeyword = $this->consume('identifier')->value;
         $inclusive    = $limitKeyword === 'through';
 
-        while ($this->currentToken() && $this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
-
         $to = ($this->parseExpression)();
 
-        while ($this->currentToken() && $this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
+        $currentToken = $this->currentToken();
 
         if (! $this->peek('brace_open')) {
             throw new SyntaxException(
                 'Expected "{" to start @for block',
-                $this->currentToken() ? $this->currentToken()->line : $token->line,
-                $this->currentToken() ? $this->currentToken()->column : $token->column
+                $currentToken ? $currentToken->line : $token->line,
+                $currentToken ? $currentToken->column : $token->column
             );
         }
 

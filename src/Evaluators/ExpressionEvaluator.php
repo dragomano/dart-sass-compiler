@@ -93,6 +93,8 @@ class ExpressionEvaluator extends AbstractEvaluator
         $values = ['Unknown expression type: ', $type->value, ' at line ', $expr->line ?? 0];
 
         return match ($type) {
+            NodeType::COLOR,
+            NodeType::HEX_COLOR           => $expr,
             NodeType::FUNCTION            => $this->evaluateFunctionExpression($expr),
             NodeType::NUMBER              => $this->evaluateNumberExpression($expr),
             NodeType::STRING              => $this->evaluateStringExpression($expr),
@@ -104,8 +106,6 @@ class ExpressionEvaluator extends AbstractEvaluator
             NodeType::PROPERTY_ACCESS     => $this->evaluatePropertyAccessExpression($expr),
             NodeType::CSS_PROPERTY        => $this->evaluateCssPropertyExpression($expr),
             NodeType::UNARY               => $this->evaluateUnaryExpression($expr),
-            NodeType::COLOR,
-            NodeType::HEX_COLOR           => $expr,
             default                       => throw new CompilationException(StringFormatter::concatMultiple($values)),
         };
     }

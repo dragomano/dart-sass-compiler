@@ -16,7 +16,7 @@ use function sprintf;
 class WhileRuleParser extends AtRuleParser
 {
     public function __construct(
-        TokenStreamInterface $stream,
+        TokenStreamInterface     $stream,
         private readonly Closure $parseExpression,
         private readonly Closure $parseBlock
     ) {
@@ -38,21 +38,15 @@ class WhileRuleParser extends AtRuleParser
             );
         }
 
-        while ($this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
-
         $condition = ($this->parseExpression)();
 
-        while ($this->currentToken() && $this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
+        $currentToken = $this->currentToken();
 
         if (! $this->peek('brace_open')) {
             throw new SyntaxException(
                 'Expected "{" to start @while block',
-                $this->currentToken() ? $this->currentToken()->line : $token->line,
-                $this->currentToken() ? $this->currentToken()->column : $token->column
+                $currentToken ? $currentToken->line : $token->line,
+                $currentToken ? $currentToken->column : $token->column
             );
         }
 

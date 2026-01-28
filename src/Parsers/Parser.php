@@ -12,16 +12,6 @@ class Parser extends AbstractParser
 {
     use AtRuleParserFactory;
 
-    private ?BlockParser $blockParser = null;
-
-    private ?ExpressionParser $expressionParser = null;
-
-    private ?SelectorParser $selectorParser = null;
-
-    private ?FunctionParser $functionParser = null;
-
-    private ?ImportParser $importParser = null;
-
     /**
      * @throws SyntaxException
      */
@@ -122,14 +112,6 @@ class Parser extends AbstractParser
         return $this->expressionParser()->parseBinaryExpression(0);
     }
 
-    /**
-     * @throws SyntaxException
-     */
-    private function parsePrimaryExpression(): AstNode
-    {
-        return $this->expressionParser()->parsePrimaryExpression();
-    }
-
     private function parseMixin(): AstNode
     {
         return $this->functionParser()->parseMixin();
@@ -166,10 +148,9 @@ class Parser extends AbstractParser
 
     private function blockParser(): BlockParser
     {
-        return $this->blockParser ??= new BlockParser(
+        return new BlockParser(
             $this->getStream(),
             $this->parseExpression(...),
-            $this->parsePrimaryExpression(...),
             $this->parseArgumentExpression(...),
             $this->parseSelector(...)
         );
@@ -177,12 +158,12 @@ class Parser extends AbstractParser
 
     private function expressionParser(): ExpressionParser
     {
-        return $this->expressionParser ??= new ExpressionParser($this->getStream());
+        return new ExpressionParser($this->getStream());
     }
 
     private function functionParser(): FunctionParser
     {
-        return $this->functionParser ??= new FunctionParser(
+        return new FunctionParser(
             $this->getStream(),
             $this->parseBlock(...),
             $this->parseBinaryExpression(...)
@@ -191,11 +172,11 @@ class Parser extends AbstractParser
 
     private function importParser(): ImportParser
     {
-        return $this->importParser ??= new ImportParser($this->getStream());
+        return new ImportParser($this->getStream());
     }
 
     private function selectorParser(): SelectorParser
     {
-        return $this->selectorParser ??= new SelectorParser($this->getStream(), $this->parseExpression(...));
+        return new SelectorParser($this->getStream(), $this->parseExpression(...));
     }
 }

@@ -155,14 +155,6 @@ class ExpressionParser extends AbstractParser
                 ) {
                     $this->skipWhitespace();
 
-                    if (
-                        isset(self::BLOCK_END_TYPES[$this->currentToken()->type])
-                        || $this->currentToken()->type === 'paren_close'
-                        || ($this->currentToken()->type === 'operator' && $this->currentToken()->value === ',')
-                    ) {
-                        break;
-                    }
-
                     $values[] = $this->parseBinaryExpression(0);
 
                     $this->skipWhitespace();
@@ -237,18 +229,6 @@ class ExpressionParser extends AbstractParser
                 $nextToken = $this->currentToken();
                 if ($nextToken && isset(self::BLOCK_END_TYPES[$nextToken->type])) {
                     return $left;
-                }
-
-                if ($nextToken && $nextToken->type === 'paren_open') {
-                    $this->consume('paren_open');
-
-                    $args = $this->parseArgumentList();
-
-                    $this->consume('paren_close');
-
-                    $funcName = $this->getFunctionNameFromPropertyAccess($left);
-
-                    return new FunctionNode($funcName, $args, line: $token->line);
                 }
 
                 continue;
@@ -358,12 +338,9 @@ class ExpressionParser extends AbstractParser
         if (preg_match('/^(-?\d*\.?\d+)(.*)$/', $valueStr, $matches)) {
             $value = (float) $matches[1];
             $unit  = trim($matches[2]) ?: null;
-        } else {
-            $value = 0.0;
-            $unit  = null;
         }
 
-        return new NumberNode($value, $unit, $token->line);
+        return new NumberNode($value ?? 0.0, $unit ?? null, $token->line);
     }
 
     /**
@@ -682,12 +659,6 @@ class ExpressionParser extends AbstractParser
 
             $value = $this->parseMapValue();
 
-            if ($value === null) {
-                $this->setTokenIndex($position);
-
-                return null;
-            }
-
             if ($value instanceof ListNode || $value instanceof CssPropertyNode) {
                 $this->setTokenIndex($valueStartPos);
 
@@ -786,14 +757,5 @@ class ExpressionParser extends AbstractParser
 
                 return $value;
         }
-    }
-
-    private function getFunctionNameFromPropertyAccess(AstNode $node): string
-    {
-        if ($node->type === NodeType::PROPERTY_ACCESS) {
-            return $node->property->value ?? '';
-        }
-
-        return '';
     }
 }

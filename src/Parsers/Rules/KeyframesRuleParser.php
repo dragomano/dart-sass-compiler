@@ -18,8 +18,7 @@ class KeyframesRuleParser extends AtRuleParser
     public function __construct(
         TokenStreamInterface     $stream,
         private readonly Closure $parseExpression
-    )
-    {
+    ) {
         parent::__construct($stream);
     }
 
@@ -32,6 +31,7 @@ class KeyframesRuleParser extends AtRuleParser
         $name  = $token->value;
 
         $animationName = '';
+
         while ($this->currentToken() && ! $this->peek('brace_open')) {
             $currentToken   = $this->currentToken();
             $animationName .= $currentToken->value;
@@ -41,11 +41,13 @@ class KeyframesRuleParser extends AtRuleParser
 
         $animationName = trim($animationName);
 
+        $currentToken = $this->currentToken();
+
         if (! $this->peek('brace_open')) {
             throw new SyntaxException(
                 sprintf('Expected "{" after %s', $name),
-                $this->currentToken() ? $this->currentToken()->line : $token->line,
-                $this->currentToken() ? $this->currentToken()->column : $token->column
+                $currentToken ? $currentToken->line : $token->line,
+                $currentToken ? $currentToken->column : $token->column
             );
         }
 
@@ -61,10 +63,6 @@ class KeyframesRuleParser extends AtRuleParser
         $keyframes = [];
 
         while ($this->currentToken() && ! $this->peek('brace_close')) {
-            while ($this->peek('whitespace')) {
-                $this->incrementTokenIndex();
-            }
-
             if ($this->peek('brace_close')) {
                 break;
             }
@@ -93,15 +91,12 @@ class KeyframesRuleParser extends AtRuleParser
         $selectors = [];
 
         while ($this->currentToken() && ! $this->peek('brace_open')) {
-            while ($this->peek('whitespace')) {
-                $this->incrementTokenIndex();
-            }
-
             if ($this->peek('brace_open')) {
                 break;
             }
 
             $selector = '';
+
             while ($this->currentToken() && ! $this->peek('comma') && ! $this->peek('brace_open')) {
                 $currentToken = $this->currentToken();
 
@@ -125,10 +120,6 @@ class KeyframesRuleParser extends AtRuleParser
         $declarations = [];
 
         while ($this->currentToken() && ! $this->peek('brace_close')) {
-            while ($this->peek('whitespace')) {
-                $this->incrementTokenIndex();
-            }
-
             if ($this->peek('brace_close')) {
                 break;
             }
@@ -138,10 +129,6 @@ class KeyframesRuleParser extends AtRuleParser
             $property = $propertyToken->value;
 
             $this->consume('colon');
-
-            while ($this->peek('whitespace')) {
-                $this->incrementTokenIndex();
-            }
 
             $value = ($this->parseExpression)();
 

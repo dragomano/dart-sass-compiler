@@ -46,17 +46,6 @@ class FunctionParser extends AbstractParser
         while (! $this->peek('paren_close')) {
             $this->skipWhitespace();
 
-            if ($this->peek('paren_close')) {
-                break;
-            }
-
-            $opToken = $this->currentToken();
-            if ($opToken && $opToken->type === 'operator' && $opToken->value === ',') {
-                $this->advanceToken();
-
-                continue;
-            }
-
             if ($this->peek('variable')) {
                 $argName = $this->consume('variable')->value;
 
@@ -118,19 +107,11 @@ class FunctionParser extends AbstractParser
         while (! $this->peek('brace_open')) {
             $this->skipWhitespace();
 
-            if ($this->peek('brace_open')) {
-                break;
-            }
-
             if ($this->peek('paren_open')) {
                 $this->consume('paren_open');
 
                 while (! $this->peek('paren_close')) {
                     $this->skipWhitespace();
-
-                    if ($this->peek('paren_close')) {
-                        break;
-                    }
 
                     if ($this->peek('variable')) {
                         $varToken = $this->consume('variable');
@@ -152,8 +133,6 @@ class FunctionParser extends AbstractParser
                         } else {
                             $args[$argName] = new NullNode($varToken->line);
                         }
-                    } else {
-                        $this->consume('identifier');
                     }
 
                     if (! $this->peek('paren_close')) {
@@ -170,8 +149,6 @@ class FunctionParser extends AbstractParser
 
                 break;
             }
-
-            $this->advanceToken();
         }
 
         $this->skipWhitespace();

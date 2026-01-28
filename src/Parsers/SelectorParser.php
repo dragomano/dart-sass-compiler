@@ -204,18 +204,18 @@ class SelectorParser extends AbstractParser
         return $this->formatExpressionForSelector($expression);
     }
 
-    private function formatExpressionForSelector(AstNode $expr): string
+    private function formatExpressionForSelector(AstNode $node): string
     {
-        if ($expr instanceof VariableNode) {
-            return $expr->name;
+        if ($node instanceof VariableNode) {
+            return $node->name;
         }
 
-        if ($expr instanceof IdentifierNode || $expr instanceof NumberNode) {
-            return $expr->value;
+        if ($node instanceof IdentifierNode || $node instanceof NumberNode) {
+            return $node->value;
         }
 
-        if ($expr instanceof StringNode) {
-            $value = $expr->value;
+        if ($node instanceof StringNode) {
+            $value = $node->value;
 
             if (str_starts_with($value, '"') && str_ends_with($value, '"')) {
                 $value = trim($value, '"');
@@ -224,8 +224,8 @@ class SelectorParser extends AbstractParser
             return $value;
         }
 
-        if ($expr instanceof InterpolationNode) {
-            return StringFormatter::concatMultiple(['#{', $this->formatExpressionForSelector($expr->expression), '}']);
+        if ($node instanceof InterpolationNode) {
+            return StringFormatter::concatMultiple(['#{', $this->formatExpressionForSelector($node->expression), '}']);
         }
 
         return 'expression';
