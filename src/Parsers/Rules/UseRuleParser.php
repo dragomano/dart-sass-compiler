@@ -33,48 +33,41 @@ class UseRuleParser extends AtRuleParser
             );
         }
 
-        while ($this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
-
         $namespace = null;
+
         if (! $this->peek('string')) {
             $pathTokens = [];
-            while ($this->currentToken() && ! $this->peek('semicolon') && ! $this->peek('brace_open') && ! $this->peek('as')) {
+
+            while (
+                $this->currentToken()
+                && ! $this->peek('semicolon')
+                && ! $this->peek('brace_open')
+                && ! ($this->peek('identifier') && $this->currentToken()->value === 'as')
+            ) {
                 $pathTokens[] = $this->consume($this->currentToken()->type);
             }
 
             $path = trim(implode('', array_map(fn($t): string => $t->value, $pathTokens)));
 
-            if ($this->currentToken() && $this->peek('as')) {
-                $this->consume('as');
-                while ($this->currentToken() && $this->peek('whitespace')) {
-                    $this->incrementTokenIndex();
-                }
+            if ($this->currentToken() && $this->peek('identifier') && $this->currentToken()->value === 'as') {
+                $this->consume('identifier');
 
-                if ($this->currentToken() && $this->peek('asterisk')) {
+                if ($this->peek('asterisk')) {
                     $namespace = $this->consume('asterisk')->value;
-                } elseif ($this->currentToken() && $this->peek('identifier')) {
+                } elseif ($this->peek('identifier')) {
                     $namespace = $this->consume('identifier')->value;
                 }
             }
         } else {
             $pathToken = $this->consume('string');
-            $path = trim(trim($pathToken->value, '\'"'));
 
-            while ($this->currentToken() && $this->peek('whitespace')) {
-                $this->incrementTokenIndex();
-            }
+            $path = trim(trim($pathToken->value, '"\''));
 
             if ($this->currentToken() && $this->peek('identifier')) {
                 $asOption = $this->consume('identifier')->value;
 
                 if ($asOption === 'as') {
-                    while ($this->currentToken() && $this->peek('whitespace')) {
-                        $this->incrementTokenIndex();
-                    }
-
-                    if ($this->currentToken() && $this->peek('asterisk')) {
+                    if ($this->peek('asterisk')) {
                         $namespace = $this->consume('asterisk')->value;
                     } else {
                         $namespace = $this->consume('identifier')->value;
@@ -85,7 +78,6 @@ class UseRuleParser extends AtRuleParser
 
         $this->consume('semicolon');
 
-        // If no namespace specified, use default (filename without extension and leading underscore)
         if ($namespace === null) {
             $namespace = $this->getDefaultNamespace($path);
         }

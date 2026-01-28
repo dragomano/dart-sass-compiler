@@ -4,14 +4,27 @@ declare(strict_types=1);
 
 namespace DartSass\Parsers\Rules;
 
+use Closure;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\MediaNode;
+use DartSass\Parsers\Tokens\TokenStreamInterface;
 
 use function preg_match;
 use function trim;
 
 class MediaRuleParser extends AtRuleParser
 {
+    public function __construct(
+        TokenStreamInterface $stream,
+        protected Closure    $parseAtRule,
+        protected Closure    $parseInclude,
+        protected Closure    $parseVariable,
+        protected Closure    $parseRule,
+        protected Closure    $parseDeclaration
+    ) {
+        parent::__construct($stream);
+    }
+
     public function parse(): AstNode
     {
         $token = $this->consume('at_rule');
@@ -33,32 +46,24 @@ class MediaRuleParser extends AtRuleParser
     {
         $declarations = $nested = [];
 
-        while ($this->currentToken() && ! $this->peek('brace_close')) {
-            while ($this->peek('whitespace')) {
-                $this->incrementTokenIndex();
-            }
+        $token = $this->currentToken();
 
-            if ($this->peek('brace_close')) {
-                break;
-            }
-
+        while ($token && ! $this->peek('brace_close')) {
             if ($this->peek('at_rule')) {
-                $token = $this->currentToken();
+
                 if ($token->value === '@include') {
-                    $nested[] = $this->parser->parseInclude();
+                    $nested[] = ($this->parseInclude)();
                 } else {
-                    $nested[] = $this->parser->parseAtRule();
+                    $nested[] = ($this->parseAtRule)();
                 }
             } elseif ($this->peek('variable')) {
-                $nested[] = $this->parser->parseVariable();
-            } elseif ($this->peek('selector')) {
-                $nested[] = $this->parser->parseRule();
+                $nested[] = ($this->parseVariable)();
             } elseif ($this->peek('operator')) {
-                $nested[] = $this->parser->parseRule();
+                $nested[] = ($this->parseRule)();
             } elseif ($this->peek('identifier')) {
                 $this->handleIdentifierInBlock($declarations, $nested);
             } else {
-                $this->handleOtherTokensInBlock($declarations, $nested);
+                $this->handleOtherTokensInBlock($nested);
             }
         }
 
@@ -79,6 +84,7 @@ class MediaRuleParser extends AtRuleParser
             }
 
             $query .= $currentToken->value;
+
             $this->incrementTokenIndex();
         }
 
@@ -91,49 +97,34 @@ class MediaRuleParser extends AtRuleParser
 
         $this->incrementTokenIndex();
 
-        while ($this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
-
         if ($this->peek('colon')) {
             $isSelector = $this->isPseudoClassSelector();
 
             $this->setTokenIndex($savedIndex);
 
             $isSelector
-                ? $nested[] = $this->parser->parseRule()
-                : $declarations[] = $this->parser->parseDeclaration();
+                ? $nested[] = ($this->parseRule)()
+                : $declarations[] = ($this->parseDeclaration)();
         } else {
-            $this->parser->setTokenIndex($savedIndex);
+            $this->setTokenIndex($savedIndex);
 
-            $nested[] = $this->parser->parseRule();
+            $nested[] = ($this->parseRule)();
         }
     }
 
-    private function handleOtherTokensInBlock(array &$declarations, array &$nested): void
+    private function handleOtherTokensInBlock(array &$nested): void
     {
         $savedIndex = $this->getTokenIndex();
 
         $this->incrementTokenIndex();
-
-        while ($this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
-
         $this->setTokenIndex($savedIndex);
 
-        $this->peek('colon')
-            ? $declarations[] = $this->parser->parseDeclaration()
-            : $nested[] = $this->parser->parseRule();
+        $nested[] = ($this->parseRule)();
     }
 
     private function isPseudoClassSelector(): bool
     {
         $this->incrementTokenIndex();
-
-        while ($this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
 
         if ($this->peek('function')) {
             return $this->checkFunctionPseudoClass();
@@ -141,10 +132,6 @@ class MediaRuleParser extends AtRuleParser
 
         if ($this->peek('identifier')) {
             $this->incrementTokenIndex();
-
-            while ($this->peek('whitespace')) {
-                $this->incrementTokenIndex();
-            }
 
             return $this->peek('brace_open');
         }
@@ -162,9 +149,7 @@ class MediaRuleParser extends AtRuleParser
             $this->consume('paren_open');
 
             while ($this->currentToken() && $parenLevel > 0) {
-                if ($this->peek('paren_open')) {
-                    $parenLevel++;
-                } elseif ($this->peek('paren_close')) {
+                if ($this->peek('paren_close')) {
                     $parenLevel--;
                 }
 
@@ -172,19 +157,11 @@ class MediaRuleParser extends AtRuleParser
             }
         }
 
-        while ($this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
-
         return $this->peek('brace_open');
     }
 
     private function shouldAddSpace($currentToken, string $query): bool
     {
-        if (preg_match('/\s$/', $query) === 1) {
-            return false;
-        }
-
         if ($currentToken->type === 'logical_operator') {
             return true;
         }
@@ -194,10 +171,6 @@ class MediaRuleParser extends AtRuleParser
         }
 
         if ($currentToken->type === 'identifier') {
-            if (preg_match('/\b(and|or)\b$/', $query) === 1) {
-                return true;
-            }
-
             if (preg_match('/[a-zA-Z0-9_-]+$/', $query) === 1) {
                 return true;
             }
@@ -213,10 +186,6 @@ class MediaRuleParser extends AtRuleParser
 
         if ($currentToken->type === 'number') {
             if (preg_match('/:$/', $query) === 1) {
-                return true;
-            }
-
-            if (preg_match('/\)$/', $query) === 1) {
                 return true;
             }
         }

@@ -3,13 +3,13 @@
 declare(strict_types=1);
 
 use DartSass\Exceptions\SyntaxException;
-use DartSass\Parsers\Lexer;
-use DartSass\Parsers\Token;
-use DartSass\Parsers\TokenStream;
+use DartSass\Parsers\Tokens\Lexer;
+use DartSass\Parsers\Tokens\Token;
+use DartSass\Parsers\Tokens\TokenStream;
 
 describe('TokenStream', function () {
     beforeEach(function () {
-        $this->lexer = new Lexer();
+        $this->lexer       = new Lexer();
         $this->tokenStream = $this->lexer->tokenize('.class > .child { color: red; }');
     });
 

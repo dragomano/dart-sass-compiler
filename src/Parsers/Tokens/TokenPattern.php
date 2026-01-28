@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Parsers;
+namespace DartSass\Parsers\Tokens;
 
 use function array_column;
 use function implode;

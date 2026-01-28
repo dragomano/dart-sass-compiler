@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use DartSass\Exceptions\InvalidColorException;
-use DartSass\Parsers\Lexer;
+use DartSass\Parsers\Tokens\Lexer;
 use Tests\ReflectionAccessor;
 
 describe('Lexer', function () {

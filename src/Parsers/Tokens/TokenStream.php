@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DartSass\Parsers;
+namespace DartSass\Parsers\Tokens;
 
 use ArrayIterator;
 use DartSass\Exceptions\SyntaxException;
@@ -76,6 +76,7 @@ class TokenStream implements TokenStreamInterface, IteratorAggregate
     {
         if ($this->matches($type)) {
             $token = $this->current();
+
             $this->advance();
 
             return $token;

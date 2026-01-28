@@ -4,26 +4,36 @@ declare(strict_types=1);
 
 namespace DartSass\Parsers\Rules;
 
+use Closure;
 use DartSass\Exceptions\SyntaxException;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\KeyframesNode;
+use DartSass\Parsers\Tokens\TokenStreamInterface;
 
 use function sprintf;
 use function trim;
 
 class KeyframesRuleParser extends AtRuleParser
 {
+    public function __construct(
+        TokenStreamInterface     $stream,
+        private readonly Closure $parseExpression
+    ) {
+        parent::__construct($stream);
+    }
+
     /**
      * @throws SyntaxException
      */
     public function parse(): AstNode
     {
         $token = $this->consume('at_rule');
-        $name = $token->value;
+        $name  = $token->value;
 
         $animationName = '';
+
         while ($this->currentToken() && ! $this->peek('brace_open')) {
-            $currentToken = $this->currentToken();
+            $currentToken   = $this->currentToken();
             $animationName .= $currentToken->value;
 
             $this->incrementTokenIndex();
@@ -31,11 +41,13 @@ class KeyframesRuleParser extends AtRuleParser
 
         $animationName = trim($animationName);
 
+        $currentToken = $this->currentToken();
+
         if (! $this->peek('brace_open')) {
             throw new SyntaxException(
                 sprintf('Expected "{" after %s', $name),
-                $this->currentToken() ? $this->currentToken()->line : $token->line,
-                $this->currentToken() ? $this->currentToken()->column : $token->column
+                $currentToken ? $currentToken->line : $token->line,
+                $currentToken ? $currentToken->column : $token->column
             );
         }
 
@@ -51,10 +63,6 @@ class KeyframesRuleParser extends AtRuleParser
         $keyframes = [];
 
         while ($this->currentToken() && ! $this->peek('brace_close')) {
-            while ($this->peek('whitespace')) {
-                $this->incrementTokenIndex();
-            }
-
             if ($this->peek('brace_close')) {
                 break;
             }
@@ -83,18 +91,17 @@ class KeyframesRuleParser extends AtRuleParser
         $selectors = [];
 
         while ($this->currentToken() && ! $this->peek('brace_open')) {
-            while ($this->peek('whitespace')) {
-                $this->incrementTokenIndex();
-            }
-
             if ($this->peek('brace_open')) {
                 break;
             }
 
             $selector = '';
+
             while ($this->currentToken() && ! $this->peek('comma') && ! $this->peek('brace_open')) {
                 $currentToken = $this->currentToken();
+
                 $selector .= $currentToken->value;
+
                 $this->incrementTokenIndex();
             }
 
@@ -113,24 +120,17 @@ class KeyframesRuleParser extends AtRuleParser
         $declarations = [];
 
         while ($this->currentToken() && ! $this->peek('brace_close')) {
-            while ($this->peek('whitespace')) {
-                $this->incrementTokenIndex();
-            }
-
             if ($this->peek('brace_close')) {
                 break;
             }
 
             $propertyToken = $this->consume('identifier');
+
             $property = $propertyToken->value;
 
             $this->consume('colon');
 
-            while ($this->peek('whitespace')) {
-                $this->incrementTokenIndex();
-            }
-
-            $value = $this->parser->parseExpression();
+            $value = ($this->parseExpression)();
 
             $this->consume('semicolon');
 

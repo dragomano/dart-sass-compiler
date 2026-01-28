@@ -4,17 +4,27 @@ declare(strict_types=1);
 
 namespace DartSass\Parsers\Rules;
 
+use Closure;
 use DartSass\Exceptions\SyntaxException;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\ConditionNode;
 use DartSass\Parsers\Nodes\IfNode;
 use DartSass\Parsers\Nodes\OperationNode;
+use DartSass\Parsers\Tokens\TokenStreamInterface;
 
 use function array_merge;
 use function sprintf;
 
 class IfRuleParser extends AtRuleParser
 {
+    public function __construct(
+        TokenStreamInterface     $stream,
+        private readonly Closure $parseExpression,
+        private readonly Closure $parseBlock
+    ) {
+        parent::__construct($stream);
+    }
+
     /**
      * @throws SyntaxException
      */
@@ -32,12 +42,9 @@ class IfRuleParser extends AtRuleParser
 
         $condition = $this->parseCondition();
 
-        while ($this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
-
         if (! $this->peek('brace_open')) {
             $currentToken = $this->currentToken();
+
             $tokenInfo = $currentToken
                 ? sprintf('Token: type=%s, value=%s', $currentToken->type, $currentToken->value ?? 'null')
                 : 'No current token';
@@ -51,7 +58,7 @@ class IfRuleParser extends AtRuleParser
 
         $this->consume('brace_open');
 
-        $block = $this->parser->parseBlock();
+        $block = ($this->parseBlock)();
         $body  = array_merge($block['declarations'], $block['nested']);
 
         $elseBlock = $this->parseElseChain();
@@ -61,10 +68,6 @@ class IfRuleParser extends AtRuleParser
 
     private function parseCondition(): AstNode
     {
-        while ($this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
-
         $expression = $this->parseFullConditionExpression();
 
         return new ConditionNode($expression, 1);
@@ -72,33 +75,18 @@ class IfRuleParser extends AtRuleParser
 
     private function parseFullConditionExpression(): AstNode
     {
-        $left = $this->parser->parseExpression();
-
-        while ($this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
+        $left = ($this->parseExpression)();
 
         while ($this->currentToken() && $this->currentToken()->type === 'logical_operator') {
             $operatorToken = $this->currentToken();
+
             $operator = $operatorToken->value;
+
             $this->incrementTokenIndex();
 
-            while ($this->peek('whitespace')) {
-                $this->incrementTokenIndex();
-            }
+            $right = ($this->parseExpression)();
 
-            $right = $this->parser->parseExpression();
-
-            $left = new OperationNode(
-                $left,
-                $operator,
-                $right,
-                $operatorToken->line ?? 1
-            );
-
-            while ($this->peek('whitespace')) {
-                $this->incrementTokenIndex();
-            }
+            $left = new OperationNode($left, $operator, $right, $operatorToken->line ?? 1);
 
             if ($this->peek('brace_open')) {
                 break;
@@ -113,28 +101,16 @@ class IfRuleParser extends AtRuleParser
      */
     private function parseElseChain(): ?array
     {
-        while ($this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
-
         if (! $this->peek('at_rule') || $this->currentToken()->value !== '@else') {
             return null;
         }
 
         $this->consume('at_rule');
 
-        while ($this->peek('whitespace')) {
-            $this->incrementTokenIndex();
-        }
-
         if ($this->peek('identifier') && $this->currentToken()->value === 'if') {
             $this->consume('identifier');
 
             $condition = $this->parseCondition();
-
-            while ($this->peek('whitespace')) {
-                $this->incrementTokenIndex();
-            }
 
             if (! $this->peek('brace_open')) {
                 throw new SyntaxException(
@@ -146,7 +122,7 @@ class IfRuleParser extends AtRuleParser
 
             $this->consume('brace_open');
 
-            $block = $this->parser->parseBlock();
+            $block = ($this->parseBlock)();
             $body  = array_merge($block['declarations'], $block['nested']);
 
             $nextElse = $this->parseElseChain();
@@ -163,7 +139,7 @@ class IfRuleParser extends AtRuleParser
 
             $this->consume('brace_open');
 
-            $block = $this->parser->parseBlock();
+            $block = ($this->parseBlock)();
 
             return array_merge($block['declarations'], $block['nested']);
         }
