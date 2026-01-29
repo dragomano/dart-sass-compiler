@@ -21,7 +21,7 @@ readonly class ModuleCompiler
         Closure $expression,
         Closure $compileAst
     ): string {
-        $this->context->variableHandler->enterScope();
+        $this->context->environment->enterScope();
 
         $moduleVars = $this->context->moduleHandler->getVariables($actualNamespace);
         foreach ($moduleVars as $name => $varNode) {
@@ -34,7 +34,7 @@ readonly class ModuleCompiler
 
         $css = $compileAst($result['cssAst'], '', $nestingLevel);
 
-        $this->context->variableHandler->exitScope();
+        $this->context->environment->exitScope();
 
         if ($namespace === '*') {
             $this->defineGlobalVariablesFromModule($expression);

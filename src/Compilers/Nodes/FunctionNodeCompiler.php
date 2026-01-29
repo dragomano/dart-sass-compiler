@@ -30,8 +30,7 @@ class FunctionNodeCompiler extends AbstractNodeCompiler
         $context->functionHandler->defineUserFunction(
             $node->name,
             $node->args ?? [],
-            $node->body ?? [],
-            $context->variableHandler,
+            $node->body ?? []
         );
 
         return '';

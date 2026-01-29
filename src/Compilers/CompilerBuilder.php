@@ -62,10 +62,7 @@ readonly class CompilerBuilder
         $this->initializeEvaluators($context);
         $this->initializeCompilers($context);
 
-        $engine = new CompilerEngine($context);
-        $context->mixinHandler->setCompilerEngine($engine);
-
-        return $engine;
+        return new CompilerEngine($context);
     }
 
     private function createContext(): CompilerContext
@@ -90,8 +87,9 @@ readonly class CompilerBuilder
 
     private function initializeVariableAndMixinHandlers(CompilerContext $context): void
     {
-        $context->variableHandler = new VariableHandler();
-        $context->mixinHandler    = new MixinHandler();
+        $context->environment     = new Environment();
+        $context->variableHandler = new VariableHandler($context->environment);
+        $context->mixinHandler    = new MixinHandler($context);
         $context->nestingHandler  = new NestingHandler();
         $context->extendHandler   = new ExtendHandler();
     }
@@ -112,10 +110,11 @@ readonly class CompilerBuilder
         $this->registerMetaModule($moduleRegistry, $context);
 
         $context->functionHandler = new FunctionHandler(
+            $context->environment,
             $context->moduleHandler,
             new FunctionRouter($moduleRegistry, $context->resultFormatter),
             $customHandler,
-            new UserFunctionEvaluator(),
+            new UserFunctionEvaluator($context->environment),
             fn($expr): mixed => $context->engine->evaluateExpression($expr)
         );
     }
@@ -182,7 +181,7 @@ readonly class CompilerBuilder
 
     private function initializeEvaluators(CompilerContext $context): void
     {
-        $context->interpolationEvaluator = new InterpolationEvaluator($context->resultFormatter, $context->parserFactory);
+        $context->interpolationEvaluator = new InterpolationEvaluator($context);
         $context->operationEvaluator     = new OperationEvaluator($context);
         $context->calcEvaluator          = new CalcFunctionEvaluator($context->resultFormatter);
         $context->expressionEvaluator    = new ExpressionEvaluator($context);
@@ -197,7 +196,7 @@ readonly class CompilerBuilder
     private function initializeCoreCompilers(CompilerContext $context): void
     {
         $context->ruleCompiler        = new RuleCompiler();
-        $context->flowControlCompiler = new FlowControlCompiler($context->variableHandler);
+        $context->flowControlCompiler = new FlowControlCompiler($context->variableHandler, $context->environment);
         $context->declarationCompiler = new DeclarationCompiler($context->resultFormatter, $context->positionTracker);
     }
 

@@ -25,7 +25,10 @@ use function str_contains;
 
 readonly class FlowControlCompiler
 {
-    public function __construct(private VariableHandler $variableHandler) {}
+    public function __construct(
+        private VariableHandler $variableHandler,
+        private Environment $environment
+    ) {}
 
     public function compile(
         AstNode $node,
@@ -97,7 +100,7 @@ readonly class FlowControlCompiler
 
         $css = '';
 
-        $this->variableHandler->enterScope();
+        $this->environment->enterScope();
 
         $numVars = count($variables);
 
@@ -153,7 +156,7 @@ readonly class FlowControlCompiler
             }
         }
 
-        $this->variableHandler->exitScope();
+        $this->environment->exitScope();
 
         return $css;
     }
@@ -173,7 +176,7 @@ readonly class FlowControlCompiler
 
         $css = '';
 
-        $this->variableHandler->enterScope();
+        $this->environment->enterScope();
 
         $end  = $inclusive ? $to : $to - 1;
         $step = $from <= $end ? 1 : -1;
@@ -192,7 +195,7 @@ readonly class FlowControlCompiler
             }
         }
 
-        $this->variableHandler->exitScope();
+        $this->environment->exitScope();
 
         return $css;
     }
@@ -208,7 +211,7 @@ readonly class FlowControlCompiler
 
         $maxIterations = 1000;
 
-        $this->variableHandler->enterScope();
+        $this->environment->enterScope();
 
         $iteration = 0;
         while ($iteration < $maxIterations) {
@@ -221,7 +224,7 @@ readonly class FlowControlCompiler
             $iteration++;
         }
 
-        $this->variableHandler->exitScope();
+        $this->environment->exitScope();
 
         if ($iteration >= $maxIterations) {
             throw new CompilationException('Maximum @while iterations exceeded (1000)');
