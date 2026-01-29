@@ -59,7 +59,10 @@ describe('OperationEvaluator', function () {
 
         it('throws exception for invalid expression', function () {
             expect(fn() => $this->evaluator->evaluate('invalid'))
-                ->toThrow(CompilationException::class, 'Invalid arguments for OperationEvaluator::evaluate()');
+                ->toThrow(
+                    CompilationException::class,
+                    'Invalid arguments for OperationEvaluator::evaluate()'
+                );
         });
     });
 
@@ -209,7 +212,10 @@ describe('OperationEvaluator', function () {
                 ->andReturnUsing(fn($value) => (string) $value);
 
             expect(fn() => $this->evaluator->evaluateOperation('text', '*', 'other'))
-                ->toThrow(CompilationException::class, 'Undefined operation "text * other".');
+                ->toThrow(
+                    CompilationException::class,
+                    'Undefined operation "text * other".'
+                );
         });
 
         it('handles other operators as calc', function () {

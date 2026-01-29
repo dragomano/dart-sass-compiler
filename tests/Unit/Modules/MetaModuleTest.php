@@ -46,8 +46,9 @@ describe('MetaModule', function () {
     describe('apply()', function () {
         it('applies SassMixin with arguments', function () {
             $this->mixinHandler
-                ->shouldReceive('getMixins')
-                ->andReturn(['mixins' => ['testMixin' => ['body' => []]]]);
+                ->shouldReceive('getMixin')
+                ->with('testMixin')
+                ->andReturn(['body' => []]);
 
             $this->mixinHandler
                 ->shouldReceive('include')
@@ -61,8 +62,9 @@ describe('MetaModule', function () {
 
         it('includes mixin with arguments', function () {
             $this->mixinHandler
-                ->shouldReceive('getMixins')
-                ->andReturn(['mixins' => ['testMixin' => []]]);
+                ->shouldReceive('hasMixin')
+                ->with('testMixin')
+                ->andReturn(true);
 
             $this->mixinHandler
                 ->shouldReceive('include')
@@ -73,10 +75,13 @@ describe('MetaModule', function () {
         });
 
         it('throws exception for unknown mixin', function () {
-            $this->mixinHandler->shouldReceive('getMixins')->andReturn(['mixins' => []]);
+            $this->mixinHandler
+                ->shouldReceive('hasMixin')
+                ->with('unknownMixin')
+                ->andReturn(false);
 
             expect(fn() => $this->metaModule->apply(['unknownMixin']))
-                ->toThrow(CompilationException::class);
+                ->toThrow(CompilationException::class, 'Unknown mixin: unknownMixin');
         });
 
         it('throws exception for invalid first argument', function () {
@@ -476,6 +481,11 @@ describe('MetaModule', function () {
                 ->with('nonExistent')
                 ->andReturn(null);
 
+            $this->functionHandler
+                ->shouldReceive('exists')
+                ->with('nonExistent')
+                ->andReturn(false);
+
             expect(fn() => $this->metaModule->getFunction(['nonExistent']))
                 ->toThrow(CompilationException::class);
         });
@@ -493,13 +503,17 @@ describe('MetaModule', function () {
 
     describe('mixinExists()', function () {
         it('returns true when mixin exists', function () {
-            $this->mixinHandler->shouldReceive('getMixins')->andReturn(['mixins' => ['testMixin' => []]]);
+            $this->mixinHandler->shouldReceive('hasMixin')
+                ->with('testMixin')
+                ->andReturn(true);
 
             expect($this->metaModule->mixinExists(['testMixin']))->toBeTrue();
         });
 
         it('returns false when mixin does not exist', function () {
-            $this->mixinHandler->shouldReceive('getMixins')->andReturn(['mixins' => []]);
+            $this->mixinHandler->shouldReceive('hasMixin')
+                ->with('nonExistent')
+                ->andReturn(false);
 
             expect($this->metaModule->mixinExists(['nonExistent']))->toBeFalse();
         });
@@ -525,7 +539,9 @@ describe('MetaModule', function () {
 
     describe('getMixin()', function () {
         it('throws exception for non-existing mixin', function () {
-            $this->mixinHandler->shouldReceive('getMixins')->andReturn(['mixins' => []]);
+            $this->mixinHandler->shouldReceive('hasMixin')
+                ->with('nonExistent')
+                ->andReturn(false);
 
             expect(fn() => $this->metaModule->getMixin(['nonExistent']))
                 ->toThrow(CompilationException::class);
@@ -564,8 +580,9 @@ describe('MetaModule', function () {
     describe('acceptsContent()', function () {
         it('returns true when SassMixin accepts content', function () {
             $this->mixinHandler
-                ->shouldReceive('getMixins')
-                ->andReturn(['mixins' => ['testMixin' => ['body' => ['@content']]]]);
+                ->shouldReceive('getMixin')
+                ->with('testMixin')
+                ->andReturn(['body' => ['@content']]);
 
             $mixin = new SassMixin($this->mixinHandler, 'testMixin');
 
@@ -574,8 +591,9 @@ describe('MetaModule', function () {
 
         it('returns false when SassMixin does not accept content', function () {
             $this->mixinHandler
-                ->shouldReceive('getMixins')
-                ->andReturn(['mixins' => ['testMixin' => ['body' => ['some rule']]]]);
+                ->shouldReceive('getMixin')
+                ->with('testMixin')
+                ->andReturn(['body' => ['some rule']]);
 
             $mixin = new SassMixin($this->mixinHandler, 'testMixin');
 
@@ -583,7 +601,9 @@ describe('MetaModule', function () {
         });
 
         it('returns false for invalid mixin', function () {
-            $this->mixinHandler->shouldReceive('getMixins')->andReturn(['mixins' => []]);
+            $this->mixinHandler->shouldReceive('getMixin')
+                ->with('string')
+                ->andReturn(['body' => []]);
 
             expect($this->metaModule->acceptsContent(['string']))->toBeFalse();
         });
@@ -611,8 +631,9 @@ describe('MetaModule', function () {
             };
 
             $this->mixinHandler
-                ->shouldReceive('getMixins')
-                ->andReturn(['mixins' => ['testMixin' => ['body' => ['@content']]]]);
+                ->shouldReceive('getMixin')
+                ->with('testMixin')
+                ->andReturn(['body' => ['@content']]);
 
             expect($this->metaModule->acceptsContent([$callable]))->toBeTrue();
         });
@@ -628,16 +649,16 @@ describe('MetaModule', function () {
     describe('contentExists()', function () {
         it('returns true when content exists', function () {
             $this->mixinHandler
-                ->shouldReceive('getMixins')
-                ->andReturn(['currentContent' => 'content']);
+                ->shouldReceive('hasContent')
+                ->andReturn(true);
 
             expect($this->metaModule->contentExists([]))->toBeTrue();
         });
 
         it('returns false when no content', function () {
             $this->mixinHandler
-                ->shouldReceive('getMixins')
-                ->andReturn(['currentContent' => null]);
+                ->shouldReceive('hasContent')
+                ->andReturn(false);
 
             expect($this->metaModule->contentExists([]))->toBeFalse();
         });
@@ -687,7 +708,7 @@ describe('MetaModule', function () {
     describe('globalVariableExists()', function () {
         it('returns true when global variable exists', function () {
             $this->variableHandler
-                ->shouldReceive('globalVariableExists')
+                ->shouldReceive('globalExists')
                 ->with('$testVar')
                 ->andReturn(true);
 
@@ -696,7 +717,7 @@ describe('MetaModule', function () {
 
         it('returns false when global variable does not exist', function () {
             $this->variableHandler
-                ->shouldReceive('globalVariableExists')
+                ->shouldReceive('globalExists')
                 ->with('$nonExistent')
                 ->andReturn(false);
 

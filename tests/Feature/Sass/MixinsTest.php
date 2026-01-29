@@ -50,6 +50,40 @@ it('handles mixins with arguments', function () {
         ->toEqualCss($expected);
 });
 
+it('handles local mixins', function () {
+    $scss = <<<'SCSS'
+    @use "sass:meta";
+
+    .test-keywords {
+        @mixin test-kw($args...) {
+            $kw: meta.keywords($args);
+            @each $key, $val in $kw {
+                .kw-#{$key} {
+                    value: $val;
+                }
+            }
+        }
+
+        @include test-kw(
+            $string: #080,
+            $comment-val: #800
+        );
+    }
+    SCSS;
+
+    $expected = /** @lang text */ <<<'CSS'
+    .test-keywords .kw-string {
+      value: #080;
+    }
+    .test-keywords .kw-comment-val {
+      value: #800;
+    }
+    CSS;
+
+    expect($this->compiler->compileString($scss))
+        ->toEqualCss($expected);
+});
+
 it('handles complex mixins', function () {
     $oldMixin = <<<'SCSS'
     @mixin bRadius($topLeft: 6px, $topRight: null, $bottomRight: null, $bottomLeft: null) {

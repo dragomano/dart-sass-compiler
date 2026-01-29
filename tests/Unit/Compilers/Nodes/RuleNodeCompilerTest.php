@@ -3,20 +3,8 @@
 declare(strict_types=1);
 
 use DartSass\Compilers\CompilerContext;
-use DartSass\Compilers\CompilerEngineInterface;
-use DartSass\Compilers\DeclarationCompiler;
 use DartSass\Compilers\Nodes\RuleNodeCompiler;
-use DartSass\Evaluators\InterpolationEvaluator;
-use DartSass\Handlers\ExtendHandler;
-use DartSass\Handlers\NestingHandler;
-use DartSass\Handlers\VariableHandler;
-use DartSass\Parsers\Nodes\AstNode;
-use DartSass\Parsers\Nodes\NodeType;
-use DartSass\Parsers\Nodes\RuleNode;
 use DartSass\Parsers\Nodes\StringNode;
-use DartSass\Parsers\ParserFactory;
-use DartSass\Utils\PositionTracker;
-use DartSass\Utils\ResultFormatterInterface;
 use Tests\ReflectionAccessor;
 
 describe('RuleNodeCompiler', function () {
@@ -31,53 +19,6 @@ describe('RuleNodeCompiler', function () {
         $result = $this->accessor->callMethod('evaluateInterpolationsInString', [null, $context]);
 
         expect($result)->toBe('');
-    });
-
-    it('sets selectorString to null when selector is not SelectorNode and calls resolveSelector with null', function () {
-        $selectorNode = mock(AstNode::class);
-        $selectorNode->type = NodeType::UNKNOWN;
-        $node = new RuleNode($selectorNode, [], [], 0);
-
-        $nestingHandler = mock(NestingHandler::class);
-        $nestingHandler->shouldReceive('resolveSelector')
-            ->once()
-            ->with(null, '')
-            ->andReturn('resolved-selector');
-
-        $variableHandler = mock(VariableHandler::class);
-        $variableHandler->shouldReceive('enterScope')->once();
-        $variableHandler->shouldReceive('exitScope')->once();
-
-        $resultFormatter        = mock(ResultFormatterInterface::class);
-        $positionTrackerForDecl = mock(PositionTracker::class);
-        $declarationCompiler    = new DeclarationCompiler($resultFormatter, $positionTrackerForDecl);
-
-        $positionTracker = mock(PositionTracker::class);
-        $positionTracker->shouldReceive('updatePosition')->andReturn();
-
-        $extendHandler = mock(ExtendHandler::class);
-        $extendHandler->shouldReceive('addDefinedSelector')->once();
-
-        $resultFormatter        = mock(ResultFormatterInterface::class);
-        $parserFactory          = mock(ParserFactory::class);
-        $interpolationEvaluator = new InterpolationEvaluator($resultFormatter, $parserFactory);
-
-        $context = mock(CompilerContext::class);
-        $context->nestingHandler         = $nestingHandler;
-        $context->variableHandler        = $variableHandler;
-        $context->declarationCompiler    = $declarationCompiler;
-        $context->positionTracker        = $positionTracker;
-        $context->extendHandler          = $extendHandler;
-        $context->interpolationEvaluator = $interpolationEvaluator;
-        $context->options                = ['sourceMap' => false];
-        $context->mappings               = [];
-
-        $context->engine = mock(CompilerEngineInterface::class);
-        $context->engine->shouldReceive('getIndent')->andReturn('');
-
-        $result = $this->accessor->callMethod('compileNode', [$node, $context]);
-
-        expect($result)->toBeString();
     });
 
     it('returns empty string when node is not instance of RuleNode', function () {

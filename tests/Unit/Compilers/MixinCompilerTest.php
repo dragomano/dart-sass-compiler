@@ -396,10 +396,10 @@ describe('handleMetaApply()', function () {
         $includeNode = new IncludeNode('meta.apply', ['mixinName'], null, 0);
 
         $this->mixinHandler
-            ->shouldReceive('include')
+            ->shouldReceive('hasMixin')
             ->once()
-            ->with('mixinName', [])
-            ->andReturn();
+            ->with('mixinName')
+            ->andReturn(true);
 
         $this->mixinHandler
             ->shouldReceive('include')
@@ -416,15 +416,10 @@ describe('handleMetaApply()', function () {
         $includeNode = new IncludeNode('meta.apply', ['mixinName'], null, 0);
 
         $this->mixinHandler
-            ->shouldReceive('include')
+            ->shouldReceive('hasMixin')
             ->once()
-            ->with('mixinName', [])
-            ->andThrow(new CompilationException('Mixin not found'));
-
-        $this->mixinHandler
-            ->shouldReceive('getMixins')
-            ->once()
-            ->andReturn([]);
+            ->with('mixinName')
+            ->andReturn(false);
 
         $this->mixinHandler
             ->shouldReceive('include')
@@ -450,10 +445,10 @@ describe('handleMetaApply()', function () {
         $includeNode = new IncludeNode('meta.apply', [$sassList], null, 0);
 
         $this->mixinHandler
-            ->shouldReceive('include')
+            ->shouldReceive('hasMixin')
             ->once()
-            ->with('mixinName', [])
-            ->andReturn();
+            ->with('mixinName')
+            ->andReturn(true);
 
         $this->mixinHandler
             ->shouldReceive('include')
@@ -465,5 +460,4 @@ describe('handleMetaApply()', function () {
 
         expect($result)->toBe('.mixin { content: "applied with list"; }');
     });
-
 });

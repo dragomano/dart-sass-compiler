@@ -18,7 +18,10 @@ describe('SassMixin', function () {
     describe('acceptsContent()', function () {
         it('returns false when mixin definition is null', function () {
             $handler = mock(MixinHandler::class);
-            $handler->shouldReceive('getMixins')->andReturn(['mixins' => []]);
+            $handler->shouldReceive('getMixin')
+                ->with('nonExistentMixin')
+                ->andReturn(null);
+
             $mixin = new SassMixin($handler, 'nonExistentMixin');
 
             expect($mixin->acceptsContent())->toBeFalse();
@@ -26,7 +29,10 @@ describe('SassMixin', function () {
 
         it('does not throw when mixin definition is null', function () {
             $handler = mock(MixinHandler::class);
-            $handler->shouldReceive('getMixins')->andReturn(['mixins' => []]);
+            $handler->shouldReceive('getMixin')
+                ->with('nonExistentMixin')
+                ->andReturn(null);
+
             $mixin = new SassMixin($handler, 'nonExistentMixin');
 
             expect(fn() => $mixin->acceptsContent())->not->toThrow(Throwable::class);
@@ -34,11 +40,10 @@ describe('SassMixin', function () {
 
         it('returns true when body contains @content', function () {
             $handler = mock(MixinHandler::class);
-            $handler->shouldReceive('getMixins')->andReturn([
-                'mixins' => [
-                    'myMixin' => ['body' => ['some code', '@content', 'more code']],
-                ],
-            ]);
+            $handler->shouldReceive('getMixin')
+                ->with('myMixin')
+                ->andReturn(['body' => ['some code', '@content', 'more code']]);
+
             $mixin = new SassMixin($handler, 'myMixin');
 
             expect($mixin->acceptsContent())->toBeTrue();
@@ -46,11 +51,10 @@ describe('SassMixin', function () {
 
         it('returns false when body does not contain @content', function () {
             $handler = mock(MixinHandler::class);
-            $handler->shouldReceive('getMixins')->andReturn([
-                'mixins' => [
-                    'myMixin' => ['body' => ['some code', 'more code']],
-                ],
-            ]);
+            $handler->shouldReceive('getMixin')
+                ->with('myMixin')
+                ->andReturn(['body' => ['some code', 'more code']]);
+
             $mixin = new SassMixin($handler, 'myMixin');
 
             expect($mixin->acceptsContent())->toBeFalse();
