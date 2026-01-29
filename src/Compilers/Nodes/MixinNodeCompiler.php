@@ -30,7 +30,8 @@ class MixinNodeCompiler extends AbstractNodeCompiler
         $context->mixinHandler->define(
             $node->name,
             $node->args ?? [],
-            $node->body ?? []
+            $node->body ?? [],
+            $nestingLevel === 0
         );
 
         return '';

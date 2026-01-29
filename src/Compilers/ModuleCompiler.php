@@ -27,6 +27,7 @@ readonly class ModuleCompiler
         foreach ($moduleVars as $name => $varNode) {
             if ($varNode instanceof VariableDeclarationNode) {
                 $value = $expression($varNode->value);
+
                 $this->context->variableHandler->define($name, $value);
             }
         }

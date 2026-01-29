@@ -16,7 +16,7 @@ class VariableHandler
 {
     private array $scopes = [];
 
-    private array $globalVariables = [];
+    private array $globals = [];
 
     public function enterScope(): void
     {
@@ -37,7 +37,7 @@ class VariableHandler
         }
 
         if ($global || empty($this->scopes)) {
-            $this->globalVariables[$name] = $value;
+            $this->globals[$name] = $value;
         } else {
             $this->scopes[array_key_last($this->scopes)][$name] = $value;
         }
@@ -51,8 +51,8 @@ class VariableHandler
             }
         }
 
-        if (array_key_exists($name, $this->globalVariables)) {
-            return $this->globalVariables[$name];
+        if (array_key_exists($name, $this->globals)) {
+            return $this->globals[$name];
         }
 
         throw new CompilationException("Undefined variable: $name");
@@ -60,7 +60,7 @@ class VariableHandler
 
     public function getVariables(): array
     {
-        $variables = $this->globalVariables;
+        $variables = $this->globals;
 
         foreach ($this->scopes as $scope) {
             $variables = array_merge($variables, $scope);
@@ -71,14 +71,13 @@ class VariableHandler
 
     public function setVariables(array $variables): void
     {
-        $this->scopes = [];
-
-        $this->globalVariables = $variables;
+        $this->scopes  = [];
+        $this->globals = $variables;
     }
 
     public function globalVariableExists(string $name): bool
     {
-        return array_key_exists($name, $this->globalVariables);
+        return array_key_exists($name, $this->globals);
     }
 
     private function variableExists(string $name): bool
@@ -90,6 +89,6 @@ class VariableHandler
             }
         }
 
-        return array_key_exists($name, $this->globalVariables);
+        return array_key_exists($name, $this->globals);
     }
 }

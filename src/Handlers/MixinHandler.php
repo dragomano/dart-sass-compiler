@@ -132,6 +132,11 @@ class MixinHandler
         unset($this->mixins[$name]);
     }
 
+    public function hasMixin(string $name): bool
+    {
+        return $this->findMixin($name) !== null;
+    }
+
     private function findMixin(string $name): ?array
     {
         for ($i = count($this->scopes) - 1; $i >= 0; $i--) {

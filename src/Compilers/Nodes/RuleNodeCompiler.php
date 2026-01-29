@@ -45,6 +45,7 @@ class RuleNodeCompiler extends AbstractNodeCompiler
         $selector       = $context->nestingHandler->resolveSelector($selectorString, $parentSelector);
 
         $context->variableHandler->enterScope();
+        $context->mixinHandler->enterScope();
 
         [$includes, $nested, $postDecl] = $this->processNestedItems($node, $context, $selector, $nestingLevel);
 
@@ -52,6 +53,7 @@ class RuleNodeCompiler extends AbstractNodeCompiler
 
         $context->extendHandler->addDefinedSelector($selector);
         $context->variableHandler->exitScope();
+        $context->mixinHandler->exitScope();
 
         return $ruleCss . $nested;
     }
