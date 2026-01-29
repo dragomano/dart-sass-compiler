@@ -213,6 +213,7 @@ try {
 
         try {
             for ($i = 0; $i < $runs; $i++) {
+                gc_collect_cycles();
                 $memBefore = memory_get_usage();
                 $start = hrtime(true);
                 $compiler = $compilerFactory();

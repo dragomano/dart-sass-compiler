@@ -10,8 +10,12 @@ use DartSass\Parsers\Nodes\AtRuleNode;
 use DartSass\Parsers\Nodes\NodeType;
 use InvalidArgumentException;
 
+use function array_merge;
+use function explode;
+use function preg_match;
 use function rtrim;
 use function str_repeat;
+use function trim;
 
 readonly class AtRuleStrategy implements RuleCompilationStrategy
 {
@@ -27,6 +31,10 @@ readonly class AtRuleStrategy implements RuleCompilationStrategy
         int $currentNestingLevel,
         ...$params
     ): string {
+        if ($node->name === '@mixin') {
+            return $this->compileDefinition($node, $context);
+        }
+
         $expression          = $params[0] ?? null;
         $compileDeclarations = $params[1] ?? null;
         $compileAst          = $params[2] ?? null;
@@ -50,5 +58,34 @@ readonly class AtRuleStrategy implements RuleCompilationStrategy
         $valuePart = $value !== '' ? " $value" : '';
 
         return "$indent$node->name$valuePart {\n$body\n$indent}\n";
+    }
+
+    private function compileDefinition(AtRuleNode $node, CompilerContext $context): string
+    {
+        $signature = trim($node->value ?? '');
+        $name      = $signature;
+        $args      = [];
+
+        if (preg_match('/^([^\s(]+)\s*(?:\((.*)\))?$/s', $signature, $matches)) {
+            $name = $matches[1];
+
+            if (isset($matches[2]) && trim($matches[2]) !== '') {
+                $rawArgs = explode(',', $matches[2]);
+                foreach ($rawArgs as $argStr) {
+                    $parts          = explode(':', $argStr, 2);
+                    $argName        = trim($parts[0]);
+                    $default        = isset($parts[1]) ? trim($parts[1]) : null;
+                    $args[$argName] = $default;
+                }
+            }
+        }
+
+        $bodyDeclarations = $node->body['declarations'] ?? [];
+        $bodyNested       = $node->body['nested'] ?? [];
+        $body             = array_merge($bodyDeclarations, $bodyNested);
+
+        $context->mixinHandler->define($name, $args, $body);
+
+        return '';
     }
 }

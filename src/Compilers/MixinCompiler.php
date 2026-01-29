@@ -179,7 +179,7 @@ readonly class MixinCompiler
         string $parentSelector,
         int $nestingLevel
     ): string {
-        if ($this->mixinExists($mixin)) {
+        if ($this->context->mixinHandler->hasMixin($mixin)) {
             return $this->context->mixinHandler->include(
                 $mixin,
                 $args,
@@ -192,19 +192,6 @@ readonly class MixinCompiler
         $sassMixin = new SassMixin($this->context->mixinHandler, $mixin);
 
         return $sassMixin->apply($args, $body);
-    }
-
-    private function mixinExists(string $name): bool
-    {
-        try {
-            $this->context->mixinHandler->include($name, []);
-
-            return true;
-        } catch (CompilationException) {
-            $mixinsData = $this->context->mixinHandler->getMixins();
-
-            return isset($mixinsData['mixins'][$name]);
-        }
     }
 
     private function handleModuleMixinCall(

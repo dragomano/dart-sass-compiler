@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use DartSass\Compilers\Environment;
 use DartSass\Compilers\FlowControlCompiler;
 use DartSass\Exceptions\CompilationException;
 use DartSass\Handlers\VariableHandler;
@@ -14,9 +15,10 @@ use Tests\ReflectionAccessor;
 
 describe('FlowControlCompiler', function () {
     beforeEach(function () {
-        $this->handler  = mock(VariableHandler::class);
-        $this->compiler = new FlowControlCompiler($this->handler);
-        $this->accessor = new ReflectionAccessor($this->compiler);
+        $this->environment = new Environment();
+        $this->handler     = new VariableHandler($this->environment);
+        $this->compiler    = new FlowControlCompiler($this->handler, $this->environment);
+        $this->accessor    = new ReflectionAccessor($this->compiler);
     });
 
     describe('compileIf method', function () {
@@ -26,7 +28,7 @@ describe('FlowControlCompiler', function () {
             $body = [];
             $node = new IfNode($condition, $body);
 
-            $expression = fn($cond) => false; // falsy
+            $expression = fn($cond) => false;
             $compileAst = fn($nodes, $prefix, $level) => 'compiled';
 
             $result = $this->accessor->callMethod('compileIf', [$node, '', 0, $expression, $compileAst]);
@@ -40,7 +42,7 @@ describe('FlowControlCompiler', function () {
             $body = [['width', '100px'], ['height', '200px']];
             $node = new IfNode($condition, $body);
 
-            $expression = fn($cond) => true; // truthy
+            $expression = fn($cond) => true;
             $compileAst = fn($nodes, $prefix, $level) => 'compiled';
 
             $result = $this->accessor->callMethod('compileIf', [$node, '', 0, $expression, $compileAst]);
@@ -57,11 +59,7 @@ describe('FlowControlCompiler', function () {
             $body = [];
             $node = new EachNode($variables, $condition, $body, 0);
 
-            $this->handler->shouldReceive('enterScope')->once();
-            $this->handler->shouldReceive('define')->with('$item', 'value')->once();
-            $this->handler->shouldReceive('exitScope')->once();
-
-            $expression = fn($cond) => 'value'; // non-array
+            $expression = fn($cond) => 'value';
             $compileAst = fn($nodes, $prefix, $level) => 'compiled';
 
             $result = $this->accessor->callMethod('compileEach', [$node, '', 0, $expression, $compileAst]);
@@ -77,10 +75,7 @@ describe('FlowControlCompiler', function () {
             $body = [];
             $node = new WhileNode($condition, $body, 0);
 
-            $this->handler->shouldReceive('enterScope')->once();
-            $this->handler->shouldReceive('exitScope')->once();
-
-            $expression = fn($cond) => true; // always truthy
+            $expression = fn($cond) => true;
             $compileAst = fn($nodes, $prefix, $level) => '';
 
             expect(fn() => $this->accessor->callMethod('compileWhile', [$node, '', 0, $expression, $compileAst]))

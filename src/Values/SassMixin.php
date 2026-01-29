@@ -43,9 +43,7 @@ readonly class SassMixin implements Stringable
 
     private function getMixinDefinition(): ?array
     {
-        $mixins = $this->mixinHandler->getMixins()['mixins'];
-
-        return $mixins[$this->mixinName] ?? null;
+        return $this->mixinHandler->getMixin($this->mixinName) ?? null;
     }
 
     private function isContentDirective(mixed $item): bool

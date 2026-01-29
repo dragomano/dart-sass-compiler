@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use DartSass\Compilers\Environment;
 use DartSass\Evaluators\UserFunctionEvaluator;
 use DartSass\Exceptions\CompilationException;
 use DartSass\Handlers\Builtins\CustomFunctionHandler;
@@ -10,7 +11,6 @@ use DartSass\Handlers\FunctionHandler;
 use DartSass\Handlers\FunctionRouter;
 use DartSass\Handlers\ModuleHandler;
 use DartSass\Handlers\ModuleRegistry;
-use DartSass\Handlers\VariableHandler;
 use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Parsers\Nodes\NumberNode;
 use DartSass\Parsers\Nodes\OperationNode;
@@ -22,11 +22,29 @@ beforeEach(function () {
     $this->moduleHandler         = mock(ModuleHandler::class);
     $this->moduleRegistry        = mock(ModuleRegistry::class);
     $this->resultFormatter       = mock(ResultFormatterInterface::class);
-    $this->router                = new FunctionRouter($this->moduleRegistry, $this->resultFormatter);
     $this->customFunctionHandler = mock(CustomFunctionHandler::class);
-    $this->userFunctionEvaluator = new UserFunctionEvaluator();
-    $this->evaluateExpression    = fn($expr) => $expr; // Simple mock for callable
-    $this->functionHandler       = new FunctionHandler(
+    $this->router                = new FunctionRouter($this->moduleRegistry, $this->resultFormatter);
+    $this->environment           = new Environment();
+    $this->userFunctionEvaluator = new UserFunctionEvaluator($this->environment);
+
+    $this->evaluateExpression = function ($node) {
+        if ($node instanceof VariableNode) {
+            return 5;
+        }
+
+        if ($node instanceof NumberNode) {
+            return $node->value;
+        }
+
+        if ($node instanceof OperationNode) {
+            return 10;
+        }
+
+        return $node;
+    };
+
+    $this->functionHandler = new FunctionHandler(
+        $this->environment,
         $this->moduleHandler,
         $this->router,
         $this->customFunctionHandler,
@@ -173,11 +191,9 @@ describe('FunctionHandler', function () {
         });
 
         it('handles user defined function', function () {
-            $variableHandler = mock(VariableHandler::class);
-
             $this->functionHandler->defineUserFunction(
                 'double',
-                ['$value'],
+                [['name' => 'value', 'arbitrary' => false]],
                 [(object) [
                     'type'  => NodeType::RETURN,
                     'value' => new OperationNode(
@@ -186,16 +202,8 @@ describe('FunctionHandler', function () {
                         new NumberNode(2, line: 1),
                         1
                     ),
-                ]],
-                $variableHandler
+                ]]
             );
-
-            // UserFunctionEvaluator now handles scope management
-            $variableHandler->shouldReceive('enterScope')->once();
-            $variableHandler->shouldReceive('define')
-                ->with('$value', 5)
-                ->once();
-            $variableHandler->shouldReceive('exitScope')->once();
 
             $result = $this->functionHandler->call('double', [5]);
 
@@ -203,17 +211,11 @@ describe('FunctionHandler', function () {
         });
 
         it('returns null for user function without return', function () {
-            $variableHandler = mock(VariableHandler::class);
-
             $this->functionHandler->defineUserFunction(
                 'noReturn',
                 [],
-                [(object) ['type' => NodeType::UNKNOWN]],
-                $variableHandler
+                [(object) ['type' => NodeType::UNKNOWN]]
             );
-
-            $variableHandler->shouldReceive('enterScope')->once();
-            $variableHandler->shouldReceive('exitScope')->once();
 
             $result = $this->functionHandler->call('noReturn', []);
 
@@ -252,28 +254,25 @@ describe('FunctionHandler', function () {
 
     describe('user function management', function () {
         it('defines and retrieves user functions', function () {
-            $variableHandler = mock(VariableHandler::class);
-
             $this->customFunctionHandler->shouldReceive('getSupportedFunctions')
                 ->andReturn([]);
 
             $this->functionHandler->defineUserFunction(
                 'testFunc',
                 ['$param'],
-                [['type' => NodeType::RETURN, 'value' => '$param']],
-                $variableHandler
+                [['type' => NodeType::RETURN, 'value' => '$param']]
             );
+
+            expect($this->environment->getCurrentScope()->hasFunction('testFunc'))->toBeTrue();
 
             $functions = $this->functionHandler->getUserFunctions();
 
-            expect($functions)->toHaveKey('userDefinedFunctions')
-                ->and($functions['userDefinedFunctions'])->toHaveKey('testFunc');
+            expect($functions)->toHaveKey('customFunctions');
         });
 
-        it('sets user functions state', function () {
+        it('sets custom functions state', function () {
             $state = [
                 'customFunctions' => ['func1' => 'callback1'],
-                'userDefinedFunctions' => ['func2' => ['args' => [], 'body' => [], 'handler' => null]],
             ];
 
             $this->customFunctionHandler->shouldReceive('setCustomFunctions')
@@ -281,10 +280,6 @@ describe('FunctionHandler', function () {
                 ->once();
 
             $this->functionHandler->setUserFunctions($state);
-
-            // Verify internal state
-            $reflectedUserFunctions = $this->accessor->getProperty('userDefinedFunctions');
-            expect($reflectedUserFunctions)->toEqual(['func2' => ['args' => [], 'body' => [], 'handler' => null]]);
         });
     });
 })->covers(FunctionHandler::class);

@@ -64,9 +64,7 @@ class MetaModule extends AbstractModule
         }
 
         if (is_string($mixin)) {
-            $mixins = $this->context->mixinHandler->getMixins()['mixins'];
-
-            if (! isset($mixins[$mixin])) {
+            if (! $this->context->mixinHandler->hasMixin($mixin)) {
                 throw new CompilationException("Unknown mixin: $mixin");
             }
 
@@ -213,9 +211,7 @@ class MetaModule extends AbstractModule
     {
         $this->validateArgs($args, 0, 'content-exists');
 
-        $mixins = $this->context->mixinHandler->getMixins();
-
-        return $mixins['currentContent'] !== null;
+        return $this->context->mixinHandler->hasContent();
     }
 
     public function featureExists(array $args): bool
@@ -289,6 +285,7 @@ class MetaModule extends AbstractModule
 
             if (isset($moduleMixins[$mixinName])) {
                 $tempName = $moduleName . '.' . $mixinName;
+
                 $this->context->mixinHandler->define(
                     $tempName,
                     $moduleMixins[$mixinName]['args'] ?? [],
@@ -301,9 +298,7 @@ class MetaModule extends AbstractModule
             throw new CompilationException("Mixin $mixinName not found in module $moduleName");
         }
 
-        $mixins = $this->context->mixinHandler->getMixins()['mixins'];
-
-        if (! isset($mixins[$mixinName])) {
+        if (! $this->context->mixinHandler->hasMixin($mixinName)) {
             throw new CompilationException("Mixin $mixinName not found");
         }
 
@@ -329,7 +324,7 @@ class MetaModule extends AbstractModule
             return isset($moduleVariables[$variableName]);
         }
 
-        return $this->context->variableHandler->globalVariableExists($variableName);
+        return $this->context->variableHandler->globalExists($variableName);
     }
 
     public function inspect(array $args): string
@@ -466,9 +461,7 @@ class MetaModule extends AbstractModule
             return isset($moduleMixins[$mixinName]);
         }
 
-        $mixins = $this->context->mixinHandler->getMixins()['mixins'];
-
-        return isset($mixins[$mixinName]);
+        return $this->context->mixinHandler->hasMixin($mixinName);
     }
 
     public function moduleFunctions(array $args): SassMap
@@ -631,9 +624,6 @@ class MetaModule extends AbstractModule
 
     private function isUserDefinedFunction(string $name): bool
     {
-        $userFunctions = $this->context->functionHandler->getUserFunctions();
-
-        return isset($userFunctions['userDefinedFunctions'][$name])
-            || isset($userFunctions['customFunctions'][$name]);
+        return $this->context->functionHandler->exists($name);
     }
 }

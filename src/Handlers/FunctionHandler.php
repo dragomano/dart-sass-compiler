@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DartSass\Handlers;
 
 use Closure;
+use DartSass\Compilers\Environment;
 use DartSass\Evaluators\UserFunctionEvaluator;
 use DartSass\Handlers\Builtins\CustomFunctionHandler;
 
@@ -13,15 +14,15 @@ use function explode;
 use function is_array;
 use function str_contains;
 
-class FunctionHandler
+readonly class FunctionHandler
 {
     public function __construct(
-        private readonly ModuleHandler         $moduleHandler,
-        private readonly FunctionRouter        $router,
-        private readonly CustomFunctionHandler $customFunctionHandler,
-        private readonly UserFunctionEvaluator $userFunctionEvaluator,
-        private readonly Closure               $expression,
-        private array                          $userDefinedFunctions = []
+        private Environment           $environment,
+        private ModuleHandler         $moduleHandler,
+        private FunctionRouter        $router,
+        private CustomFunctionHandler $customFunctionHandler,
+        private UserFunctionEvaluator $userFunctionEvaluator,
+        private Closure               $expression,
     ) {}
 
     public function addCustom(string $name, callable $callback): void
@@ -29,24 +30,24 @@ class FunctionHandler
         $this->customFunctionHandler->addCustomFunction($name, $callback);
     }
 
+    public function exists(string $name): bool
+    {
+        return $this->environment->getCurrentScope()->hasFunction($name);
+    }
+
     public function defineUserFunction(
         string $name,
         array $args,
         array $body,
-        VariableHandler $variableHandler,
+        bool $global = false
     ): void {
-        $this->userDefinedFunctions[$name] = [
-            'args'    => $args,
-            'body'    => $body,
-            'handler' => $variableHandler,
-        ];
+        $this->environment->getCurrentScope()->setFunction($name, $args, $body, $global);
     }
 
     public function getUserFunctions(): array
     {
         return [
-            'customFunctions'      => $this->customFunctionHandler->getSupportedFunctions(),
-            'userDefinedFunctions' => $this->userDefinedFunctions,
+            'customFunctions' => $this->customFunctionHandler->getSupportedFunctions(),
         ];
     }
 
@@ -55,8 +56,6 @@ class FunctionHandler
         if (isset($state['customFunctions'])) {
             $this->customFunctionHandler->setCustomFunctions($state['customFunctions']);
         }
-
-        $this->userDefinedFunctions = $state['userDefinedFunctions'] ?? [];
     }
 
     public function call(string $name, array $args)
@@ -68,15 +67,14 @@ class FunctionHandler
         }
 
         $originalName = $name;
-
-        $modulePath = SassModule::getPath($namespace);
+        $modulePath   = SassModule::getPath($namespace);
 
         if ($namespace && ! $this->moduleHandler->isModuleLoaded($modulePath)) {
             $this->moduleHandler->loadModule($modulePath, $namespace);
         }
 
-        if (isset($this->userDefinedFunctions[$originalName])) {
-            $func = $this->userDefinedFunctions[$originalName];
+        if ($this->environment->getCurrentScope()->hasFunction($originalName)) {
+            $func = $this->environment->getCurrentScope()->getFunction($originalName);
 
             return $this->userFunctionEvaluator->evaluate($func, $args, $this->expression);
         }

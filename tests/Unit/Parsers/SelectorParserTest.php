@@ -18,7 +18,7 @@ describe('SelectorParser', function () {
     beforeEach(function () {
         $this->lexer = new Lexer();
 
-        $this->createParser = function (string $content, callable $parseExpression = null): SelectorParser {
+        $this->createParser = function (string $content, ?callable $parseExpression = null): SelectorParser {
             $stream = $this->lexer->tokenize($content);
 
             $parseExpression = $parseExpression ?? fn() => new IdentifierNode('default', 1);

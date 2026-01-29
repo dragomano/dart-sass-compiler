@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DartSass\Evaluators;
 
-use DartSass\Handlers\VariableHandler;
+use DartSass\Compilers\Environment;
 use DartSass\Parsers\Nodes\EachNode;
 use DartSass\Parsers\Nodes\ForNode;
 use DartSass\Parsers\Nodes\ListNode;
@@ -15,70 +15,51 @@ use DartSass\Values\SassList;
 use function array_slice;
 use function count;
 use function is_array;
-use function is_int;
 use function is_object;
-use function key;
-use function next;
 
 readonly class UserFunctionEvaluator
 {
+    public function __construct(private Environment $environment) {}
+
     public function evaluate(array $func, array $args, callable $expression): mixed
     {
-        $body    = $func['body'];
-        $handler = $func['handler'];
+        $body = $func['body'];
 
-        $handler->enterScope();
+        $this->environment->enterScope();
 
         try {
-            $this->processArguments($func['args'], $args, $handler, $expression);
+            $this->processArguments($func['args'], $args, $expression);
 
-            return $this->executeBody($body, $args, $handler, $expression);
+            return $this->executeBody($body, $args, $expression);
         } finally {
-            $handler->exitScope();
+            $this->environment->exitScope();
         }
     }
 
     private function processArguments(
         array $funcArgs,
         array $callArgs,
-        VariableHandler $variableHandler,
         callable $expression
     ): void {
         $argIndex = 0;
 
         foreach ($funcArgs as $arg) {
-            if (is_array($arg)) {
-                // New structure: ['name' => string, 'arbitrary' => bool, ?'default' => AstNode]
-                $paramName = $arg['name'];
-                $arbitrary = $arg['arbitrary'];
-                $default   = $arg['default'] ?? null;
-            } elseif (is_int(key($funcArgs))) {
-                // Old structure: array of strings
-                $paramName = $arg;
-                $arbitrary = false;
-                $default   = null;
-            } else {
-                // Old associative structure: name => default
-                $paramName = key($funcArgs);
-                $arbitrary = false;
-                $default   = $arg;
-
-                next($funcArgs);
-            }
+            $paramName = $arg['name'];
+            $arbitrary = $arg['arbitrary'];
+            $default   = $arg['default'] ?? null;
 
             if ($arbitrary) {
-                // Collect remaining args as list
                 $remainingArgs = array_slice($callArgs, $argIndex);
-                $variableHandler->define($paramName, new ListNode($remainingArgs));
+                $this->environment->getCurrentScope()->setVariable($paramName, new ListNode($remainingArgs));
 
-                break; // No more args after arbitrary
+                break;
             } else {
                 $value = $callArgs[$argIndex] ?? null;
                 if ($value === null && $default !== null) {
                     $value = $expression($default);
                 }
 
-                $variableHandler->define($paramName, $value);
+                $this->environment->getCurrentScope()->setVariable($paramName, $value);
                 $argIndex++;
             }
         }
@@ -87,7 +68,6 @@ readonly class UserFunctionEvaluator
     private function executeBody(
         array $body,
         array $args,
-        VariableHandler $variableHandler,
         callable $expression
     ): mixed {
         foreach ($body as $statement) {
@@ -95,16 +75,16 @@ readonly class UserFunctionEvaluator
                 $valueNode = $statement->value;
                 $value     = $expression($valueNode);
 
-                $variableHandler->define(
+                $this->environment->getCurrentScope()->setVariable(
                     $statement->name,
                     $value,
                     $statement->global ?? false,
                     $statement->default ?? false,
                 );
             } elseif ($statement->type === NodeType::FOR) {
-                $this->executeFor($statement, $args, $variableHandler, $expression);
+                $this->executeFor($statement, $args, $expression);
             } elseif ($statement->type === NodeType::EACH) {
-                $this->executeEach($statement, $args, $variableHandler, $expression);
+                $this->executeEach($statement, $args, $expression);
             } elseif ($statement->type === NodeType::RETURN) {
                 $returnValue = $statement->value;
 
@@ -151,7 +131,6 @@ readonly class UserFunctionEvaluator
     private function executeFor(
         ForNode $node,
         array $args,
-        VariableHandler $variableHandler,
         callable $expression
     ): void {
         $from = (int) $expression($node->from);
@@ -166,13 +145,13 @@ readonly class UserFunctionEvaluator
 
         if ($step > 0) {
             for ($i = $from; $i <= $end; $i += $step) {
-                $variableHandler->define($varName, $i);
-                $this->executeBody($body, $args, $variableHandler, $expression);
+                $this->environment->getCurrentScope()->setVariable($varName, $i);
+                $this->executeBody($body, $args, $expression);
             }
         } else {
             for ($i = $from; $i >= $end; $i += $step) {
-                $variableHandler->define($varName, $i);
-                $this->executeBody($body, $args, $variableHandler, $expression);
+                $this->environment->getCurrentScope()->setVariable($varName, $i);
+                $this->executeBody($body, $args, $expression);
             }
         }
     }
@@ -180,7 +159,6 @@ readonly class UserFunctionEvaluator
     private function executeEach(
         EachNode $node,
         array $args,
-        VariableHandler $variableHandler,
         callable $expression
     ): void {
         $variables = $node->variables;
@@ -190,8 +168,8 @@ readonly class UserFunctionEvaluator
         $items = $this->extractItems($condition);
 
         foreach ($items as $item) {
-            $this->assignVariables($variables, $item, $variableHandler);
-            $this->executeBody($body, $args, $variableHandler, $expression);
+            $this->assignVariables($variables, $item);
+            $this->executeBody($body, $args, $expression);
         }
     }
 
@@ -212,10 +190,10 @@ readonly class UserFunctionEvaluator
         return [$condition];
     }
 
-    private function assignVariables(array $variables, mixed $item, VariableHandler $variableHandler): void
+    private function assignVariables(array $variables, mixed $item): void
     {
         if (count($variables) === 1) {
-            $variableHandler->define($variables[0], $item);
+            $this->environment->getCurrentScope()->setVariable($variables[0], $item);
 
             return;
         }
@@ -223,7 +201,7 @@ readonly class UserFunctionEvaluator
         $values = $this->extractItems($item);
 
         foreach ($variables as $i => $varName) {
-            $variableHandler->define($varName, $values[$i] ?? null);
+            $this->environment->getCurrentScope()->setVariable($varName, $values[$i] ?? null);
         }
     }
 }

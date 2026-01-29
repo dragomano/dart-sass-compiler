@@ -21,19 +21,20 @@ readonly class ModuleCompiler
         Closure $expression,
         Closure $compileAst
     ): string {
-        $this->context->variableHandler->enterScope();
+        $this->context->environment->enterScope();
 
         $moduleVars = $this->context->moduleHandler->getVariables($actualNamespace);
         foreach ($moduleVars as $name => $varNode) {
             if ($varNode instanceof VariableDeclarationNode) {
                 $value = $expression($varNode->value);
+
                 $this->context->variableHandler->define($name, $value);
             }
         }
 
         $css = $compileAst($result['cssAst'], '', $nestingLevel);
 
-        $this->context->variableHandler->exitScope();
+        $this->context->environment->exitScope();
 
         if ($namespace === '*') {
             $this->defineGlobalVariablesFromModule($expression);

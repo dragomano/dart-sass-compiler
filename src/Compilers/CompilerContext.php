@@ -25,6 +25,8 @@ class CompilerContext
 {
     public array $mappings = [];
 
+    public Environment $environment;
+
     public LoaderInterface $loader;
 
     public ParserFactory $parserFactory;

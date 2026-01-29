@@ -14,8 +14,8 @@ describe('FunctionParser', function () {
 
         $this->createParser = function (
             string $content,
-            callable $parseBlock = null,
-            callable $parseBinaryExpression = null
+            ?callable $parseBlock = null,
+            ?callable $parseBinaryExpression = null
         ): FunctionParser {
             $stream = $this->lexer->tokenize($content);
 

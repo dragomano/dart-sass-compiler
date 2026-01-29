@@ -44,14 +44,14 @@ class RuleNodeCompiler extends AbstractNodeCompiler
         $selectorString = $this->evaluateInterpolationsInString($selectorString, $context);
         $selector       = $context->nestingHandler->resolveSelector($selectorString, $parentSelector);
 
-        $context->variableHandler->enterScope();
+        $context->environment->enterScope();
 
         [$includes, $nested, $postDecl] = $this->processNestedItems($node, $context, $selector, $nestingLevel);
 
         $ruleCss = $this->buildRule($node, $context, $selector, $nestingLevel, $includes, $postDecl);
 
         $context->extendHandler->addDefinedSelector($selector);
-        $context->variableHandler->exitScope();
+        $context->environment->exitScope();
 
         return $ruleCss . $nested;
     }

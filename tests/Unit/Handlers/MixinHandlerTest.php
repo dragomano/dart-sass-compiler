@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use DartSass\Compilers\CompilerContext;
 use DartSass\Compilers\CompilerEngineInterface;
+use DartSass\Compilers\Environment;
 use DartSass\Exceptions\CompilationException;
 use DartSass\Handlers\MixinHandler;
 use DartSass\Handlers\VariableHandler;
@@ -12,13 +13,16 @@ use DartSass\Values\SassList;
 use Tests\ReflectionAccessor;
 
 beforeEach(function () {
-    $this->mixinHandler    = new MixinHandler();
+    $this->environment     = new Environment();
     $this->compilerEngine  = mock(CompilerEngineInterface::class);
     $this->context         = mock(CompilerContext::class);
     $this->variableHandler = mock(VariableHandler::class);
 
+    $this->context->environment     = $this->environment;
     $this->context->variableHandler = $this->variableHandler;
-    $this->mixinHandler->setCompilerEngine($this->compilerEngine);
+    $this->context->engine          = $this->compilerEngine;
+
+    $this->mixinHandler = new MixinHandler($this->context);
 });
 
 describe('MixinHandler', function () {
@@ -26,9 +30,7 @@ describe('MixinHandler', function () {
         it('defines a mixin', function () {
             $this->mixinHandler->define('testMixin', ['$param'], [['property' => 'color', 'value' => 'red']]);
 
-            $mixins = $this->mixinHandler->getMixins();
-            expect($mixins['mixins'])->toHaveKey('testMixin')
-                ->and($mixins['mixins']['testMixin']['args'])->toBe(['$param']);
+            expect($this->mixinHandler->hasMixin('testMixin'))->toBeTrue();
         });
     });
 
@@ -41,10 +43,8 @@ describe('MixinHandler', function () {
         it('includes mixin without content', function () {
             $this->mixinHandler->define('simpleMixin', [], [['property' => 'color', 'value' => 'blue']]);
 
-            $this->compilerEngine->shouldReceive('getContext')->andReturn($this->context);
             $this->compilerEngine->shouldReceive('compileDeclarations')->andReturn('color: blue;');
-            $this->variableHandler->shouldReceive('enterScope')->once();
-            $this->variableHandler->shouldReceive('exitScope')->once();
+            $this->variableHandler->shouldReceive('define')->never();
 
             $result = $this->mixinHandler->include('simpleMixin', []);
 
@@ -58,11 +58,8 @@ describe('MixinHandler', function () {
                 [['property' => 'color', 'value' => '$color']]
             );
 
-            $this->compilerEngine->shouldReceive('getContext')->andReturn($this->context);
             $this->compilerEngine->shouldReceive('compileDeclarations')->andReturn('color: red;');
-            $this->variableHandler->shouldReceive('enterScope')->once();
-            $this->variableHandler->shouldReceive('define')->with('$color', 'red')->once();
-            $this->variableHandler->shouldReceive('exitScope')->once();
+            $this->variableHandler->shouldReceive('define')->with('$color', 'red');
 
             $result = $this->mixinHandler->include('paramMixin', ['red']);
 
@@ -76,11 +73,8 @@ describe('MixinHandler', function () {
                 [['property' => 'color', 'value' => '$color']]
             );
 
-            $this->compilerEngine->shouldReceive('getContext')->andReturn($this->context);
             $this->compilerEngine->shouldReceive('compileDeclarations')->andReturn('color: blue;');
-            $this->variableHandler->shouldReceive('enterScope');
-            $this->variableHandler->shouldReceive('define');
-            $this->variableHandler->shouldReceive('exitScope');
+            $this->variableHandler->shouldReceive('define')->with('$color', 'blue');
 
             $result = $this->mixinHandler->include('namedMixin', ['$color' => 'blue']);
 
@@ -95,11 +89,8 @@ describe('MixinHandler', function () {
                 [['property' => 'color', 'value' => '$color']]
             );
 
-            $this->compilerEngine->shouldReceive('getContext')->andReturn($this->context);
             $this->compilerEngine->shouldReceive('compileDeclarations')->andReturn('color: blue;');
-            $this->variableHandler->shouldReceive('enterScope')->once();
-            $this->variableHandler->shouldReceive('define')->with('$color', $identifierNode)->once();
-            $this->variableHandler->shouldReceive('exitScope')->once();
+            $this->variableHandler->shouldReceive('define')->with('$color', $identifierNode);
 
             $result = $this->mixinHandler->include('defaultMixin', []);
 
@@ -113,11 +104,8 @@ describe('MixinHandler', function () {
                 [['property' => 'color', 'value' => '$color']]
             );
 
-            $this->compilerEngine->shouldReceive('getContext')->andReturn($this->context);
             $this->compilerEngine->shouldReceive('compileDeclarations')->andReturn('color: blue;');
-            $this->variableHandler->shouldReceive('enterScope')->once();
-            $this->variableHandler->shouldReceive('define')->with('$color', 'blue')->once();
-            $this->variableHandler->shouldReceive('exitScope')->once();
+            $this->variableHandler->shouldReceive('define')->with('$color', 'blue');
 
             $result = $this->mixinHandler->include('nonIdMixin', []);
 
@@ -134,14 +122,10 @@ describe('MixinHandler', function () {
             $content = [['property' => 'font-size', 'value' => '14px']];
 
             $this->compilerEngine
-                ->shouldReceive('getContext')
-                ->andReturn($this->context);
-            $this->compilerEngine
                 ->shouldReceive('compileDeclarations')
                 ->andReturn('color: green; font-size: 14px;');
+
             $this->compilerEngine->shouldReceive('formatRule')->andReturn('  font-size: 14px;');
-            $this->variableHandler->shouldReceive('enterScope')->once();
-            $this->variableHandler->shouldReceive('exitScope')->once();
 
             $result = $this->mixinHandler->include('contentMixin', [], $content, '.parent');
 
@@ -159,13 +143,8 @@ describe('MixinHandler', function () {
             $content = [['property' => 'font-size', 'value' => '14px']];
 
             $this->compilerEngine
-                ->shouldReceive('getContext')
-                ->andReturn($this->context);
-            $this->compilerEngine
                 ->shouldReceive('compileDeclarations')
                 ->andReturn('color: green;@content', 'font-size: 14px;');
-            $this->variableHandler->shouldReceive('enterScope')->once();
-            $this->variableHandler->shouldReceive('exitScope')->once();
 
             $result = $this->mixinHandler->include('contentMixinNoParent', [], $content);
 
@@ -175,52 +154,40 @@ describe('MixinHandler', function () {
         it('caches mixin results', function () {
             $this->mixinHandler->define('cachedMixin', [], [['property' => 'margin', 'value' => '0']]);
 
-            $this->compilerEngine->shouldReceive('getContext')->andReturn($this->context);
             $this->compilerEngine->shouldReceive('compileDeclarations')->andReturn('margin: 0;');
-            $this->variableHandler->shouldReceive('enterScope')->once();
-            $this->variableHandler->shouldReceive('exitScope')->once();
 
-            // First call
             $result1 = $this->mixinHandler->include('cachedMixin', []);
-            // Second call should use cache
             $result2 = $this->mixinHandler->include('cachedMixin', []);
 
             expect($result1)->toBe($result2);
         });
 
         it('cleans up cache when limit exceeded', function () {
-            // Clear the static cache
             $this->accessor = new ReflectionAccessor($this->mixinHandler);
             $this->accessor->setProperty('mixinCache', []);
 
-            // Define a mixin
             $this->mixinHandler->define(
                 'cacheTestMixin',
                 ['$arg' => null],
                 [['property' => 'color', 'value' => '$arg']]
             );
 
-            // Mock methods for include calls
-            $this->compilerEngine->shouldReceive('getContext')->andReturn($this->context)->atLeast();
-            $this->compilerEngine->shouldReceive('compileDeclarations')->andReturn('color: test;')->atLeast();
-            $this->variableHandler->shouldReceive('enterScope')->atLeast();
+            $this->compilerEngine
+                ->shouldReceive('compileDeclarations')
+                ->andReturn('color: test;')
+                ->atLeast();
             $this->variableHandler->shouldReceive('define')->atLeast();
-            $this->variableHandler->shouldReceive('exitScope')->atLeast();
 
-            // Fill cache beyond limit (101 entries)
             for ($i = 0; $i < 101; $i++) {
                 $this->mixinHandler->include('cacheTestMixin', [(string) $i]);
             }
 
-            // Check cache size
             $cache = $this->accessor->getProperty('mixinCache');
             expect(count($cache))->toBe(100);
 
-            // Verify first entry was removed
             $firstKey = $this->accessor->callMethod('generateCacheKey', ['cacheTestMixin', ['0'], null]);
             expect($cache)->not->toHaveKey($firstKey);
 
-            // Verify last entry is present
             $lastKey = $this->accessor->callMethod('generateCacheKey', ['cacheTestMixin', ['100'], null]);
             expect($cache)->toHaveKey($lastKey);
         });
@@ -235,15 +202,11 @@ describe('MixinHandler', function () {
             $sassList = mock(SassList::class, [['10px', '20px']]);
 
             $this->compilerEngine
-                ->shouldReceive('getContext')
-                ->andReturn($this->context);
-            $this->compilerEngine
                 ->shouldReceive('compileDeclarations')
                 ->andReturn('width: 10px; height: 20px;');
-            $this->variableHandler->shouldReceive('enterScope')->once();
-            $this->variableHandler->shouldReceive('define')->with('$a', '10px')->once();
-            $this->variableHandler->shouldReceive('define')->with('$b', '20px')->once();
-            $this->variableHandler->shouldReceive('exitScope')->once();
+
+            $this->variableHandler->shouldReceive('define')->with('$a', '10px');
+            $this->variableHandler->shouldReceive('define')->with('$b', '20px');
 
             $result = $this->mixinHandler->include('listMixin', [$sassList]);
 
@@ -258,18 +221,14 @@ describe('MixinHandler', function () {
                 [['property' => 'width', 'value' => '$a'], ['property' => 'height', 'value' => '$b']]
             );
 
-            $args = [['10px', '20px']]; // array without 'value' key
+            $args = [['10px', '20px']];
 
-            $this->compilerEngine
-                ->shouldReceive('getContext')
-                ->andReturn($this->context);
             $this->compilerEngine
                 ->shouldReceive('compileDeclarations')
                 ->andReturn('width: 10px; height: 20px;');
-            $this->variableHandler->shouldReceive('enterScope')->once();
-            $this->variableHandler->shouldReceive('define')->with('$a', '10px')->once();
-            $this->variableHandler->shouldReceive('define')->with('$b', '20px')->once();
-            $this->variableHandler->shouldReceive('exitScope')->once();
+
+            $this->variableHandler->shouldReceive('define')->with('$a', '10px');
+            $this->variableHandler->shouldReceive('define')->with('$b', '20px');
 
             $result = $this->mixinHandler->include('arrayArgMixin', $args);
 
@@ -284,11 +243,11 @@ describe('MixinHandler', function () {
                 [['property' => 'content', 'value' => '"$a and $rest"']]
             );
 
-            $this->compilerEngine->shouldReceive('getContext')->andReturn($this->context);
-            $this->compilerEngine->shouldReceive('compileDeclarations')->andReturn('content: "val1 and val2,val3";');
-            $this->variableHandler->shouldReceive('enterScope');
+            $this->compilerEngine
+                ->shouldReceive('compileDeclarations')
+                ->andReturn('content: "val1 and val2,val3";');
+
             $this->variableHandler->shouldReceive('define');
-            $this->variableHandler->shouldReceive('exitScope');
 
             $result = $this->mixinHandler->include('spreadMixin', ['val1', 'val2', 'val3']);
 
@@ -298,10 +257,7 @@ describe('MixinHandler', function () {
         it('creates fallback compiler when no parent compiler provided', function () {
             $this->mixinHandler->define('fallbackMixin', [], [['color' => 'red']]);
 
-            $this->compilerEngine->shouldReceive('getContext')->andReturn($this->context);
             $this->compilerEngine->shouldReceive('compileDeclarations')->andReturn('color: red;');
-            $this->variableHandler->shouldReceive('enterScope')->once();
-            $this->variableHandler->shouldReceive('exitScope')->once();
 
             $result = $this->mixinHandler->include('fallbackMixin', []);
 
@@ -309,36 +265,13 @@ describe('MixinHandler', function () {
         });
     });
 
-    describe('getMixins and setMixins methods', function () {
-        it('gets and sets mixin state', function () {
-            $this->mixinHandler->define('testMixin', [], []);
-
-            $state = $this->mixinHandler->getMixins();
-            expect($state)->toHaveKey('mixins');
-
-            $this->mixinHandler->setMixins($state);
-            $newState = $this->mixinHandler->getMixins();
-            expect($newState)->toEqual($state);
-        });
-    });
-
     describe('removeMixin method', function () {
-        it('removes a mixin', function () {
-            $this->mixinHandler->define('testMixin', [], []);
-            $this->mixinHandler->removeMixin('testMixin');
-
-            $mixins = $this->mixinHandler->getMixins();
-            expect($mixins['mixins'])->not->toHaveKey('testMixin');
-        });
-
         it('defines mixin in scope when scopes are not empty', function () {
-            $this->mixinHandler->enterScope();
+            $this->environment->enterScope();
+
             $this->mixinHandler->define('scopedMixin', [], [['property' => 'color', 'value' => 'green']]);
 
-            $this->compilerEngine->shouldReceive('getContext')->andReturn($this->context);
             $this->compilerEngine->shouldReceive('compileDeclarations')->andReturn('color: green;');
-            $this->variableHandler->shouldReceive('enterScope');
-            $this->variableHandler->shouldReceive('exitScope');
 
             $result = $this->mixinHandler->include('scopedMixin', []);
             expect($result)->toContain('color: green;');
@@ -347,18 +280,16 @@ describe('MixinHandler', function () {
 
     describe('enterScope and exitScope methods', function () {
         it('enters and exits scope', function () {
-            $this->mixinHandler->enterScope();
+            $this->environment->enterScope();
+
             $this->mixinHandler->define('scopedMixin', [], [['property' => 'color', 'value' => 'yellow']]);
 
-            $this->compilerEngine->shouldReceive('getContext')->andReturn($this->context);
             $this->compilerEngine->shouldReceive('compileDeclarations')->andReturn('color: green;');
-            $this->variableHandler->shouldReceive('enterScope');
-            $this->variableHandler->shouldReceive('exitScope');
 
             $result = $this->mixinHandler->include('scopedMixin', []);
             expect($result)->toContain('color: green;');
 
-            $this->mixinHandler->exitScope();
+            $this->environment->exitScope();
 
             expect(fn() => $this->mixinHandler->include('scopedMixin', []))
                 ->toThrow(CompilationException::class);
