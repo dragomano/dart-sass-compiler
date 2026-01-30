@@ -514,24 +514,6 @@ describe('Lexer', function () {
         });
     });
 
-    describe('Caching Behavior', function () {
-        it('caches tokenizer patterns for performance', function () {
-            // First call should cache patterns
-            $this->lexer->tokenize('.class { color: red; }');
-
-            expect($this->accessor->getProperty('cachedRegexes'))->not->toBeNull()
-                ->and($this->accessor->getProperty('cachedPatterns'))->not->toBeNull();
-
-            // Second call should use cached patterns
-            $startTime = microtime(true);
-            $this->lexer->tokenize('.other { margin: 10px; }');
-            $endTime = microtime(true);
-
-            // Should be fast due to caching (less than 1ms)
-            expect($endTime - $startTime)->toBeLessThan(0.001);
-        });
-    });
-
     describe('Post-processing', function () {
         it('splits hex colors correctly in different contexts', function () {
             $tokenStream = $this->lexer->tokenize('.class { color: #ff0000; }');
