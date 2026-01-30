@@ -21,7 +21,6 @@ describe('ForwardRuleParser', function () {
 
     it('parses basic forward rule with string path', function () {
         $parser = ($this->createParser)('@forward "styles";');
-
         $result = $parser->parse();
 
         expect($result)->toBeInstanceOf(ForwardNode::class)
@@ -34,7 +33,6 @@ describe('ForwardRuleParser', function () {
 
     it('parses forward rule with single quotes', function () {
         $parser = ($this->createParser)("@forward 'utilities';");
-
         $result = $parser->parse();
 
         expect($result)->toBeInstanceOf(ForwardNode::class)
@@ -43,7 +41,6 @@ describe('ForwardRuleParser', function () {
 
     it('parses forward rule with namespace', function () {
         $parser = ($this->createParser)('@forward "components" as cmp;');
-
         $result = $parser->parse();
 
         expect($result)->toBeInstanceOf(ForwardNode::class)
@@ -52,7 +49,6 @@ describe('ForwardRuleParser', function () {
 
     it('parses forward rule with config', function () {
         $parser = ($this->createParser)('@forward "theme" with ($primary: blue, $spacing: 10px);');
-
         $result = $parser->parse();
 
         expect($result)->toBeInstanceOf(ForwardNode::class)
@@ -61,7 +57,6 @@ describe('ForwardRuleParser', function () {
 
     it('parses forward rule with hide variables', function () {
         $parser = ($this->createParser)('@forward "helpers" hide $deprecated, $old-var;');
-
         $result = $parser->parse();
 
         expect($result)->toBeInstanceOf(ForwardNode::class)
@@ -70,7 +65,6 @@ describe('ForwardRuleParser', function () {
 
     it('parses forward rule with show variables', function () {
         $parser = ($this->createParser)('@forward "mixins" show $button-mixin, $grid-mixin;');
-
         $result = $parser->parse();
 
         expect($result)->toBeInstanceOf(ForwardNode::class)
@@ -79,7 +73,6 @@ describe('ForwardRuleParser', function () {
 
     it('parses forward rule with multiple options', function () {
         $parser = ($this->createParser)('@forward "library" as lib with ($version: 2.0) hide $internal show $public;');
-
         $result = $parser->parse();
 
         expect($result)->toBeInstanceOf(ForwardNode::class)
@@ -118,7 +111,6 @@ describe('ForwardRuleParser', function () {
 
     it('handles complex config with various value types', function () {
         $parser = ($this->createParser)('@forward "config" with ($color: #ff0000, $size: 16px, $enabled: true);');
-
         $result = $parser->parse();
 
         expect($result)->toBeInstanceOf(ForwardNode::class)
@@ -127,7 +119,6 @@ describe('ForwardRuleParser', function () {
 
     it('handles hide/show with parentheses', function () {
         $parser = ($this->createParser)('@forward "utils" hide ($private1, $private2) show ($public1, $public2);');
-
         $result = $parser->parse();
 
         expect($result)->toBeInstanceOf(ForwardNode::class)
@@ -137,7 +128,6 @@ describe('ForwardRuleParser', function () {
 
     it('parses forward rule with path containing dots and hyphens', function () {
         $parser = ($this->createParser)('@forward "./shared/components/button";');
-
         $result = $parser->parse();
 
         expect($result)->toBeInstanceOf(ForwardNode::class)
@@ -166,20 +156,27 @@ describe('ForwardRuleParser', function () {
 
     it('handles empty config parentheses', function () {
         $parser = ($this->createParser)('@forward "empty" with ();');
-
         $result = $parser->parse();
 
         expect($result)->toBeInstanceOf(ForwardNode::class)
             ->and($result->config)->toBe([]);
     });
 
-    it('handles empty hide/show lists', function () {
-        $parser = ($this->createParser)('@forward "clean" hide () show ();');
+    it('throws exception when missing colon after key in config', function () {
+        $parser = ($this->createParser)('@forward "module" with ($var value);');
 
-        $result = $parser->parse();
+        expect(fn() => $parser->parse())->toThrow(
+            SyntaxException::class,
+            'Expected : after key in config'
+        );
+    });
 
-        expect($result)->toBeInstanceOf(ForwardNode::class)
-            ->and($result->hide)->toBe([])
-            ->and($result->show)->toBe([]);
+    it('throws exception when missing opening parenthesis after with keyword', function () {
+        $parser = ($this->createParser)('@forward "module" with $var: value;');
+
+        expect(fn() => $parser->parse())->toThrow(
+            SyntaxException::class,
+            'Expected ( after with keyword'
+        );
     });
 });

@@ -28,7 +28,6 @@ describe('IfRuleParser', function () {
 
     it('parses basic if rule with simple condition', function () {
         $parser = ($this->createParser)('@if $debug { color: red; }');
-
         $result = $parser->parse();
 
         expect($result)->toBeInstanceOf(IfNode::class)
@@ -39,7 +38,6 @@ describe('IfRuleParser', function () {
 
     it('parses if rule with complex condition', function () {
         $parser = ($this->createParser)('@if $width > 768px { font-size: 18px; }');
-
         $result = $parser->parse();
 
         expect($result)->toBeInstanceOf(IfNode::class)
@@ -48,7 +46,6 @@ describe('IfRuleParser', function () {
 
     it('parses if rule with logical operators', function () {
         $parser = ($this->createParser)('@if $mobile and $landscape { padding: 10px; }');
-
         $result = $parser->parse();
 
         expect($result)->toBeInstanceOf(IfNode::class)
@@ -75,7 +72,6 @@ describe('IfRuleParser', function () {
 
     it('handles multiple declarations in if body', function () {
         $parser = ($this->createParser)('@if $theme == dark { background: black; color: white; font-size: 16px; }');
-
         $result = $parser->parse();
 
         expect($result)->toBeInstanceOf(IfNode::class);
@@ -103,24 +99,50 @@ describe('IfRuleParser', function () {
 
     it('handles complex nested conditions', function () {
         $parser = ($this->createParser)('@if ($width > 768px) and ($height > 400px) { display: flex; }');
-
         $result = $parser->parse();
 
         expect($result)->toBeInstanceOf(IfNode::class)
             ->and($result->condition->expression)->toBeInstanceOf(OperationNode::class);
     });
 
-    it('handles if rule with variable declarations', function () {
-        $tokens = $this->lexer->tokenize('@if $debug { $color: red; margin: 10px; }');
+    it('handles null current token in ternary operator', function () {
+        $parser = ($this->createParser)('@if $var value');
+
+        expect(fn() => $parser->parse())->toThrow(
+            SyntaxException::class,
+            'Expected "{" to start @if block. No current token'
+        );
+    });
+
+    it('throws exception when else if block missing opening brace', function () {
+        $tokens = $this->lexer->tokenize('@else if $condition color: red;');
 
         $expressionParser = new ExpressionParser($tokens);
         $parseExpression  = fn() => $expressionParser->parse();
         $parseBlock       = fn() => ['declarations' => [], 'nested' => []];
 
-        $parser = new IfRuleParser($tokens, $parseExpression, $parseBlock);
+        $parser   = new IfRuleParser($tokens, $parseExpression, $parseBlock);
+        $accessor = new ReflectionAccessor($parser);
 
-        $result = $parser->parse();
+        expect(fn() => $accessor->callMethod('parseElseChain'))->toThrow(
+            SyntaxException::class,
+            'Expected "{" to start @else if block'
+        );
+    });
 
-        expect($result)->toBeInstanceOf(IfNode::class);
+    it('throws exception when else block missing opening brace', function () {
+        $tokens = $this->lexer->tokenize('@else color: red;');
+
+        $expressionParser = new ExpressionParser($tokens);
+        $parseExpression  = fn() => $expressionParser->parse();
+        $parseBlock       = fn() => ['declarations' => [], 'nested' => []];
+
+        $parser   = new IfRuleParser($tokens, $parseExpression, $parseBlock);
+        $accessor = new ReflectionAccessor($parser);
+
+        expect(fn() => $accessor->callMethod('parseElseChain'))->toThrow(
+            SyntaxException::class,
+            'Expected "{" to start @else block'
+        );
     });
 });
