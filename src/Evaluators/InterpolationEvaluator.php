@@ -42,23 +42,23 @@ readonly class InterpolationEvaluator
     private function processHashInterpolations(string $string, Closure $expression): string
     {
         return preg_replace_callback('/#\{([^}]+)}/', function ($matches) use ($expression) {
-            $expr = $matches[1];
-            $expr = trim($expr, '"\' ');
+            $content = $matches[1];
+            $content = trim($content, '"\' ');
 
             // Handle nested interpolations
-            if (str_contains($expr, '#{')) {
-                $expr = $this->evaluate($expr, $expression);
+            if (str_contains($content, '#{')) {
+                $content = $this->evaluate($content, $expression);
             }
 
             // Evaluate expression
             try {
-                $parser = $this->context->parserFactory->create($expr, Syntax::SCSS);
+                $parser = $this->context->parserFactory->create($content, Syntax::SCSS);
                 $ast    = $parser->parseExpression();
                 $value  = $expression($ast);
 
                 return $this->unwrapQuotedValue($value);
             } catch (Exception) {
-                return $expr;
+                return $content;
             }
         }, $string);
     }

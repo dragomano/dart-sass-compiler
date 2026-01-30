@@ -78,34 +78,34 @@ class ExpressionEvaluator extends AbstractEvaluator
         return $expression;
     }
 
-    private function evaluateAstNode(AstNode $expr): mixed
+    private function evaluateAstNode(AstNode $node): mixed
     {
-        if ($expr instanceof SelectorNode || $expr instanceof OperatorNode) {
-            return $expr->value;
+        if ($node instanceof SelectorNode || $node instanceof OperatorNode) {
+            return $node->value;
         }
 
-        if ($expr instanceof ConditionNode || $expr instanceof InterpolationNode) {
-            return $this->evaluate($expr->expression);
+        if ($node instanceof ConditionNode || $node instanceof InterpolationNode) {
+            return $this->evaluate($node->expression);
         }
 
-        $type = $expr->type;
+        $type = $node->type;
 
-        $values = ['Unknown expression type: ', $type->value, ' at line ', $expr->line ?? 0];
+        $values = ['Unknown expression type: ', $type->value, ' at line ', $node->line ?? 0];
 
         return match ($type) {
             NodeType::COLOR,
-            NodeType::HEX_COLOR           => $expr,
-            NodeType::FUNCTION            => $this->evaluateFunctionExpression($expr),
-            NodeType::NUMBER              => $this->evaluateNumberExpression($expr),
-            NodeType::STRING              => $this->evaluateStringExpression($expr),
-            NodeType::LIST                => $this->evaluateListExpression($expr),
-            NodeType::MAP                 => $this->evaluateMapExpression($expr),
-            NodeType::IDENTIFIER          => $this->evaluateIdentifierExpression($expr),
-            NodeType::VARIABLE            => $this->evaluateVariableExpression($expr),
-            NodeType::CSS_CUSTOM_PROPERTY => $this->evaluateCssCustomProperty($expr),
-            NodeType::PROPERTY_ACCESS     => $this->evaluatePropertyAccessExpression($expr),
-            NodeType::CSS_PROPERTY        => $this->evaluateCssPropertyExpression($expr),
-            NodeType::UNARY               => $this->evaluateUnaryExpression($expr),
+            NodeType::HEX_COLOR           => $node,
+            NodeType::FUNCTION            => $this->evaluateFunctionNode($node),
+            NodeType::NUMBER              => $this->evaluateNumberNode($node),
+            NodeType::STRING              => $this->evaluateStringNode($node),
+            NodeType::LIST                => $this->evaluateListNode($node),
+            NodeType::MAP                 => $this->evaluateMapNode($node),
+            NodeType::IDENTIFIER          => $this->evaluateIdentifierNode($node),
+            NodeType::VARIABLE            => $this->evaluateVariableNode($node),
+            NodeType::CSS_CUSTOM_PROPERTY => $this->evaluateCssCustomPropertyNode($node),
+            NodeType::PROPERTY_ACCESS     => $this->evaluatePropertyAccessNode($node),
+            NodeType::CSS_PROPERTY        => $this->evaluateCssPropertyNode($node),
+            NodeType::UNARY               => $this->evaluateUnaryNode($node),
             default                       => throw new CompilationException(StringFormatter::concatMultiple($values)),
         };
     }
@@ -148,10 +148,10 @@ class ExpressionEvaluator extends AbstractEvaluator
         return $expr;
     }
 
-    private function evaluateFunctionExpression(FunctionNode|AstNode $expr): mixed
+    private function evaluateFunctionNode(FunctionNode|AstNode $node): mixed
     {
-        $name = $expr->name;
-        $args = $expr->args ?? [];
+        $name = $node->name;
+        $args = $node->args ?? [];
 
         if ($this->hasSlashSeparator($args)) {
             return $this->evaluateFunctionWithSlashSeparator($name, $args);
@@ -165,10 +165,10 @@ class ExpressionEvaluator extends AbstractEvaluator
         };
     }
 
-    private function evaluateNumberExpression(NumberNode|AstNode $expr): string|array|int|float
+    private function evaluateNumberNode(NumberNode|AstNode $node): string|array|int|float
     {
-        $value = $expr->value;
-        $unit  = $expr->unit ?? '';
+        $value = $node->value;
+        $unit  = $node->unit ?? '';
 
         if ($unit === '') {
             return $value;
@@ -179,9 +179,9 @@ class ExpressionEvaluator extends AbstractEvaluator
         return $sassNumber->toArray();
     }
 
-    private function evaluateStringExpression(StringNode|AstNode $expr): string
+    private function evaluateStringNode(StringNode|AstNode $node): string
     {
-        $value = $expr->value;
+        $value = $node->value;
         $value = $this->context->interpolationEvaluator->evaluate($value, $this->evaluate(...));
 
         if (preg_match('/^[a-zA-Z_-][a-zA-Z0-9_-]*$/', $value)) {
@@ -191,18 +191,18 @@ class ExpressionEvaluator extends AbstractEvaluator
         return StringFormatter::forceQuoteString($value);
     }
 
-    private function evaluateListExpression(ListNode|AstNode $expr): SassList
+    private function evaluateListNode(ListNode|AstNode $node): SassList
     {
         return new SassList(
-            $this->evaluateArguments($expr->values),
-            $expr->separator ?? 'comma',
-            $expr->bracketed ?? false
+            $this->evaluateArguments($node->values),
+            $node->separator ?? 'comma',
+            $node->bracketed ?? false
         );
     }
 
-    private function evaluateMapExpression(MapNode|AstNode $expr): SassMap
+    private function evaluateMapNode(MapNode|AstNode $node): SassMap
     {
-        $pairs = $expr->pairs ?? [];
+        $pairs = $node->pairs ?? [];
         $map   = [];
 
         foreach ($pairs as [$key, $value]) {
@@ -219,9 +219,9 @@ class ExpressionEvaluator extends AbstractEvaluator
         return new SassMap($map);
     }
 
-    private function evaluateIdentifierExpression(IdentifierNode|AstNode $expr): mixed
+    private function evaluateIdentifierNode(IdentifierNode|AstNode $node): mixed
     {
-        $value = $expr->value;
+        $value = $node->value;
 
         return match (strtolower($value)) {
             'true'  => true,
@@ -231,21 +231,21 @@ class ExpressionEvaluator extends AbstractEvaluator
         };
     }
 
-    private function evaluateVariableExpression(VariableNode|AstNode $expr): mixed
+    private function evaluateVariableNode(VariableNode|AstNode $node): mixed
     {
-        return $this->evaluate($this->context->variableHandler->get($expr->name));
+        return $this->evaluate($this->context->variableHandler->get($node->name));
     }
 
-    private function evaluateCssCustomProperty(CssCustomPropertyNode|AstNode $expr): mixed
+    private function evaluateCssCustomPropertyNode(CssCustomPropertyNode|AstNode $node): mixed
     {
-        return $expr->name;
+        return $node->name;
     }
 
-    private function evaluatePropertyAccessExpression(PropertyAccessNode|AstNode $expr): mixed
+    private function evaluatePropertyAccessNode(PropertyAccessNode|AstNode $node): mixed
     {
-        $namespace = $this->evaluate($expr->namespace);
+        $namespace = $this->evaluate($node->namespace);
 
-        $propertyNode = $expr->property;
+        $propertyNode = $node->property;
         if ($propertyNode instanceof VariableNode) {
             $propertyName = $propertyNode->name;
         } else {
@@ -263,18 +263,18 @@ class ExpressionEvaluator extends AbstractEvaluator
         throw new CompilationException("Invalid property access: $namespace.$propertyName");
     }
 
-    private function evaluateCssPropertyExpression(CssPropertyNode|AstNode $expr): string
+    private function evaluateCssPropertyNode(CssPropertyNode|AstNode $node): string
     {
-        $property = $expr->property;
-        $value    = $this->evaluate($expr->value);
+        $property = $node->property;
+        $value    = $this->evaluate($node->value);
 
         return StringFormatter::concatMultiple([$property, ': ', $this->formatValue($value)]);
     }
 
-    private function evaluateUnaryExpression(UnaryNode|AstNode $expr): string|array|bool|float
+    private function evaluateUnaryNode(UnaryNode|AstNode $node): string|array|bool|float
     {
-        $operand  = $this->evaluate($expr->operand);
-        $operator = $expr->operator;
+        $operand  = $this->evaluate($node->operand);
+        $operator = $node->operator;
 
         // Try to use SassNumber for numeric operations
         $sassNumber = SassNumber::tryFrom($operand);
