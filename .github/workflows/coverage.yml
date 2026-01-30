@@ -46,6 +46,7 @@ jobs:
         run: composer run check
 
       - name: Run tests
+        shell: bash
         run: |
           if [ "${{ matrix.php }}" = "8.5" ]; then
             vendor/bin/pest --colors=always --coverage-clover build/logs/clover.xml
