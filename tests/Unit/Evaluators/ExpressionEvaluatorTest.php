@@ -210,17 +210,14 @@ describe('ExpressionEvaluator', function () {
 
             $this->context->functionHandler = $functionHandler;
 
-            $leftNode = new NumberNode(50);
-            $leftNode->unit = '%';
-            $rightNode = new NumberNode(0.5);
-
+            $leftNode      = new NumberNode(50, '%');
+            $rightNode     = new NumberNode(0.5);
             $operationNode = new OperationNode($leftNode, '/', $rightNode, 0);
 
             $args = [120, '50%', $operationNode];
-
             $expr = new FunctionNode('hsl', $args);
 
-            $result = $this->accessor->callMethod('evaluateFunctionExpression', [$expr]);
+            $result = $this->accessor->callMethod('evaluateFunctionNode', [$expr]);
 
             expect($result)->toBe('hsl(120 50% 50% / 0.5)');
         });
@@ -339,7 +336,7 @@ describe('ExpressionEvaluator', function () {
                 ->with('$color.red')
                 ->andReturn('#ff0000');
 
-            $this->context->moduleHandler  = $moduleHandler;
+            $this->context->moduleHandler   = $moduleHandler;
             $this->context->variableHandler = $variableHandler;
 
             $result = $this->accessor->callMethod('evaluateVariableString', ['$color.red']);
@@ -358,7 +355,7 @@ describe('ExpressionEvaluator', function () {
                 ->with('$color.red')
                 ->andThrow(new CompilationException('Variable not found'));
 
-            $this->context->moduleHandler  = $moduleHandler;
+            $this->context->moduleHandler   = $moduleHandler;
             $this->context->variableHandler = $variableHandler;
 
             expect(fn() => $this->accessor->callMethod('evaluateVariableString', ['$color.red']))
@@ -465,11 +462,11 @@ describe('ExpressionEvaluator', function () {
         });
     });
 
-    describe('evaluateIdentifierExpression()', function () {
+    describe('evaluateIdentifierNode()', function () {
         it('evaluates "true" to boolean true', function () {
             $node = new IdentifierNode('true');
 
-            $result = $this->accessor->callMethod('evaluateIdentifierExpression', [$node]);
+            $result = $this->accessor->callMethod('evaluateIdentifierNode', [$node]);
 
             expect($result)->toBeTrue();
         });
@@ -477,7 +474,7 @@ describe('ExpressionEvaluator', function () {
         it('evaluates "false" to boolean false', function () {
             $node = new IdentifierNode('false');
 
-            $result = $this->accessor->callMethod('evaluateIdentifierExpression', [$node]);
+            $result = $this->accessor->callMethod('evaluateIdentifierNode', [$node]);
 
             expect($result)->toBeFalse();
         });
@@ -485,7 +482,7 @@ describe('ExpressionEvaluator', function () {
         it('evaluates "null" to null', function () {
             $node = new IdentifierNode('null');
 
-            $result = $this->accessor->callMethod('evaluateIdentifierExpression', [$node]);
+            $result = $this->accessor->callMethod('evaluateIdentifierNode', [$node]);
 
             expect($result)->toBeNull();
         });
@@ -493,7 +490,7 @@ describe('ExpressionEvaluator', function () {
         it('evaluates other string to itself', function () {
             $node = new IdentifierNode('someValue');
 
-            $result = $this->accessor->callMethod('evaluateIdentifierExpression', [$node]);
+            $result = $this->accessor->callMethod('evaluateIdentifierNode', [$node]);
 
             expect($result)->toBe('someValue');
         });
@@ -546,10 +543,8 @@ describe('ExpressionEvaluator', function () {
 
             $this->context->functionHandler = $functionHandler;
 
-            $leftNode = new NumberNode(50);
-            $leftNode->unit = '%';
-            $rightNode = new NumberNode(0.5);
-
+            $leftNode      = new NumberNode(50, '%');
+            $rightNode     = new NumberNode(0.5);
             $operationNode = new OperationNode($leftNode, '/', $rightNode, 0);
 
             $args = [120, '50%', $operationNode];

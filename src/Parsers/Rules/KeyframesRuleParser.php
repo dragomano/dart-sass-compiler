@@ -63,10 +63,6 @@ class KeyframesRuleParser extends AtRuleParser
         $keyframes = [];
 
         while ($this->currentToken() && ! $this->peek('brace_close')) {
-            if ($this->peek('brace_close')) {
-                break;
-            }
-
             $selectors = $this->parseKeyframeSelectors();
 
             $this->consume('brace_open');
@@ -91,10 +87,6 @@ class KeyframesRuleParser extends AtRuleParser
         $selectors = [];
 
         while ($this->currentToken() && ! $this->peek('brace_open')) {
-            if ($this->peek('brace_open')) {
-                break;
-            }
-
             $selector = '';
 
             while ($this->currentToken() && ! $this->peek('comma') && ! $this->peek('brace_open')) {
@@ -106,10 +98,6 @@ class KeyframesRuleParser extends AtRuleParser
             }
 
             $selectors[] = trim($selector);
-
-            if ($this->peek('comma')) {
-                $this->consume('comma');
-            }
         }
 
         return $selectors;
@@ -120,10 +108,6 @@ class KeyframesRuleParser extends AtRuleParser
         $declarations = [];
 
         while ($this->currentToken() && ! $this->peek('brace_close')) {
-            if ($this->peek('brace_close')) {
-                break;
-            }
-
             $propertyToken = $this->consume('identifier');
 
             $property = $propertyToken->value;

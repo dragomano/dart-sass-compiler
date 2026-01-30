@@ -332,7 +332,7 @@ describe('ExpressionParser', function () {
             expect($result)->toBeInstanceOf(ListNode::class);
         });
 
-        it('covers ternary operator for numeric values without units (line 425)', function () {
+        it('covers ternary operator for numeric values without units', function () {
             $parser = ($this->createParser)('[width="100"]');
 
             $result = $parser->parsePrimaryExpression();
@@ -382,7 +382,7 @@ describe('ExpressionParser', function () {
                 ->and($result->value)->toBe('!important');
         });
 
-        it('returns string representation when operation is not division (line 621)', function () {
+        it('returns string representation when operation is not division', function () {
             $parser = ($this->createParser)('10px + 20px');
 
             $result = $parser->parse();
@@ -425,9 +425,8 @@ describe('ExpressionParser', function () {
             expect($result)->toHaveKey('$name');
         });
 
-        it('throws exception when spread operator is not last argument (lines 561-564)', function () {
+        it('validates spread operator position constraint', function () {
             $parser = ($this->createParser)('mix($colors..., red)');
-
             expect(fn() => $parser->parse())->toThrow(
                 SyntaxException::class,
                 'Spread operator (...) must be the last argument'
@@ -545,44 +544,71 @@ describe('ExpressionParser', function () {
             expect($result->type)->toBe(NodeType::LIST);
         });
 
-        it('handles complex map values with nested lists (lines 671-694)', function () {
+        it('processes nested map structures with list values', function () {
             $parser = ($this->createParser)('map(key: (1, 2, 3))');
 
             $accessor = new ReflectionAccessor($parser);
-            $result = $accessor->callMethod('tryParseMapWithConsume');
+
+            $result = $accessor->callMethod('tryParseMap');
 
             expect($result)->toBeNull();
         });
 
-        it('returns null for invalid map and creates MapNode for valid (lines 707-717)', function () {
+        it('validates map parsing with colon requirement', function () {
             $parser = ($this->createParser)('map(invalid-key no-colon)');
 
             $accessor = new ReflectionAccessor($parser);
-            $result = $accessor->callMethod('tryParseMapWithConsume');
+
+            $result = $accessor->callMethod('tryParseMap');
 
             expect($result)->toBeNull();
         });
 
-        it('returns null when no current token (line 728)', function () {
-            $emptyTokens = new TokenStream([]);
-            $parser = new ExpressionParser($emptyTokens);
+        it('returns null when no current token available', function () {
+            $parser = new ExpressionParser(new TokenStream([]));
 
             $accessor = new ReflectionAccessor($parser);
-            $result = $accessor->callMethod('parseMapValue');
 
+            $result = $accessor->callMethod('parseMapValue');
             expect($result)->toBeNull();
         });
 
-        it('handles default case in parseMapValue (lines 758-766)', function () {
+        it('handles default parsing branch with token rollback', function () {
             $parser = ($this->createParser)('test-value');
 
             $accessor = new ReflectionAccessor($parser);
-
             $accessor->callMethod('setTokenIndex', [100]);
 
             $result = $accessor->callMethod('parseMapValue');
 
             expect($result)->toBeNull();
+        });
+
+        it('executes numeric value parsing without units in attribute selector', function () {
+            $tokens = $this->lexer->tokenize('[50]');
+
+            $parser = new ExpressionParser($tokens);
+            $accessor = new ReflectionAccessor($parser);
+
+            $token = $tokens->current();
+            expect($token->type)->toBe('attribute_selector');
+
+            $result = $accessor->callMethod('parseAttributeSelector', [$token]);
+
+            expect($result)->toBeInstanceOf(ListNode::class)
+                ->and($result->values[0])->toBe(50.0);
+        });
+
+        it('executes list type checking logic in default branch', function () {
+            $tokens = $this->lexer->tokenize('(a, b, c)');
+            $parser = new ExpressionParser($tokens);
+
+            $accessor = new ReflectionAccessor($parser);
+            $accessor->callMethod('setTokenIndex', [0]);
+
+            $result = $accessor->callMethod('parseMapValue');
+
+            expect($result)->toBeInstanceOf(ListNode::class);
         });
     });
 });

@@ -339,7 +339,7 @@ try {
 
     $mdContent   = str_replace($tableOld, $newTable, $mdContent);
     $scssContent = file_get_contents('generated.scss');
-    $mdContent .= "\n*Note: These results are approximate. Run `php benchmark.php` from the project root to see the actual results.*\n";
+    $mdContent .= "\n*Note: These results are approximate. Run `composer run benchmark` from the project root to see the actual results.*\n";
 
     file_put_contents('benchmark.md', $mdContent);
 } catch (RandomException $e) {

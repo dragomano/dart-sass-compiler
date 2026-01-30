@@ -163,8 +163,6 @@ class ExpressionParser extends AbstractParser
                 if (count($values) > 1) {
                     return new ListNode($values, 'space', line: $left->line ?? 0);
                 }
-            } else {
-                $this->setTokenIndex($this->getTokenIndex() - 1);
             }
         }
 
@@ -301,10 +299,6 @@ class ExpressionParser extends AbstractParser
         while (! $this->peek('paren_close')) {
             $this->skipWhitespace();
 
-            if ($this->peek('paren_close')) {
-                break;
-            }
-
             $namedArg = $this->tryParseNamedArgument();
 
             if ($namedArg !== null) {
@@ -377,7 +371,7 @@ class ExpressionParser extends AbstractParser
         }
 
         $savedPosition = $this->getTokenIndex();
-        $mapResult     = $this->tryParseMapWithConsume();
+        $mapResult     = $this->tryParseMap();
 
         if ($mapResult !== null) {
             return $mapResult;
@@ -412,7 +406,7 @@ class ExpressionParser extends AbstractParser
 
         foreach ($parts as $part) {
             if (preg_match('/^(\d+(?:\.\d+)?)(px|em|rem|%)?$/', $part, $matches)) {
-                $values[] = $matches[2]
+                $values[] = isset($matches[2]) && $matches[2]
                     ? ['value' => (float) $matches[1], 'unit' => $matches[2]]
                     : (float) $matches[1];
             } else {
@@ -592,25 +586,17 @@ class ExpressionParser extends AbstractParser
         return new ColorNode($funcName, $components, $alpha, $line);
     }
 
-    private function extractColorComponent(AstNode $node): string|int|float
+    private function extractColorComponent(OperationNode|AstNode $node): mixed
     {
-        return match ($node->type) {
-            NodeType::NUMBER    => $node->value ?? '',
-            NodeType::OPERATION => $this->extractOperationComponent($node),
-            default             => (string) $node,
-        };
-    }
-
-    private function extractOperationComponent(OperationNode|AstNode $node): string
-    {
-        if ($node->operator === '/') {
-            $left  = $this->extractColorComponent($node->left);
-            $right = $this->extractColorComponent($node->right);
-
-            return "$left/$right";
+        if ($node->type === NodeType::OPERATION) {
+            return sprintf(
+                '%s/%s',
+                $this->extractColorComponent($node->left),
+                $this->extractColorComponent($node->right)
+            );
         }
 
-        return (string) $node;
+        return $node->type === NodeType::NUMBER ? $node->value ?? '' : (string) $node;
     }
 
     private function getOperatorPrecedence(string $operator): int
@@ -629,18 +615,16 @@ class ExpressionParser extends AbstractParser
     /**
      * @throws SyntaxException
      */
-    private function tryParseMapWithConsume(): ?AstNode
+    private function tryParseMap(): ?AstNode
     {
-        $pairs = [];
-
+        $pairs    = [];
         $position = $this->getTokenIndex();
 
-        while (! $this->peek('paren_close')) {
+        while (true) {
             $keyToken = $this->currentToken();
-            if (! $keyToken || ! in_array($keyToken->type, ['identifier', 'string'], true)) {
-                $this->setTokenIndex($position);
 
-                return null;
+            if (! $keyToken || ! in_array($keyToken->type, ['identifier', 'string'], true)) {
+                break;
             }
 
             $key = $keyToken->value;
@@ -648,65 +632,33 @@ class ExpressionParser extends AbstractParser
             $this->advanceToken();
 
             if (! $this->peek('colon')) {
-                $this->setTokenIndex($position);
-
-                return null;
+                break;
             }
 
             $this->consume('colon');
 
-            $valueStartPos = $this->getTokenIndex();
-
-            $value = $this->parseMapValue();
-
-            if ($value instanceof ListNode || $value instanceof CssPropertyNode) {
-                $this->setTokenIndex($valueStartPos);
-
-                $parenLevel = 0;
-
-                while (
-                    $this->currentToken()
-                    && (! $this->peek('operator') || $this->currentToken()?->value !== ',' || $parenLevel > 0)
-                ) {
-                    if ($this->peek('paren_open')) {
-                        $parenLevel++;
-                    } elseif ($this->peek('paren_close')) {
-                        $parenLevel--;
-                    }
-
-                    if ($parenLevel === 0 && $this->peek('operator') && $this->currentToken()?->value === ',') {
-                        break;
-                    }
-
-                    $this->advanceToken();
-                }
-
-                $this->setTokenIndex($valueStartPos);
-
-                $value = $this->parse();
-            }
-
-            $pairs[] = [$key, $value];
+            $pairs[] = [$key, $this->parseMapValue()];
 
             if ($this->peek('operator') && $this->currentToken()?->value === ',') {
                 $this->consume('operator');
                 $this->skipWhitespace();
-            } elseif ($this->peek('paren_close')) {
+
+                continue;
+            }
+
+            if ($this->peek('paren_close')) {
                 $this->consume('paren_close');
 
-                return new MapNode($pairs, $position > 0 ? $this->getTokens()[$position - 1]->line : 0);
-            } else {
-                $this->setTokenIndex($position);
-
-                return null;
+                return new MapNode(
+                    $pairs,
+                    $position > 0 ? $this->getTokens()[$position - 1]->line : 0
+                );
             }
         }
 
-        $this->consume('paren_close');
+        $this->setTokenIndex($position);
 
-        return empty($pairs)
-            ? null
-            : new MapNode($pairs, $position > 0 ? $this->getTokens()[$position - 1]->line : 0);
+        return null;
     }
 
     /**
@@ -719,8 +671,6 @@ class ExpressionParser extends AbstractParser
         if (! $token) {
             return null;
         }
-
-        $startPosition = $this->getTokenIndex();
 
         switch ($token->type) {
             case 'number':
@@ -743,19 +693,8 @@ class ExpressionParser extends AbstractParser
 
                 return new HexColorNode($token->value, $token->line);
 
-            case 'paren_open':
-                return $this->parse();
-
             default:
-                $value = $this->parse();
-
-                if ($value instanceof ListNode) {
-                    $this->setTokenIndex($startPosition);
-
-                    return null;
-                }
-
-                return $value;
+                return $this->parse();
         }
     }
 }

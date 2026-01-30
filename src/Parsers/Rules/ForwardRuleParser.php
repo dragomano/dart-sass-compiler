@@ -134,8 +134,6 @@ class ForwardRuleParser extends AtRuleParser
                 if ($this->currentToken() && $this->peek('operator') && $this->currentToken()->value === ',') {
                     $this->consume('operator');
                 }
-            } else {
-                break;
             }
         }
 

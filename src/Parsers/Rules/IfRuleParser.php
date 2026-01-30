@@ -9,7 +9,6 @@ use DartSass\Exceptions\SyntaxException;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\ConditionNode;
 use DartSass\Parsers\Nodes\IfNode;
-use DartSass\Parsers\Nodes\OperationNode;
 use DartSass\Parsers\Tokens\TokenStreamInterface;
 
 use function array_merge;
@@ -68,32 +67,9 @@ class IfRuleParser extends AtRuleParser
 
     private function parseCondition(): AstNode
     {
-        $expression = $this->parseFullConditionExpression();
+        $expression = ($this->parseExpression)();
 
         return new ConditionNode($expression, 1);
-    }
-
-    private function parseFullConditionExpression(): AstNode
-    {
-        $left = ($this->parseExpression)();
-
-        while ($this->currentToken() && $this->currentToken()->type === 'logical_operator') {
-            $operatorToken = $this->currentToken();
-
-            $operator = $operatorToken->value;
-
-            $this->incrementTokenIndex();
-
-            $right = ($this->parseExpression)();
-
-            $left = new OperationNode($left, $operator, $right, $operatorToken->line ?? 1);
-
-            if ($this->peek('brace_open')) {
-                break;
-            }
-        }
-
-        return $left;
     }
 
     /**

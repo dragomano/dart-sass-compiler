@@ -67,16 +67,10 @@ class GenericAtRuleParser extends AtRuleParser
         $declarations = $nested = [];
 
         while ($this->currentToken() && ! $this->peek('brace_close')) {
-            if ($this->peek('brace_close')) {
-                break;
-            }
-
             if ($this->peek('at_rule')) {
                 $nested[] = ($this->parseAtRule)();
             } elseif ($this->peek('variable')) {
                 $nested[] = ($this->parseVariable)();
-            } elseif ($this->peek('selector')) {
-                $nested[] = ($this->parseRule)();
             } elseif ($this->peek('operator')) {
                 $nested[] = ($this->parseRule)();
             } elseif ($this->peek('identifier')) {
@@ -93,8 +87,6 @@ class GenericAtRuleParser extends AtRuleParser
 
                     $nested[] = ($this->parseRule)();
                 }
-            } else {
-                $declarations[] = ($this->parseDeclaration)();
             }
         }
 

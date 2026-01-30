@@ -563,9 +563,9 @@ describe('SassNormalizer', function () {
     describe('Line Ending Detection', function () {
         it('detects Windows line endings (CRLF)', function () {
             $sass = ".container\r\n  color: red\r\n";
+
             $result = $this->normalizer->normalize($sass);
 
-            // Test that normalizer processes CRLF input without errors
             expect($result)->not->toBeEmpty()
                 ->and($result)->toContain('.container {')
                 ->and($result)->toContain('color: red;');
@@ -573,6 +573,7 @@ describe('SassNormalizer', function () {
 
         it('detects Mac line endings (CR)', function () {
             $sass = ".container\r  color: red\r";
+
             $result = $this->normalizer->normalize($sass);
 
             expect($result)->toContain("\r")
@@ -582,6 +583,7 @@ describe('SassNormalizer', function () {
 
         it('detects Unix line endings (LF)', function () {
             $sass = ".container\n  color: red\n";
+
             $result = $this->normalizer->normalize($sass);
 
             expect($result)->toContain("\n")
@@ -590,13 +592,12 @@ describe('SassNormalizer', function () {
         });
 
         it('preserves original line ending style', function () {
-            $sassWithLF = ".container\n  color: red\n";
+            $sassWithLF   = ".container\n  color: red\n";
             $sassWithCRLF = ".container\r\n  color: red\r\n";
 
-            $resultLF = $this->normalizer->normalize($sassWithLF);
+            $resultLF   = $this->normalizer->normalize($sassWithLF);
             $resultCRLF = $this->normalizer->normalize($sassWithCRLF);
 
-            // Test that both formats are processed without errors
             expect($resultLF)->not->toBeEmpty()
                 ->and($resultCRLF)->not->toBeEmpty()
                 ->and($resultLF)->toContain('.container {')
@@ -605,9 +606,9 @@ describe('SassNormalizer', function () {
 
         it('handles mixed line endings gracefully', function () {
             $sass = ".container\r\n  color: red\n  .nested\r    margin: 10px\n";
+
             $result = $this->normalizer->normalize($sass);
 
-            // Should detect CRLF and use it consistently
             expect($result)->toContain("\r\n");
         });
     });
@@ -615,9 +616,9 @@ describe('SassNormalizer', function () {
     describe('Indentation Edge Cases', function () {
         it('handles files with no indentation', function () {
             $sass = ".container\ncolor: red\n";
+
             $result = $this->normalizer->normalize($sass);
 
-            // Test that normalizer handles unindented files
             expect($result)->not->toBeEmpty()
                 ->and($result)->toContain('.container {')
                 ->and($result)->toContain('color: red;');
@@ -625,6 +626,7 @@ describe('SassNormalizer', function () {
 
         it('handles mixed indentation (spaces and tabs)', function () {
             $sass = ".container\n\tcolor: red\n  .nested\n    margin: 10px\n";
+
             $result = $this->normalizer->normalize($sass);
 
             expect($result)->toContain('.container {')
@@ -635,9 +637,9 @@ describe('SassNormalizer', function () {
 
         it('detects correct indent size automatically', function () {
             $sass = ".container\n    color: red\n      .nested\n        margin: 10px\n";
+
             $result = $this->normalizer->normalize($sass);
 
-            // Test that normalizer processes mixed indentation
             expect($result)->not->toBeEmpty()
                 ->and($result)->toContain('.container {')
                 ->and($result)->toContain('.nested {')
@@ -647,6 +649,7 @@ describe('SassNormalizer', function () {
 
         it('handles very deep nesting levels', function () {
             $sass = str_repeat('  ', 20) . ".deep\n" . str_repeat('  ', 21) . "color: red\n";
+
             $result = $this->normalizer->normalize($sass);
 
             expect($result)->toContain('.deep {')
@@ -655,9 +658,9 @@ describe('SassNormalizer', function () {
 
         it('handles single space indentation', function () {
             $sass = ".container\n color: red\n";
+
             $result = $this->normalizer->normalize($sass);
 
-            // Test that normalizer handles single space indentation
             expect($result)->not->toBeEmpty()
                 ->and($result)->toContain('.container {')
                 ->and($result)->toContain('color: red;');
@@ -667,6 +670,7 @@ describe('SassNormalizer', function () {
     describe('Error Handling and Malformed Input', function () {
         it('handles malformed Sass syntax gracefully', function () {
             $malformed = ".container\n  color: red\n    .nested\n  margin: 10px\n}";
+
             $result = $this->normalizer->normalize($malformed);
 
             expect($result)->toContain('.container {')
@@ -677,9 +681,9 @@ describe('SassNormalizer', function () {
 
         it('processes invalid directives without breaking', function () {
             $invalidSass = ".container\n  @invalid-directive\n  color: red\n";
+
             $result = $this->normalizer->normalize($invalidSass);
 
-            // Test that normalizer handles invalid directives gracefully
             expect($result)->not->toBeEmpty()
                 ->and($result)->toContain('.container {')
                 ->and($result)->toContain('color: red;');
@@ -701,13 +705,12 @@ describe('SassNormalizer', function () {
     describe('Performance and Large Files', function () {
         it('processes large files efficiently', function () {
             $largeSass = str_repeat(".container\n  color: red\n", 1000);
-
             $startTime = microtime(true);
-            $result = $this->normalizer->normalize($largeSass);
-            $endTime = microtime(true);
+            $result    = $this->normalizer->normalize($largeSass);
+            $endTime   = microtime(true);
 
             expect($endTime - $startTime)->toBeLessThan(0.5)
-                ->and(substr_count($result, '.container {'))->toBe(1000); // Should process in under 500ms
+                ->and(substr_count($result, '.container {'))->toBe(1000);
         });
 
         it('maintains performance with Unicode content', function () {
@@ -715,8 +718,8 @@ describe('SassNormalizer', function () {
                 . ".text\n  content: 'класс'\n";
 
             $startTime = microtime(true);
-            $result = $this->normalizer->normalize($unicodeSass);
-            $endTime = microtime(true);
+            $result    = $this->normalizer->normalize($unicodeSass);
+            $endTime   = microtime(true);
 
             expect($endTime - $startTime)->toBeLessThan(0.1)
                 ->and($result)->toContain('→←↑↓')
@@ -727,9 +730,9 @@ describe('SassNormalizer', function () {
     describe('Unicode and Special Characters', function () {
         it('handles Unicode characters correctly', function () {
             $sass = ".container\n  content: \"test\"\n";
+
             $result = $this->normalizer->normalize($sass);
 
-            // Test that normalizer handles content with special characters
             expect($result)->not->toBeEmpty()
                 ->and($result)->toContain('.container {')
                 ->and($result)->toContain('content: "test";');
@@ -737,6 +740,7 @@ describe('SassNormalizer', function () {
 
         it('handles special characters in content', function () {
             $sass = ".container\n  content: \"→←↑↓\"\n";
+
             $result = $this->normalizer->normalize($sass);
 
             expect($result)->toContain('content: "→←↑↓";');
@@ -744,6 +748,7 @@ describe('SassNormalizer', function () {
 
         it('handles emoji in selectors', function () {
             $sass = ".🚀\n  color: gold\n";
+
             $result = $this->normalizer->normalize($sass);
 
             expect($result)->toContain('.🚀 {')
@@ -751,7 +756,7 @@ describe('SassNormalizer', function () {
         });
     });
 
-    describe('Comment with empty lines coverage', function () {
+    describe('Comments with empty lines', function () {
         it('preserves empty lines before multiline comments', function () {
             $sass = <<<'SASS'
 
