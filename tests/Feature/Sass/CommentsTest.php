@@ -78,6 +78,7 @@ dataset('comment styles', [
         /* Multiline comment at start */
         // Single line comment
         body {
+            // Single inline comment
             color: black;
             /* Inline comment */
             font-size: 14px;

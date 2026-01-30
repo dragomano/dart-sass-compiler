@@ -45,13 +45,11 @@ readonly class DeclarationCompiler
                         $content = $context->interpolationEvaluator->evaluate($content, $expression);
 
                         $commentCss = StringFormatter::concatMultiple([$indent, '/*' . $content . '*/', "\n"]);
-                    } else {
-                        $commentCss = StringFormatter::concatMultiple([$indent, $comment ?? '', "\n"]);
+
+                        $this->positionTracker->updatePosition($commentCss);
+
+                        $css .= $commentCss;
                     }
-
-                    $css .= $commentCss;
-
-                    $this->positionTracker->updatePosition($commentCss);
                 } else {
                     $css .= $compileAst([$declaration], $parentSelector, $nestingLevel);
                 }

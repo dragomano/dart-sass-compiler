@@ -125,7 +125,7 @@ describe('DeclarationCompiler', function () {
             expect($result)->toBe("color: red !important;\n");
         });
 
-        it('compiles comment without /* as plain text', function () {
+        it('removes single-line comments (starting with //)', function () {
             $commentNode = new CommentNode('// comment');
 
             $declarations   = [$commentNode];
@@ -134,8 +134,7 @@ describe('DeclarationCompiler', function () {
 
             $this->positionTracker
                 ->shouldReceive('updatePosition')
-                ->once()
-                ->with("// comment\n");
+                ->never();
 
             $compileAst = fn() => 'should not be called';
             $expression = fn() => 'value';
@@ -149,7 +148,7 @@ describe('DeclarationCompiler', function () {
                 $expression
             );
 
-            expect($result)->toBe("// comment\n");
+            expect($result)->toBe('');
         });
     });
 });
