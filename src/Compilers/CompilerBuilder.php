@@ -13,9 +13,7 @@ use DartSass\Handlers\BuiltInModuleProvider;
 use DartSass\Handlers\Builtins\ColorModuleHandler;
 use DartSass\Handlers\Builtins\CssColorFunctionHandler;
 use DartSass\Handlers\Builtins\CustomFunctionHandler;
-use DartSass\Handlers\Builtins\FormatFunctionHandler;
 use DartSass\Handlers\Builtins\IfFunctionHandler;
-use DartSass\Handlers\Builtins\LinearGradientFunctionHandler;
 use DartSass\Handlers\Builtins\ListModuleHandler;
 use DartSass\Handlers\Builtins\MapModuleHandler;
 use DartSass\Handlers\Builtins\MathModuleHandler;
@@ -135,9 +133,7 @@ readonly class CompilerBuilder
     private function registerCoreHandlers(ModuleRegistry $registry, CompilerContext $context): void
     {
         $registry->register(new IfFunctionHandler(fn($expr): mixed => $context->engine->evaluateExpression($expr)));
-        $registry->register(new UrlFunctionHandler());
-        $registry->register(new FormatFunctionHandler($context->resultFormatter));
-        $registry->register(new LinearGradientFunctionHandler($context->resultFormatter));
+        $registry->register(new UrlFunctionHandler($context->resultFormatter));
     }
 
     private function registerModuleHandlers(ModuleRegistry $registry, CompilerContext $context): void
