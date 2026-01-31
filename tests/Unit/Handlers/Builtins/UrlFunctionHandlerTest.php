@@ -4,19 +4,21 @@ declare(strict_types=1);
 
 use DartSass\Handlers\Builtins\UrlFunctionHandler;
 use DartSass\Handlers\SassModule;
+use DartSass\Utils\ResultFormatterInterface;
 
 beforeEach(function () {
-    $this->handler = new UrlFunctionHandler();
+    $this->formatter = mock(ResultFormatterInterface::class);
+    $this->handler   = new UrlFunctionHandler($this->formatter);
 });
 
 describe('UrlFunctionHandler', function () {
-    describe('constructor', function () {
+    describe('__constructor()', function () {
         it('creates instance', function () {
             expect($this->handler)->toBeInstanceOf(UrlFunctionHandler::class);
         });
     });
 
-    describe('canHandle method', function () {
+    describe('canHandle()', function () {
         it('returns true for url function', function () {
             expect($this->handler->canHandle('url'))->toBeTrue();
         });
@@ -27,25 +29,25 @@ describe('UrlFunctionHandler', function () {
         });
     });
 
-    describe('getSupportedFunctions method', function () {
+    describe('getSupportedFunctions()', function () {
         it('returns array with url', function () {
-            expect($this->handler->getSupportedFunctions())->toEqual(['url']);
+            expect($this->handler->getSupportedFunctions())->toEqual(['url', 'format']);
         });
     });
 
-    describe('getModuleNamespace method', function () {
+    describe('getModuleNamespace()', function () {
         it('returns css', function () {
             expect($this->handler->getModuleNamespace())->toEqual(SassModule::CSS);
         });
     });
 
-    describe('getModuleFunctions method', function () {
+    describe('getModuleFunctions()', function () {
         it('returns empty array for UrlFunctionHandler', function () {
             expect($this->handler->getModuleFunctions())->toEqual([]);
         });
     });
 
-    describe('handle method', function () {
+    describe('handle()', function () {
         it('handles simple URL string', function () {
             $result = $this->handler->handle('url', ['path/to/file.css']);
             expect($result)->toEqual('url(path/to/file.css)');
@@ -99,6 +101,15 @@ describe('UrlFunctionHandler', function () {
         it('handles empty URL', function () {
             $result = $this->handler->handle('url', ['']);
             expect($result)->toEqual('url()');
+        });
+
+        it('handles format function with single-quoted strings', function () {
+            $this->formatter->shouldReceive('format')
+                ->with("'woff2'")
+                ->andReturn("'woff2'");
+
+            $result = $this->handler->handle('format', ["'woff2'"]);
+            expect($result)->toEqual('format("woff2")');
         });
 
         it('throws exception for no arguments', function () {
