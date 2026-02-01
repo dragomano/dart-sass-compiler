@@ -10,6 +10,7 @@ use DartSass\Compilers\CompilerEngineInterface;
 use DartSass\Loaders\FileLoader;
 use DartSass\Loaders\LoaderInterface;
 use DartSass\Parsers\Syntax;
+use DartSass\Utils\LoggerInterface;
 
 use function array_merge;
 
@@ -17,8 +18,11 @@ readonly class Compiler
 {
     private CompilerEngineInterface $engine;
 
-    public function __construct(array $options = [], ?LoaderInterface $loader = null)
-    {
+    public function __construct(
+        array $options = [],
+        ?LoaderInterface $loader = null,
+        ?LoggerInterface $logger = null
+    ) {
         $options = array_merge(
             [
                 'style'          => 'expanded',
@@ -34,7 +38,7 @@ readonly class Compiler
 
         $loader ??= new FileLoader($options['loadPaths']);
 
-        $builder = new CompilerBuilder($options, $loader);
+        $builder = new CompilerBuilder($options, $loader, $logger);
 
         $this->engine = $builder->build();
     }

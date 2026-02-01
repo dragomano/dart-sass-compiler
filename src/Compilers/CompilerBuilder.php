@@ -53,7 +53,7 @@ readonly class CompilerBuilder
     public function __construct(
         private array $options,
         private LoaderInterface $loader,
-        private LoggerInterface $logger = new StderrLogger()
+        private ?LoggerInterface $logger = null
     ) {}
 
     public function build(): CompilerEngineInterface
@@ -66,7 +66,7 @@ readonly class CompilerBuilder
         $this->initializeEvaluators($context);
         $this->initializeCompilers($context);
 
-        return new CompilerEngine($context, $this->logger);
+        return new CompilerEngine($context, $this->logger ?? new StderrLogger());
     }
 
     private function createContext(): CompilerContext
