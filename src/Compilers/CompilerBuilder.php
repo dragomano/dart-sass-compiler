@@ -40,15 +40,21 @@ use DartSass\Modules\MetaModule;
 use DartSass\Modules\SelectorModule;
 use DartSass\Modules\StringModule;
 use DartSass\Parsers\ParserFactory;
+use DartSass\Utils\LoggerInterface;
 use DartSass\Utils\OutputOptimizer;
 use DartSass\Utils\PositionTracker;
 use DartSass\Utils\ResultFormatter;
 use DartSass\Utils\SourceMapGenerator;
+use DartSass\Utils\StderrLogger;
 use DartSass\Utils\ValueFormatter;
 
 readonly class CompilerBuilder
 {
-    public function __construct(private array $options, private LoaderInterface $loader) {}
+    public function __construct(
+        private array $options,
+        private LoaderInterface $loader,
+        private ?LoggerInterface $logger = null
+    ) {}
 
     public function build(): CompilerEngineInterface
     {
@@ -60,7 +66,7 @@ readonly class CompilerBuilder
         $this->initializeEvaluators($context);
         $this->initializeCompilers($context);
 
-        return new CompilerEngine($context);
+        return new CompilerEngine($context, $this->logger ?? new StderrLogger());
     }
 
     private function createContext(): CompilerContext

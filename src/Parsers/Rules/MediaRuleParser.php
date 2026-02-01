@@ -6,7 +6,9 @@ namespace DartSass\Parsers\Rules;
 
 use Closure;
 use DartSass\Parsers\Nodes\AstNode;
+use DartSass\Parsers\Nodes\AtRootNode;
 use DartSass\Parsers\Nodes\MediaNode;
+use DartSass\Parsers\Nodes\RuleNode;
 use DartSass\Parsers\Tokens\TokenStreamInterface;
 
 use function preg_match;
@@ -14,6 +16,8 @@ use function trim;
 
 class MediaRuleParser extends AtRuleParser
 {
+    use BlockParsingHelper;
+
     public function __construct(
         TokenStreamInterface $stream,
         protected Closure    $parseAtRule,
@@ -34,42 +38,20 @@ class MediaRuleParser extends AtRuleParser
 
         $body = $this->parseBlock();
 
+        $this->consume('brace_close');
+
+        $atRootRule = $this->extractAtRootWithoutMedia($body);
+
+        if ($atRootRule !== null) {
+            return $atRootRule;
+        }
+
         return $this->createNode($query, $body, $token->line);
     }
 
     protected function createNode(string $query, array $body, int $line): AstNode
     {
         return new MediaNode($query, $body, $line);
-    }
-
-    protected function parseBlock(): array
-    {
-        $declarations = $nested = [];
-
-        $token = $this->currentToken();
-
-        while ($token && ! $this->peek('brace_close')) {
-            if ($this->peek('at_rule')) {
-
-                if ($token->value === '@include') {
-                    $nested[] = ($this->parseInclude)();
-                } else {
-                    $nested[] = ($this->parseAtRule)();
-                }
-            } elseif ($this->peek('variable')) {
-                $nested[] = ($this->parseVariable)();
-            } elseif ($this->peek('operator')) {
-                $nested[] = ($this->parseRule)();
-            } elseif ($this->peek('identifier')) {
-                $this->handleIdentifierInBlock($declarations, $nested);
-            } else {
-                $this->handleOtherTokensInBlock($nested);
-            }
-        }
-
-        $this->consume('brace_close');
-
-        return ['declarations' => $declarations, 'nested' => $nested];
     }
 
     private function parseMediaQuery(): string
@@ -91,73 +73,44 @@ class MediaRuleParser extends AtRuleParser
         return trim($query);
     }
 
-    private function handleIdentifierInBlock(array &$declarations, array &$nested): void
+    private function extractAtRootWithoutMedia(array $body): ?RuleNode
     {
-        $savedIndex = $this->getTokenIndex();
+        $hasAtRootWithoutMedia = false;
 
-        $this->incrementTokenIndex();
+        $filteredNested = [];
+        foreach ($body['nested'] as $nested) {
+            if ($nested instanceof RuleNode) {
+                foreach ($nested->nested as $nestedItem) {
+                    if ($nestedItem instanceof AtRootNode && $nestedItem->without === 'media') {
+                        $hasAtRootWithoutMedia = true;
 
-        if ($this->peek('colon')) {
-            $isSelector = $this->isPseudoClassSelector();
+                        $newRule = new RuleNode(
+                            $nested->selector,
+                            $nestedItem->body['declarations'],
+                            $nestedItem->body['nested'],
+                            $nested->line,
+                            $nested->column
+                        );
 
-            $this->setTokenIndex($savedIndex);
+                        $filteredNested[] = $newRule;
 
-            $isSelector
-                ? $nested[] = ($this->parseRule)()
-                : $declarations[] = ($this->parseDeclaration)();
-        } else {
-            $this->setTokenIndex($savedIndex);
-
-            $nested[] = ($this->parseRule)();
-        }
-    }
-
-    private function handleOtherTokensInBlock(array &$nested): void
-    {
-        $savedIndex = $this->getTokenIndex();
-
-        $this->incrementTokenIndex();
-        $this->setTokenIndex($savedIndex);
-
-        $nested[] = ($this->parseRule)();
-    }
-
-    private function isPseudoClassSelector(): bool
-    {
-        $this->incrementTokenIndex();
-
-        if ($this->peek('function')) {
-            return $this->checkFunctionPseudoClass();
-        }
-
-        if ($this->peek('identifier')) {
-            $this->incrementTokenIndex();
-
-            return $this->peek('brace_open');
-        }
-
-        return false;
-    }
-
-    private function checkFunctionPseudoClass(): bool
-    {
-        $parenLevel = 1;
-
-        $this->incrementTokenIndex();
-
-        if ($this->peek('paren_open')) {
-            $this->consume('paren_open');
-
-            while ($this->currentToken() && $parenLevel > 0) {
-                if ($this->peek('paren_close')) {
-                    $parenLevel--;
+                        break;
+                    }
                 }
 
-                $this->incrementTokenIndex();
+                if (! $hasAtRootWithoutMedia) {
+                    $filteredNested[] = $nested;
+                }
+            } else {
+                $filteredNested[] = $nested;
             }
         }
 
-        return $this->peek('brace_open');
+        if ($hasAtRootWithoutMedia) {
+            return $filteredNested[0];
+        }
+
+        return null;
     }
 
     private function shouldAddSpace($currentToken, string $query): bool

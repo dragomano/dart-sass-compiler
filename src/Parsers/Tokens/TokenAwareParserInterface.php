@@ -28,6 +28,8 @@ interface TokenAwareParserInterface
 
     public function peekValue(int $offset = 1): ?string;
 
+    public function previousToken(): Token;
+
     public function setTokenIndex(int $index): void;
 
     public function skipWhitespace(): void;

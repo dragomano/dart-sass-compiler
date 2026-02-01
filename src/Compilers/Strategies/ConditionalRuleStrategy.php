@@ -75,6 +75,7 @@ abstract readonly class ConditionalRuleStrategy implements RuleCompilationStrate
 
         $body   = rtrim($declarationsCss . $nestedCss);
         $indent = str_repeat('  ', $currentNestingLevel);
+
         $atSymbol = $this->getAtSymbol();
 
         return "$indent$atSymbol $query {\n$body\n$indent}\n";

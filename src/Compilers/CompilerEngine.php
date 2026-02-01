@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace DartSass\Compilers;
 
 use DartSass\Compilers\Nodes\ColorNodeCompiler;
+use DartSass\Compilers\Nodes\DebugNodeCompiler;
+use DartSass\Compilers\Nodes\ErrorNodeCompiler;
 use DartSass\Compilers\Nodes\ForwardNodeCompiler;
 use DartSass\Compilers\Nodes\FunctionNodeCompiler;
 use DartSass\Compilers\Nodes\MixinNodeCompiler;
@@ -12,11 +14,13 @@ use DartSass\Compilers\Nodes\NodeCompiler;
 use DartSass\Compilers\Nodes\RuleNodeCompiler;
 use DartSass\Compilers\Nodes\UseNodeCompiler;
 use DartSass\Compilers\Nodes\VariableNodeCompiler;
+use DartSass\Compilers\Nodes\WarnNodeCompiler;
 use DartSass\Exceptions\CompilationException;
 use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Parsers\Nodes\OperationNode;
 use DartSass\Parsers\Nodes\VariableDeclarationNode;
 use DartSass\Parsers\Syntax;
+use DartSass\Utils\LoggerInterface;
 
 use function basename;
 use function file_put_contents;
@@ -33,18 +37,23 @@ class CompilerEngine implements CompilerEngineInterface
 {
     private const NODE_COMPILER_CLASSES = [
         ColorNodeCompiler::class,
+        DebugNodeCompiler::class,
+        ErrorNodeCompiler::class,
         ForwardNodeCompiler::class,
         FunctionNodeCompiler::class,
         MixinNodeCompiler::class,
         RuleNodeCompiler::class,
         UseNodeCompiler::class,
         VariableNodeCompiler::class,
+        WarnNodeCompiler::class,
     ];
 
     private array $compilerInstances = [];
 
-    public function __construct(private readonly CompilerContext $context)
-    {
+    public function __construct(
+        private readonly CompilerContext $context,
+        private readonly LoggerInterface $logger
+    ) {
         $this->context->engine = $this;
     }
 
@@ -108,7 +117,15 @@ class CompilerEngine implements CompilerEngineInterface
         }
 
         foreach (self::NODE_COMPILER_CLASSES as $className) {
-            $compiler = new $className();
+            if (in_array($className, [
+                DebugNodeCompiler::class,
+                ErrorNodeCompiler::class,
+                WarnNodeCompiler::class,
+            ], true)) {
+                $compiler = new $className($this->logger);
+            } else {
+                $compiler = new $className();
+            }
 
             if ($compiler instanceof NodeCompiler && $compiler->canCompile($nodeType)) {
                 $this->compilerInstances[$nodeType->value] = $compiler;
@@ -246,7 +263,8 @@ class CompilerEngine implements CompilerEngineInterface
             NodeType::MEDIA,
             NodeType::CONTAINER,
             NodeType::KEYFRAMES,
-            NodeType::AT_RULE => $this->compileAtRuleNode($node, $parentSelector, $nestingLevel),
+            NodeType::AT_RULE,
+            NodeType::AT_ROOT => $this->compileAtRuleNode($node, $parentSelector, $nestingLevel),
             NodeType::INCLUDE => $this->compileIncludeNode($node, $parentSelector, $nestingLevel),
             default => throw new CompilationException("Unknown AST node type: {$node->type->value}"),
         };
