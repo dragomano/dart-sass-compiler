@@ -34,6 +34,7 @@
     "dg/bypass-finals": "^1.9",
     "friendsofphp/php-cs-fixer": "^3.92",
     "mockery/mockery": "dev-bugfix/spy-generics",
+    "monolog/monolog": "^3.10",
     "pestphp/pest": "^3.8|^4.3",
     "rector/rector": "^2.3",
     "scssphp/scssphp": "^2.1",

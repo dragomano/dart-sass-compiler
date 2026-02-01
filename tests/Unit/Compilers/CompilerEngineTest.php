@@ -7,11 +7,13 @@ use DartSass\Compilers\CompilerEngine;
 use DartSass\Exceptions\CompilationException;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\NodeType;
+use DartSass\Utils\LoggerInterface;
 
 describe('CompilerEngine', function () {
     beforeEach(function () {
         $this->context = mock(CompilerContext::class);
-        $this->engine  = new CompilerEngine($this->context);
+        $this->logger  = mock(LoggerInterface::class);
+        $this->engine  = new CompilerEngine($this->context, $this->logger);
     });
 
     describe('findNodeCompiler', function () {
