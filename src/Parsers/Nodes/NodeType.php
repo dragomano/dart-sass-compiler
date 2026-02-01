@@ -13,7 +13,9 @@ enum NodeType: string
     case CONTAINER           = 'container';
     case CSS_CUSTOM_PROPERTY = 'css_custom_property';
     case CSS_PROPERTY        = 'css_property';
+    case DEBUG               = 'debug';
     case EACH                = 'each';
+    case ERROR               = 'error';
     case FOR                 = 'for';
     case FORWARD             = 'forward';
     case FUNCTION            = 'function';
@@ -37,8 +39,9 @@ enum NodeType: string
     case SELECTOR            = 'selector';
     case STRING              = 'string';
     case UNARY               = 'unary';
+    case UNKNOWN             = 'unknown';
     case USE                 = 'use';
     case VARIABLE            = 'variable';
+    case WARN                = 'warn';
     case WHILE               = 'while';
-    case UNKNOWN             = 'unknown';
 }

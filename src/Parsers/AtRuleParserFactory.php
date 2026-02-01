@@ -7,7 +7,9 @@ namespace DartSass\Parsers;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Rules\AtRuleParser;
 use DartSass\Parsers\Rules\ContainerRuleParser;
+use DartSass\Parsers\Rules\DebugRuleParser;
 use DartSass\Parsers\Rules\EachRuleParser;
+use DartSass\Parsers\Rules\ErrorRuleParser;
 use DartSass\Parsers\Rules\ForRuleParser;
 use DartSass\Parsers\Rules\ForwardRuleParser;
 use DartSass\Parsers\Rules\GenericAtRuleParser;
@@ -15,6 +17,7 @@ use DartSass\Parsers\Rules\IfRuleParser;
 use DartSass\Parsers\Rules\KeyframesRuleParser;
 use DartSass\Parsers\Rules\MediaRuleParser;
 use DartSass\Parsers\Rules\UseRuleParser;
+use DartSass\Parsers\Rules\WarnRuleParser;
 use DartSass\Parsers\Rules\WhileRuleParser;
 
 trait AtRuleParserFactory
@@ -31,6 +34,9 @@ trait AtRuleParserFactory
         $stream = $this->getStream();
 
         return match ($this->currentToken()->value) {
+            '@debug'     => new DebugRuleParser($stream, $this->parseExpression(...)),
+            '@warn'      => new WarnRuleParser($stream, $this->parseExpression(...)),
+            '@error'     => new ErrorRuleParser($stream, $this->parseExpression(...)),
             '@use'       => new UseRuleParser($stream),
             '@forward'   => new ForwardRuleParser($stream),
             '@for'       => new ForRuleParser($stream, $this->parseExpression(...), $this->parseBlock(...)),
