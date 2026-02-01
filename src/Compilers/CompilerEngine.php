@@ -263,7 +263,8 @@ class CompilerEngine implements CompilerEngineInterface
             NodeType::MEDIA,
             NodeType::CONTAINER,
             NodeType::KEYFRAMES,
-            NodeType::AT_RULE => $this->compileAtRuleNode($node, $parentSelector, $nestingLevel),
+            NodeType::AT_RULE,
+            NodeType::AT_ROOT => $this->compileAtRuleNode($node, $parentSelector, $nestingLevel),
             NodeType::INCLUDE => $this->compileIncludeNode($node, $parentSelector, $nestingLevel),
             default => throw new CompilationException("Unknown AST node type: {$node->type->value}"),
         };

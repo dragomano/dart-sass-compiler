@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DartSass\Parsers;
 
 use DartSass\Parsers\Nodes\AstNode;
+use DartSass\Parsers\Rules\AtRootRuleParser;
 use DartSass\Parsers\Rules\AtRuleParser;
 use DartSass\Parsers\Rules\ContainerRuleParser;
 use DartSass\Parsers\Rules\DebugRuleParser;
@@ -44,6 +45,14 @@ trait AtRuleParserFactory
             '@if'        => new IfRuleParser($stream, $this->parseExpression(...), $this->parseBlock(...)),
             '@each'      => new EachRuleParser($stream, $this->parseExpression(...), $this->parseBlock(...)),
             '@keyframes' => new KeyframesRuleParser($stream, $this->parseExpression(...)),
+            '@at-root'   => new AtRootRuleParser(
+                $stream,
+                $this->parseAtRule(...),
+                $this->parseInclude(...),
+                $this->parseVariable(...),
+                $this->parseRule(...),
+                $this->parseDeclaration(...)
+            ),
             '@media'     => new MediaRuleParser(
                 $stream,
                 $this->parseAtRule(...),

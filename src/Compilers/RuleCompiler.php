@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DartSass\Compilers;
 
+use DartSass\Compilers\Strategies\AtRootStrategy;
 use DartSass\Compilers\Strategies\AtRuleStrategy;
 use DartSass\Compilers\Strategies\ContainerRuleStrategy;
 use DartSass\Compilers\Strategies\KeyframesRuleStrategy;
@@ -16,6 +17,7 @@ use InvalidArgumentException;
 class RuleCompiler
 {
     private const STRATEGIES = [
+        AtRootStrategy::class,
         AtRuleStrategy::class,
         ContainerRuleStrategy::class,
         KeyframesRuleStrategy::class,

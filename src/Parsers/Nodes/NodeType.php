@@ -6,6 +6,7 @@ namespace DartSass\Parsers\Nodes;
 
 enum NodeType: string
 {
+    case AT_ROOT             = 'at-root';
     case AT_RULE             = 'at_rule';
     case COLOR               = 'color';
     case COMMENT             = 'comment';

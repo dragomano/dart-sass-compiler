@@ -63,6 +63,11 @@ trait TokenStreamHelper
         return $this->getStream()->peekValue($offset);
     }
 
+    public function previousToken(): Token
+    {
+        return $this->getStream()->getToken($this->getTokenIndex() - 1);
+    }
+
     public function setTokenIndex(int $index): void
     {
         $this->getStream()->setPosition($index);
