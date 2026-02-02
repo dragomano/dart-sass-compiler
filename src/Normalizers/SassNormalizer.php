@@ -32,16 +32,16 @@ readonly class SassNormalizer implements SourceNormalizer
 
     public function normalize(string $source): string
     {
-        $eol = $this->detectLineEnding($source);
-        $lines = preg_split('/\R/', $source) ?: [];
-        $indentSize = $this->detectIndentSize($lines);
-        $result = [];
-        $stack = [];
-        $pendingEmptyLines = [];
+        $eol                = $this->detectLineEnding($source);
+        $lines              = preg_split('/\R/', $source) ?: [];
+        $indentSize         = $this->detectIndentSize($lines);
+        $result             = [];
+        $stack              = [];
+        $pendingEmptyLines  = [];
         $inMultilineComment = false;
 
         foreach ($lines as $rawLine) {
-            $line = rtrim($rawLine, "\r\n");
+            $line    = rtrim($rawLine, "\r\n");
             $trimmed = ltrim($line);
 
             if ($trimmed === '') {
@@ -66,7 +66,7 @@ readonly class SassNormalizer implements SourceNormalizer
                 }
 
                 $pendingEmptyLines = [];
-                $result[] = $line;
+                $result[]          = $line;
 
                 if (! str_contains($trimmed, '*/')) {
                     $inMultilineComment = true;
@@ -81,16 +81,16 @@ readonly class SassNormalizer implements SourceNormalizer
                 }
 
                 $pendingEmptyLines = [];
-                $result[] = $line;
+                $result[]          = $line;
 
                 continue;
             }
 
             $leadingSpaces = strlen($line) - strlen($trimmed);
-            $level = intdiv($leadingSpaces, $indentSize);
+            $level         = intdiv($leadingSpaces, $indentSize);
 
             while (! empty($stack) && end($stack)['level'] >= $level) {
-                $block = array_pop($stack);
+                $block    = array_pop($stack);
                 $result[] = str_repeat(' ', $block['level'] * $indentSize) . '}';
             }
 
@@ -104,33 +104,34 @@ readonly class SassNormalizer implements SourceNormalizer
 
             if (preg_match('/,\s*$/', $trimmed)) {
                 $lineToAdd = rtrim($trimmed);
-                $result[] = str_repeat(' ', $level * $indentSize) . $lineToAdd;
+                $result[]  = str_repeat(' ', $level * $indentSize) . $lineToAdd;
 
                 continue;
             }
 
             if (str_starts_with($trimmed, '=')) {
                 $mixinDeclaration = substr($trimmed, 1);
-                $result[] = str_repeat(' ', $level * $indentSize) . '@mixin ' . $mixinDeclaration . ' {';
-                $stack[] = ['level' => $level];
+                $result[]         = str_repeat(' ', $level * $indentSize) . '@mixin ' . $mixinDeclaration . ' {';
+                $stack[]          = ['level' => $level];
             } elseif (str_starts_with($trimmed, '+')) {
                 $includeCall = substr($trimmed, 1);
-                $result[] = str_repeat(' ', $level * $indentSize) . '@include ' . $includeCall . ';';
+                $result[]    = str_repeat(' ', $level * $indentSize) . '@include ' . $includeCall . ';';
             } elseif ($this->isSingleLineDirective($trimmed)) {
-                $result[] = str_repeat(' ', $level * $indentSize) . $trimmed . ';';
+                $endsWithSemicolon = str_ends_with(rtrim($trimmed), ';');
+                $result[]          = str_repeat(' ', $level * $indentSize) . $trimmed . ($endsWithSemicolon ? '' : ';');
             } elseif (preg_match('/^@media\b/', $trimmed)) {
                 $result[] = str_repeat(' ', $level * $indentSize) . $trimmed . ' {';
-                $stack[] = ['level' => $level];
+                $stack[]  = ['level' => $level];
             } elseif ($this->isBlockHeader($trimmed)) {
                 $result[] = str_repeat(' ', $level * $indentSize) . $trimmed . ' {';
-                $stack[] = ['level' => $level];
+                $stack[]  = ['level' => $level];
             } else {
                 $result[] = str_repeat(' ', $level * $indentSize) . rtrim($trimmed, ';') . ';';
             }
         }
 
         while (! empty($stack)) {
-            $block = array_pop($stack);
+            $block    = array_pop($stack);
             $result[] = str_repeat(' ', $block['level'] * $indentSize) . '}';
         }
 
