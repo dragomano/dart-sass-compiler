@@ -54,6 +54,7 @@ echo "CSS скомпилирован!\n";
 require __DIR__ . '/vendor/autoload.php';
 
 use DartSass\Compiler;
+use DartSass\Parsers\Syntax;
 
 $compiler = new Compiler();
 
