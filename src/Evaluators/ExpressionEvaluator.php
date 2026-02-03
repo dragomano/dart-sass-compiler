@@ -24,6 +24,7 @@ use DartSass\Parsers\Nodes\StringNode;
 use DartSass\Parsers\Nodes\UnaryNode;
 use DartSass\Parsers\Nodes\VariableNode;
 use DartSass\Utils\ArithmeticCalculator;
+use DartSass\Utils\SpreadHelper;
 use DartSass\Utils\StringFormatter;
 use DartSass\Utils\ValueComparator;
 use DartSass\Values\SassList;
@@ -340,66 +341,12 @@ class ExpressionEvaluator extends AbstractEvaluator
 
     private function evaluateStandardFunction(string $name, array $args): mixed
     {
-        $args = $this->evaluateArguments($args);
-
-        if ($this->hasSpreadArguments($args)) {
-            $args = $this->expandSpreadArguments($args);
-        }
+        $args = SpreadHelper::expand(
+            $this->evaluateArguments($args),
+            $this->evaluate(...)
+        );
 
         return $this->context->functionHandler->call($name, $args);
-    }
-
-    private function isSpreadArgument(mixed $arg): bool
-    {
-        return is_array($arg) && isset($arg['type']) && $arg['type'] === 'spread';
-    }
-
-    private function hasSpreadArguments(array $args): bool
-    {
-        foreach ($args as $arg) {
-            if ($this->isSpreadArgument($arg)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function expandSpreadArguments(array $args): array
-    {
-        $processedArgs = [];
-
-        foreach ($args as $arg) {
-            if ($this->isSpreadArgument($arg)) {
-                $spreadValue   = $this->evaluate($arg['value']);
-                $processedArgs = $this->appendSpreadValues($processedArgs, $spreadValue);
-            } else {
-                $processedArgs[] = $arg;
-            }
-        }
-
-        return $processedArgs;
-    }
-
-    private function appendSpreadValues(array $processedArgs, mixed $spreadValue): array
-    {
-        if ($spreadValue instanceof SassList) {
-            foreach ($spreadValue->value as $item) {
-                $processedArgs[] = $item;
-            }
-        } elseif ($spreadValue instanceof ListNode) {
-            foreach ($spreadValue->values as $item) {
-                $processedArgs[] = $this->evaluate($item);
-            }
-        } elseif (is_array($spreadValue)) {
-            foreach ($spreadValue as $item) {
-                $processedArgs[] = $this->evaluate($item);
-            }
-        } else {
-            $processedArgs[] = $spreadValue;
-        }
-
-        return $processedArgs;
     }
 
     private function hasSlashSeparator(array $args): bool

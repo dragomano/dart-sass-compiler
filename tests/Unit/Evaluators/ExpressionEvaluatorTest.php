@@ -12,7 +12,6 @@ use DartSass\Handlers\VariableHandler;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\FunctionNode;
 use DartSass\Parsers\Nodes\IdentifierNode;
-use DartSass\Parsers\Nodes\ListNode;
 use DartSass\Parsers\Nodes\NumberNode;
 use DartSass\Parsers\Nodes\OperationNode;
 use DartSass\Parsers\Nodes\OperatorNode;
@@ -21,6 +20,7 @@ use DartSass\Parsers\Nodes\SelectorNode;
 use DartSass\Parsers\Nodes\StringNode;
 use DartSass\Parsers\Nodes\UnaryNode;
 use DartSass\Parsers\Nodes\VariableNode;
+use DartSass\Utils\SpreadHelper;
 use DartSass\Values\SassList;
 use Tests\ReflectionAccessor;
 
@@ -225,7 +225,7 @@ describe('ExpressionEvaluator', function () {
 
     describe('expandSpreadArguments()', function () {
         it('handles empty array', function () {
-            $result = $this->accessor->callMethod('expandSpreadArguments', [[]]);
+            $result = SpreadHelper::expand([], fn($x) => $x);
 
             expect($result)->toBe([]);
         });
@@ -233,7 +233,7 @@ describe('ExpressionEvaluator', function () {
         it('handles regular args without spread', function () {
             $args = ['arg1', 'arg2'];
 
-            $result = $this->accessor->callMethod('expandSpreadArguments', [$args]);
+            $result = SpreadHelper::expand($args, fn($x) => $x);
 
             expect($result)->toBe(['arg1', 'arg2']);
         });
@@ -243,7 +243,7 @@ describe('ExpressionEvaluator', function () {
 
             $args = [['type' => 'spread', 'value' => $spreadValue]];
 
-            $result = $this->accessor->callMethod('expandSpreadArguments', [$args]);
+            $result = SpreadHelper::expand($args, fn($x) => $x);
 
             expect($result)->toBe(['a', 'b', 'c']);
         });
@@ -257,7 +257,7 @@ describe('ExpressionEvaluator', function () {
                 ['type' => 'spread', 'value' => $spread2],
             ];
 
-            $result = $this->accessor->callMethod('expandSpreadArguments', [$args]);
+            $result = SpreadHelper::expand($args, fn($x) => $x);
 
             expect($result)->toBe(['a', 'b', 'c']);
         });
@@ -267,49 +267,13 @@ describe('ExpressionEvaluator', function () {
 
             $args = ['arg1', ['type' => 'spread', 'value' => $spreadValue], 'arg2'];
 
-            $result = $this->accessor->callMethod('expandSpreadArguments', [$args]);
+            $result = SpreadHelper::expand($args, fn($x) => $x);
 
             expect($result)->toBe(['arg1', 'x', 'y', 'arg2']);
         });
     });
 
-    describe('appendSpreadValues()', function () {
-        it('handles SassList', function () {
-            $sassList = new SassList(['item1', 'item2'], 'comma');
-            $processedArgs = ['existing'];
 
-            $result = $this->accessor->callMethod('appendSpreadValues', [$processedArgs, $sassList]);
-
-            expect($result)->toBe(['existing', 'item1', 'item2']);
-        });
-
-        it('handles ListNode', function () {
-            $listNode = new ListNode(['node1', 'node2']);
-            $processedArgs = ['existing'];
-
-            $result = $this->accessor->callMethod('appendSpreadValues', [$processedArgs, $listNode]);
-
-            expect($result)->toBe(['existing', 'node1', 'node2']);
-        });
-
-        it('handles array', function () {
-            $array = ['elem1', 'elem2'];
-            $processedArgs = ['existing'];
-
-            $result = $this->accessor->callMethod('appendSpreadValues', [$processedArgs, $array]);
-
-            expect($result)->toBe(['existing', 'elem1', 'elem2']);
-        });
-
-        it('handles non-array value', function () {
-            $value = 'single';
-            $processedArgs = ['existing'];
-
-            $result = $this->accessor->callMethod('appendSpreadValues', [$processedArgs, $value]);
-
-            expect($result)->toBe(['existing', 'single']);
-        });
-    });
 
     describe('evaluateVariableString()', function () {
         it('successfully accesses property with namespace', function () {

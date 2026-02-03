@@ -10,9 +10,9 @@ use DartSass\Parsers\Nodes\ForNode;
 use DartSass\Parsers\Nodes\ListNode;
 use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Parsers\Nodes\OperationNode;
+use DartSass\Utils\SpreadHelper;
 use DartSass\Values\SassList;
 
-use function array_slice;
 use function count;
 use function is_array;
 use function is_object;
@@ -49,8 +49,9 @@ readonly class UserFunctionEvaluator
             $default   = $arg['default'] ?? null;
 
             if ($arbitrary) {
-                $remainingArgs = array_slice($callArgs, $argIndex);
-                $this->environment->getCurrentScope()->setVariable($paramName, new ListNode($remainingArgs));
+                $restArgs = SpreadHelper::collect($callArgs, []);
+
+                $this->environment->getCurrentScope()->setVariable($paramName, $restArgs);
 
                 break;
             } else {
@@ -60,6 +61,7 @@ readonly class UserFunctionEvaluator
                 }
 
                 $this->environment->getCurrentScope()->setVariable($paramName, $value);
+
                 $argIndex++;
             }
         }
