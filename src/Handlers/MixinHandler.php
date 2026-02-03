@@ -7,22 +7,19 @@ namespace DartSass\Handlers;
 use DartSass\Compilers\CompilerContext;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\IdentifierNode;
+use DartSass\Utils\SpreadHelper;
 use DartSass\Values\SassList;
-use DartSass\Values\SassMap;
 use Throwable;
 
 use function array_key_exists;
 use function array_key_first;
 use function count;
-use function in_array;
 use function is_array;
-use function is_int;
 use function md5;
 use function preg_replace;
 use function serialize;
 use function str_ends_with;
 use function str_replace;
-use function str_starts_with;
 use function substr;
 use function trim;
 
@@ -139,29 +136,7 @@ class MixinHandler
     private function bindSpreadArgument(string $argName, array $arguments, array $usedKeys): void
     {
         $varName = substr($argName, 0, -3);
-
-        $remainingKeywords   = [];
-        $remainingPositional = [];
-
-        foreach ($arguments as $key => $val) {
-            if (in_array($key, $usedKeys, true)) {
-                continue;
-            }
-
-            if (is_int($key)) {
-                $remainingPositional[] = $val;
-            } else {
-                $keyStr = $key;
-
-                if (str_starts_with($keyStr, '$')) {
-                    $keyStr = substr($keyStr, 1);
-                }
-
-                $remainingKeywords[$keyStr] = $val;
-            }
-        }
-
-        $value = empty($remainingKeywords) ? new SassList($remainingPositional) : new SassMap($remainingKeywords);
+        $value   = SpreadHelper::collectWithKeywords($arguments, $usedKeys);
 
         $this->context->variableHandler->define($varName, $value);
     }
