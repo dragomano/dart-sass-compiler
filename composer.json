@@ -23,7 +23,8 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "Tests\\": "tests/"
+      "Tests\\": "tests/",
+      "Benchmarks\\": "benchmarks/"
     }
   },
   "require": {
@@ -49,7 +50,7 @@
     "benchmark": "php benchmark.php",
     "phpbench": "vendor/bin/phpbench run --report=compiler_summary",
     "phpbench-base": "vendor/bin/phpbench run --report=compiler_summary --ref=baseline",
-    "phpbench-baseline": "vendor/bin/phpbench run --report=compiler_summary --store=baseline",
+    "phpbench-baseline": "vendor/bin/phpbench run --report=compiler_summary --store --tag=baseline",
     "tests": "vendor/bin/pest --colors=always --display-warnings",
     "tests-coverage": "vendor/bin/pest --colors=always --coverage --min=100",
     "tests-coverage-clover": "vendor/bin/pest --colors=always --min=100 --coverage-clover coverage.xml",
