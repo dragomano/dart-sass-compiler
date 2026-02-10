@@ -1,0 +1,17 @@
+{
+    "runner.bootstrap": "vendor/autoload.php",
+    "runner.path": "benchmarks",
+    "runner.annotations": true,
+    "runner.php_config": {
+        "opcache.enable": "1",
+        "opcache.enable_cli": "1",
+        "xdebug.mode": "off"
+    },
+    "report.generators": {
+        "compiler_summary": {
+            "extends": "aggregate",
+            "title": "Compiler Benchmark Results",
+            "description": "Comparison of SCSS compilers performance"
+        }
+    }
+}

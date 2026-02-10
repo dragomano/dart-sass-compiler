@@ -36,6 +36,7 @@
     "mockery/mockery": "dev-bugfix/spy-generics",
     "monolog/monolog": "^3.10",
     "pestphp/pest": "^3.8|^4.3",
+    "phpbench/phpbench": "^1.4",
     "rector/rector": "^2.3",
     "scssphp/scssphp": "^2.1",
     "symfony/var-dumper": "^7.4|^8.0"
@@ -46,6 +47,9 @@
     "rector": "vendor/bin/rector process --clear-cache",
     "check": "vendor/bin/rector process --dry-run --clear-cache",
     "benchmark": "php benchmark.php",
+    "phpbench": "vendor/bin/phpbench run --report=compiler_summary",
+    "phpbench-base": "vendor/bin/phpbench run --report=compiler_summary --ref=baseline",
+    "phpbench-baseline": "vendor/bin/phpbench run --report=compiler_summary --store=baseline",
     "tests": "vendor/bin/pest --colors=always --display-warnings",
     "tests-coverage": "vendor/bin/pest --colors=always --coverage --min=100",
     "tests-coverage-clover": "vendor/bin/pest --colors=always --min=100 --coverage-clover coverage.xml",
