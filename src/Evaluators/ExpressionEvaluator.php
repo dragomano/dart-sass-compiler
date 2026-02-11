@@ -159,8 +159,8 @@ class ExpressionEvaluator extends AbstractEvaluator
         }
 
         return match (true) {
+            $name === 'calc' => $this->evaluateCalcFunction($args),
             $name === 'if'   => $this->evaluateIfFunction($args),
-            $name === 'calc' => $this->context->calcEvaluator->evaluate($args, $this->evaluate(...)),
             $name === 'url'  => $this->evaluateUrlFunction($args),
             default          => $this->evaluateStandardFunction($name, $args),
         };
@@ -318,18 +318,18 @@ class ExpressionEvaluator extends AbstractEvaluator
         return null;
     }
 
+    private function evaluateCalcFunction(array $args): mixed
+    {
+        $evaluator = new CalcFunctionEvaluator($this->context->resultFormatter);
+
+        return $evaluator->evaluate($args, $this->evaluate(...));
+    }
+
     private function evaluateIfFunction(array $args): mixed
     {
         $result = $this->context->functionHandler->call('if', $args);
 
         return $this->evaluate($result);
-    }
-
-    private function evaluateFunctionWithSlashSeparator(string $name, array $args): mixed
-    {
-        $args = $this->evaluateArgumentsWithSlashSeparator($args);
-
-        return $this->context->functionHandler->call($name, $args);
     }
 
     private function evaluateUrlFunction(array $args): mixed
@@ -358,6 +358,13 @@ class ExpressionEvaluator extends AbstractEvaluator
         $lastArg = end($args);
 
         return $this->containsDivisionOperation($lastArg);
+    }
+
+    private function evaluateFunctionWithSlashSeparator(string $name, array $args): mixed
+    {
+        $args = $this->evaluateArgumentsWithSlashSeparator($args);
+
+        return $this->context->functionHandler->call($name, $args);
     }
 
     private function evaluateUrlArguments(array $args): array

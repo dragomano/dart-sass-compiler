@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DartSass\Compilers;
 
-use DartSass\Evaluators\CalcFunctionEvaluator;
 use DartSass\Evaluators\ExpressionEvaluator;
 use DartSass\Evaluators\InterpolationEvaluator;
 use DartSass\Evaluators\OperationEvaluator;
@@ -55,8 +54,6 @@ class CompilerContext
 
     public OperationEvaluator $operationEvaluator;
 
-    public CalcFunctionEvaluator $calcEvaluator;
-
     public ExpressionEvaluator $expressionEvaluator;
 
     public RuleCompiler $ruleCompiler;
@@ -66,8 +63,6 @@ class CompilerContext
     public DeclarationCompiler $declarationCompiler;
 
     public MixinCompiler $mixinCompiler;
-
-    public AtRuleCompiler $atRuleCompiler;
 
     public ModuleCompiler $moduleCompiler;
 

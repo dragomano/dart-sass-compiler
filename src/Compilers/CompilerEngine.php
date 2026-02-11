@@ -283,15 +283,20 @@ class CompilerEngine implements CompilerEngineInterface
 
     private function compileAtRuleNode($node, string $parentSelector, int $nestingLevel): string
     {
-        return $this->context->atRuleCompiler->compile(
+        $css = $this->context->ruleCompiler->compileRule(
             $node,
+            $this->context,
             $parentSelector,
             $nestingLevel,
-            $this->evaluateExpression(...),
+            $this->evaluateInterpolationsInString(...),
             $this->compileDeclarations(...),
             $this->compileAst(...),
-            $this->evaluateInterpolationsInString(...)
+            $this->evaluateExpression(...),
         );
+
+        $this->context->positionTracker->updatePosition($css);
+
+        return $css;
     }
 
     private function compileIncludeNode($node, string $parentSelector, int $nestingLevel): string

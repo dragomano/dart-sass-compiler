@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DartSass\Compilers;
 
-use DartSass\Evaluators\CalcFunctionEvaluator;
 use DartSass\Evaluators\ExpressionEvaluator;
 use DartSass\Evaluators\InterpolationEvaluator;
 use DartSass\Evaluators\OperationEvaluator;
@@ -185,7 +184,6 @@ readonly class CompilerBuilder
     {
         $context->interpolationEvaluator = new InterpolationEvaluator($context);
         $context->operationEvaluator     = new OperationEvaluator($context);
-        $context->calcEvaluator          = new CalcFunctionEvaluator($context->resultFormatter);
         $context->expressionEvaluator    = new ExpressionEvaluator($context);
     }
 
@@ -205,7 +203,6 @@ readonly class CompilerBuilder
     private function initializeSpecializedCompilers(CompilerContext $context): void
     {
         $context->mixinCompiler  = new MixinCompiler($context);
-        $context->atRuleCompiler = new AtRuleCompiler($context);
         $context->moduleCompiler = new ModuleCompiler($context);
     }
 }

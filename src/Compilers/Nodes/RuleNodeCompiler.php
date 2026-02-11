@@ -6,7 +6,6 @@ namespace DartSass\Compilers\Nodes;
 
 use DartSass\Compilers\CompilerContext;
 use DartSass\Parsers\Nodes\AstNode;
-use DartSass\Parsers\Nodes\IncludeNode;
 use DartSass\Parsers\Nodes\MediaNode;
 use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Parsers\Nodes\RuleNode;
@@ -92,13 +91,8 @@ class RuleNodeCompiler extends AbstractNodeCompiler
         int $nestingLevel
     ): string {
         return match ($item->type) {
-            NodeType::EACH,
-            NodeType::IF,
-            NodeType::FOR,
-            NodeType::WHILE   => $this->compileFlowControlNode($item, $context, $selector, $nestingLevel + 1),
-            NodeType::INCLUDE => $this->compileIncludeNode($item, $context, $selector, $nestingLevel + 1),
-            NodeType::MEDIA   => $this->compileMediaNode($item, $selector, $nestingLevel, $context),
-            default           => $context->engine->compileAst([$item], $selector, $nestingLevel + 1),
+            NodeType::MEDIA => $this->compileMediaNode($item, $selector, $nestingLevel, $context),
+            default         => $context->engine->compileAst([$item], $selector, $nestingLevel + 1),
         };
     }
 
@@ -203,35 +197,6 @@ class RuleNodeCompiler extends AbstractNodeCompiler
         return $ruleStart . rtrim($content) . "\n" . $ruleEnd;
     }
 
-    private function compileFlowControlNode(
-        AstNode $node,
-        CompilerContext $context,
-        string $parentSelector,
-        int $nestingLevel
-    ): string {
-        return $context->flowControlCompiler->compile(
-            $node,
-            $parentSelector,
-            $nestingLevel,
-            $context->engine->evaluateExpression(...),
-            $context->engine->compileAst(...)
-        );
-    }
-
-    private function compileIncludeNode(
-        IncludeNode|AstNode $node,
-        CompilerContext $context,
-        string $parentSelector,
-        int $nestingLevel
-    ): string {
-        return $context->mixinCompiler->compile(
-            $node,
-            $parentSelector,
-            $nestingLevel,
-            $context->engine->evaluateExpression(...)
-        );
-    }
-
     private function compileMediaNode(
         MediaNode|AstNode $mediaNode,
         string $parentSelector,
@@ -246,7 +211,7 @@ class RuleNodeCompiler extends AbstractNodeCompiler
         $includesCss = '';
         foreach ($nested as $item) {
             if ($item->type === NodeType::INCLUDE) {
-                $includesCss .= $this->compileIncludeNode($item, $context, $parentSelector, $nestingLevel + 2);
+                $includesCss .= $context->engine->compileAst([$item], $parentSelector, $nestingLevel + 2);
             }
         }
 
