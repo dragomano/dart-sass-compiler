@@ -63,5 +63,19 @@ describe('Syntax enum', function () {
             $syntax = Syntax::fromPath('my.styles.sass');
             expect($syntax)->toBe(Syntax::SASS);
         });
+
+        describe('fromPath with content detection', function () {
+            it('detects SCSS syntax from content containing curly braces', function () {
+                $content = '.class { color: red; }';
+                $syntax = Syntax::fromPath('styles', $content);
+                expect($syntax)->toBe(Syntax::SCSS);
+            });
+
+            it('detects SASS syntax from content without curly braces', function () {
+                $content = '.class\n  color: red';
+                $syntax = Syntax::fromPath('styles', $content);
+                expect($syntax)->toBe(Syntax::SASS);
+            });
+        });
     });
 });

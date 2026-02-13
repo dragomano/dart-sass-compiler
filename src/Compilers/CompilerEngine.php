@@ -85,7 +85,7 @@ class CompilerEngine implements CompilerEngineInterface
         try {
             $content = $this->context->loader->load($filePath);
 
-            return $this->compileString($content, Syntax::fromPath($filePath));
+            return $this->compileString($content, Syntax::fromPath($filePath, $content));
         } finally {
             $this->context->options = $originalOptions;
         }

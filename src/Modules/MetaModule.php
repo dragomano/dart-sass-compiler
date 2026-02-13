@@ -110,7 +110,7 @@ class MetaModule extends AbstractModule
         $content = $loader->load($url);
 
         if (str_ends_with($url, '.scss') || str_ends_with($url, '.sass')) {
-            return $engine->compileString($content, Syntax::fromPath($url));
+            return $engine->compileString($content, Syntax::fromPath($url, $content));
         }
 
         return $content;
