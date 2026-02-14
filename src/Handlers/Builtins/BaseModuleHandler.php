@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DartSass\Handlers\Builtins;
 
+use function array_key_exists;
 use function array_map;
 use function array_merge;
 use function in_array;
@@ -11,6 +12,7 @@ use function is_array;
 use function is_string;
 use function lcfirst;
 use function str_replace;
+use function str_starts_with;
 use function trim;
 use function ucwords;
 
@@ -48,6 +50,50 @@ abstract class BaseModuleHandler implements ModuleHandlerInterface
     protected function normalizeArgs(array $args): array
     {
         return array_map($this->normalizeArg(...), $args);
+    }
+
+    protected function hasArgument(array $args, int $position, array $names = []): bool
+    {
+        if (array_key_exists($position, $args)) {
+            return true;
+        }
+
+        foreach ($names as $name) {
+            if (array_key_exists($name, $args)) {
+                return true;
+            }
+
+            $normalizedName = str_starts_with($name, '$') ? $name : '$' . $name;
+            if (array_key_exists($normalizedName, $args)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function getArgument(
+        array $args,
+        int $position,
+        array $names = [],
+        mixed $default = null
+    ): mixed {
+        if (array_key_exists($position, $args)) {
+            return $args[$position];
+        }
+
+        foreach ($names as $name) {
+            if (array_key_exists($name, $args)) {
+                return $args[$name];
+            }
+
+            $normalizedName = str_starts_with($name, '$') ? $name : '$' . $name;
+            if (array_key_exists($normalizedName, $args)) {
+                return $args[$normalizedName];
+            }
+        }
+
+        return $default;
     }
 
     private function normalizeArg(mixed $arg): mixed

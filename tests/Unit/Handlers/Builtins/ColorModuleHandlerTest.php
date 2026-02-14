@@ -104,6 +104,16 @@ describe('ColorModuleHandler', function () {
                 ->and($result)->toContain('5px');
         });
 
+        it('handles mix with named sass arguments', function () {
+            $result = $this->handler->handle('mix', [
+                '$color1' => '#fff',
+                '$color2' => '#000',
+                '$weight' => ['value' => 20.0, 'unit' => '%'],
+            ]);
+
+            expect($result)->toBe('#333333');
+        });
+
         it('returns CSS function call when first argument is not valid color format in scale-color', function () {
             // Test with numeric value as first argument to trigger the !isValidColorFormat branch
             $result = $this->handler->handle('scale-color', [123]);

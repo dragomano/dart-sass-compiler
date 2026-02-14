@@ -90,7 +90,7 @@ class ColorModuleHandler extends BaseModuleHandler
 
     private function handleAdjustmentFunction(string $function, array $args): string
     {
-        $color = $this->extract($args[0]);
+        $color = $this->extract($this->getArgument($args, 0, ['color']));
 
         $adjustments = $this->extractAdjustments($args);
 
@@ -99,16 +99,20 @@ class ColorModuleHandler extends BaseModuleHandler
 
     private function handleMixFunction(array $args): string
     {
+        $color1 = $this->getArgument($args, 0, ['color1']);
+        $color2 = $this->getArgument($args, 1, ['color2']);
+        $weight = $this->getArgument($args, 2, ['weight'], 0.5);
+
         return $this->colorModule->mix(
-            $this->extract($args[0]),
-            $this->extract($args[1]),
-            $this->extractWeight($args[2] ?? 0.5)
+            $this->extract($color1),
+            $this->extract($color2),
+            $this->extractWeight($weight)
         );
     }
 
     private function handleScaleFunction(array $args): string
     {
-        $color = $this->extract($args[0]);
+        $color = $this->extract($this->getArgument($args, 0, ['color']));
 
         if (! $this->isValidColorFormat($color)) {
             $formattedArgs = array_map($this->extract(...), $args);
@@ -121,7 +125,7 @@ class ColorModuleHandler extends BaseModuleHandler
 
     private function handleSimpleColorFunction(string $functionName, array $args): string
     {
-        $color = $this->extract($args[0]);
+        $color = $this->extract($this->getArgument($args, 0, ['color']));
 
         $methodName = $this->kebabToCamel($functionName);
 

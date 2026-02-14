@@ -9,6 +9,7 @@ use DartSass\Compilers\Environment;
 use DartSass\Evaluators\UserFunctionEvaluator;
 use DartSass\Handlers\Builtins\CustomFunctionHandler;
 
+use function array_key_exists;
 use function count;
 use function explode;
 use function is_array;
@@ -62,7 +63,12 @@ readonly class FunctionHandler
     {
         $namespace = str_contains($name, '.') ? explode('.', $name, 2)[0] : '';
 
-        if (count($args) === 1 && is_array($args[0]) && ! isset($args[0]['value'])) {
+        if (
+            count($args) === 1
+            && array_key_exists(0, $args)
+            && is_array($args[0])
+            && ! isset($args[0]['value'])
+        ) {
             $args = $args[0];
         }
 

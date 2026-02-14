@@ -87,4 +87,22 @@ describe('BaseModuleHandler', function () {
             expect($result)->toEqual([]);
         });
     });
+
+    describe('argument resolver methods', function () {
+        it('resolves hasArgument by normalized sass name with dollar prefix', function () {
+            $args = ['$condition' => true];
+
+            $result = $this->accessor->callMethod('hasArgument', [$args, 0, ['condition']]);
+
+            expect($result)->toBeTrue();
+        });
+
+        it('returns default value from getArgument when argument is missing', function () {
+            $args = [];
+
+            $result = $this->accessor->callMethod('getArgument', [$args, 0, ['condition'], 'fallback']);
+
+            expect($result)->toBe('fallback');
+        });
+    });
 });
