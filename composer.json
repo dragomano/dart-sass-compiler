@@ -31,7 +31,7 @@
     "php": "^8.2"
   },
   "require-dev": {
-    "bugo/sass-embedded-php": "^0.4",
+    "bugo/sass-embedded-php": "dev-main",
     "dg/bypass-finals": "^1.9",
     "friendsofphp/php-cs-fixer": "^3.92",
     "mockery/mockery": "dev-bugfix/spy-generics",

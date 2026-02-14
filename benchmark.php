@@ -176,10 +176,16 @@ try {
             }
 
             // Determine release version
-            if ($buildNum >= 26100) {
+            if ($buildNum >= 28000) {
+                $release = '26H1';
+            } elseif ($buildNum >= 26200) {
+                $release = '25H2';
+            } elseif ($buildNum >= 26100) {
                 $release = '24H2';
-            } elseif ($buildNum >= 22621) {
+            } elseif ($buildNum >= 22631) {
                 $release = '23H2';
+            } elseif ($buildNum >= 22621) {
+                $release = '22H2';
             } elseif ($buildNum >= 22000) {
                 $release = '21H2';
             } else {
