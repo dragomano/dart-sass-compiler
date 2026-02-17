@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace DartSass\Handlers;
 
-use DartSass\Compilers\CompilerContext;
+use DartSass\Compilers\CompilerEngineInterface;
+use DartSass\Compilers\Environment;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\IdentifierNode;
 use DartSass\Utils\SpreadHelper;
 use DartSass\Values\SassList;
+use LogicException;
 use Throwable;
 
 use function array_key_exists;
@@ -25,22 +27,32 @@ use function trim;
 
 class MixinHandler
 {
+    private ?CompilerEngineInterface $engine = null;
+
     private ?string $currentContent = null;
 
     private static array $mixinCache = [];
 
     private const CACHE_LIMIT = 100;
 
-    public function __construct(private readonly CompilerContext $context) {}
+    public function __construct(
+        private readonly Environment $environment,
+        private readonly VariableHandler $variableHandler
+    ) {}
+
+    public function setEngine(CompilerEngineInterface $engine): void
+    {
+        $this->engine = $engine;
+    }
 
     public function define(string $name, array $args, array $body, bool $global = false): void
     {
-        $this->context->environment->getCurrentScope()->setMixin($name, $args, $body, $global);
+        $this->environment->getCurrentScope()->setMixin($name, $args, $body, $global);
     }
 
     public function hasMixin(string $name): bool
     {
-        return $this->context->environment->getCurrentScope()->hasMixin($name);
+        return $this->environment->getCurrentScope()->hasMixin($name);
     }
 
     public function hasContent(): bool
@@ -55,14 +67,14 @@ class MixinHandler
         string $parentSelector = '',
         int $nestingLevel = 0
     ): string {
-        $mixin = $this->context->environment->getCurrentScope()->getMixin($name);
+        $mixin = $this->environment->getCurrentScope()->getMixin($name);
 
         $cacheKey = self::generateCacheKey($name, $args, $content);
         if ($cacheKey !== '' && isset(self::$mixinCache[$cacheKey])) {
             return self::$mixinCache[$cacheKey];
         }
 
-        $this->context->environment->enterScope();
+        $this->environment->enterScope();
 
         try {
             $arguments = $this->normalizeArguments($args);
@@ -77,13 +89,13 @@ class MixinHandler
 
             return $css;
         } finally {
-            $this->context->environment->exitScope();
+            $this->environment->exitScope();
         }
     }
 
     public function getMixin(string $name): ?array
     {
-        return $this->context->environment->getCurrentScope()->getMixin($name);
+        return $this->environment->getCurrentScope()->getMixin($name);
     }
 
     public function removeMixin(string $name): void {}
@@ -127,7 +139,7 @@ class MixinHandler
 
             $value = $this->resolveArgumentValue($argName, $argIndex, $arguments, $defaultValue, $usedKeys);
 
-            $this->context->variableHandler->define($argName, $value);
+            $this->variableHandler->define($argName, $value);
 
             $argIndex++;
         }
@@ -138,7 +150,7 @@ class MixinHandler
         $varName = substr($argName, 0, -3);
         $value   = SpreadHelper::collectWithKeywords($arguments, $usedKeys);
 
-        $this->context->variableHandler->define($varName, $value);
+        $this->variableHandler->define($varName, $value);
     }
 
     private function resolveArgumentValue(
@@ -186,14 +198,14 @@ class MixinHandler
 
         foreach ($content as $item) {
             if (is_array($item)) {
-                $declarationCss .= $this->context->engine->compileDeclarations(
+                $declarationCss .= $this->getEngine()->compileDeclarations(
                     [$item],
                     nestingLevel: $nestingLevel + 2
                 );
             }
         }
 
-        $compiledContent = $this->context->engine->formatRule($declarationCss, $parentSelector, $nestingLevel);
+        $compiledContent = $this->getEngine()->formatRule($declarationCss, $parentSelector, $nestingLevel);
 
         return preg_replace('/^}$/m', '  }', $compiledContent);
     }
@@ -204,7 +216,7 @@ class MixinHandler
 
         foreach ($content as $item) {
             if (is_array($item)) {
-                $compiledContent .= $this->context->engine->compileDeclarations([$item], nestingLevel: 1);
+                $compiledContent .= $this->getEngine()->compileDeclarations([$item], nestingLevel: 1);
             }
         }
 
@@ -217,9 +229,9 @@ class MixinHandler
 
         foreach ($body as $item) {
             if (is_array($item)) {
-                $css .= $this->context->engine->compileDeclarations([$item], nestingLevel: 1);
+                $css .= $this->getEngine()->compileDeclarations([$item], nestingLevel: 1);
             } elseif ($item instanceof AstNode) {
-                $css .= $this->context->engine->compileAst([$item], $parentSelector);
+                $css .= $this->getEngine()->compileAst([$item], $parentSelector);
             }
         }
 
@@ -249,5 +261,14 @@ class MixinHandler
             $firstKey = array_key_first(self::$mixinCache);
             unset(self::$mixinCache[$firstKey]);
         }
+    }
+
+    private function getEngine(): CompilerEngineInterface
+    {
+        if ($this->engine === null) {
+            throw new LogicException('MixinHandler engine is not set.');
+        }
+
+        return $this->engine;
     }
 }

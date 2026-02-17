@@ -15,12 +15,27 @@ use DartSass\Compilers\Nodes\RuleNodeCompiler;
 use DartSass\Compilers\Nodes\UseNodeCompiler;
 use DartSass\Compilers\Nodes\VariableNodeCompiler;
 use DartSass\Compilers\Nodes\WarnNodeCompiler;
+use DartSass\Evaluators\ExpressionEvaluator;
+use DartSass\Evaluators\InterpolationEvaluator;
+use DartSass\Evaluators\OperationEvaluator;
 use DartSass\Exceptions\CompilationException;
+use DartSass\Handlers\ExtendHandler;
+use DartSass\Handlers\FunctionHandler;
+use DartSass\Handlers\MixinHandler;
+use DartSass\Handlers\ModuleHandler;
+use DartSass\Handlers\NestingHandler;
+use DartSass\Handlers\VariableHandler;
+use DartSass\Loaders\LoaderInterface;
 use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Parsers\Nodes\OperationNode;
 use DartSass\Parsers\Nodes\VariableDeclarationNode;
+use DartSass\Parsers\ParserFactory;
 use DartSass\Parsers\Syntax;
 use DartSass\Utils\LoggerInterface;
+use DartSass\Utils\OutputOptimizer;
+use DartSass\Utils\PositionTracker;
+use DartSass\Utils\ResultFormatterInterface;
+use DartSass\Utils\SourceMapGenerator;
 
 use function basename;
 use function file_put_contents;
@@ -48,66 +63,94 @@ class CompilerEngine implements CompilerEngineInterface
         WarnNodeCompiler::class,
     ];
 
-    private array $compilerInstances = [];
+    private array $mappings = [];
 
     public function __construct(
-        private readonly CompilerContext $context,
+        private array $options,
+        private readonly LoaderInterface $loader,
+        private readonly ParserFactory $parserFactory,
+        private readonly PositionTracker $positionTracker,
+        private readonly ExtendHandler $extendHandler,
+        private readonly OutputOptimizer $outputOptimizer,
+        private readonly SourceMapGenerator $sourceMapGenerator,
+        private readonly ResultFormatterInterface $resultFormatter,
+        private readonly InterpolationEvaluator $interpolationEvaluator,
+        private readonly OperationEvaluator $operationEvaluator,
+        private readonly ExpressionEvaluator $expressionEvaluator,
+        private readonly RuleCompiler $ruleCompiler,
+        private readonly FlowControlCompiler $flowControlCompiler,
+        private readonly DeclarationCompiler $declarationCompiler,
+        private readonly MixinCompiler $mixinCompiler,
+        private readonly ModuleCompiler $moduleCompiler,
+        private readonly ModuleHandler $moduleHandler,
+        private readonly MixinHandler $mixinHandler,
+        private readonly NestingHandler $nestingHandler,
+        private readonly VariableHandler $variableHandler,
+        private readonly FunctionHandler $functionHandler,
+        private readonly Environment $environment,
         private readonly LoggerInterface $logger
     ) {
-        $this->context->engine = $this;
+        $this->mixinHandler->setEngine($this);
     }
+
+    private array $compilerInstances = [];
 
     public function compileString(string $string, ?Syntax $syntax = null): string
     {
         $syntax ??= Syntax::SCSS;
 
-        $this->context->mappings = [];
+        $this->mappings = [];
 
-        $this->context->positionTracker->setSourceCode($string);
+        $this->positionTracker->setSourceCode($string);
 
-        $parser = $this->context->parserFactory->create($string, $syntax);
+        $parser = $this->parserFactory->create($string, $syntax);
 
         $ast = $parser->parse();
 
         $compiled = $this->compileAst($ast);
-        $compiled = $this->context->extendHandler->applyExtends($compiled);
+        $compiled = $this->extendHandler->applyExtends($compiled);
         $compiled = $this->generateSourceMapIfNeeded($compiled, $string);
 
-        return $this->context->outputOptimizer->optimize($compiled);
+        return $this->outputOptimizer->optimize($compiled);
     }
 
     public function compileFile(string $filePath): string
     {
-        $originalOptions = $this->context->options;
+        $originalOptions = $this->options;
 
-        $this->context->options['sourceFile'] = basename($filePath);
+        $this->options['sourceFile'] = basename($filePath);
 
         try {
-            $content = $this->context->loader->load($filePath);
+            $content = $this->loader->load($filePath);
 
             return $this->compileString($content, Syntax::fromPath($filePath, $content));
         } finally {
-            $this->context->options = $originalOptions;
+            $this->options = $originalOptions;
         }
     }
 
     public function evaluateExpression(mixed $expr): mixed
     {
         if ($expr instanceof OperationNode) {
-            return $this->context->operationEvaluator->evaluate($expr);
+            return $this->operationEvaluator->evaluate($expr);
         }
 
-        return $this->context->expressionEvaluator->evaluate($expr);
+        return $this->expressionEvaluator->evaluate($expr);
     }
 
     public function addFunction(string $name, callable $callback): void
     {
-        $this->context->functionHandler->addCustom($name, $callback);
+        $this->functionHandler->addCustom($name, $callback);
     }
 
-    public function getContext(): CompilerContext
+    public function getOptions(): array
     {
-        return $this->context;
+        return $this->options;
+    }
+
+    public function getMappings(): array
+    {
+        return $this->mappings;
     }
 
     public function findNodeCompiler(NodeType $nodeType): ?NodeCompiler
@@ -150,7 +193,7 @@ class CompilerEngine implements CompilerEngineInterface
 
             if ($node->type === NodeType::AT_RULE && ($node->name ?? '') === '@extend') {
                 $targetSelector = trim((string) $this->evaluateExpression($node->value ?? ''));
-                $this->context->extendHandler->registerExtend($parentSelector, $targetSelector);
+                $this->extendHandler->registerExtend($parentSelector, $targetSelector);
 
                 continue;
             }
@@ -171,7 +214,7 @@ class CompilerEngine implements CompilerEngineInterface
 
             if ($node->type === NodeType::COMMENT) {
                 if (str_starts_with($node->value, '/*')) {
-                    $indent = $this->getIndent($nestingLevel);
+                    $indent = $this->indent($nestingLevel);
                     $commentValue = $node->value;
 
                     // Extract content between /* and */
@@ -190,7 +233,7 @@ class CompilerEngine implements CompilerEngineInterface
             $compiler = $this->findNodeCompiler($node->type);
 
             if ($compiler) {
-                $css .= $compiler->compile($node, $this->context, $parentSelector, $nestingLevel);
+                $css .= $compiler->compile($node, $this, $parentSelector, $nestingLevel);
             } else {
                 $css .= $this->compileSpecialNode($node, $parentSelector, $nestingLevel);
             }
@@ -201,54 +244,111 @@ class CompilerEngine implements CompilerEngineInterface
 
     public function compileDeclarations(array $declarations, string $parentSelector = '', int $nestingLevel = 0): string
     {
-        return $this->context->declarationCompiler->compile(
+        return $this->declarationCompiler->compile(
             $declarations,
             $parentSelector,
             $nestingLevel,
-            $this->context,
             $this->compileAst(...),
-            $this->evaluateExpression(...)
+            $this->evaluateExpression(...),
+            $this->evaluateInterpolationsInString(...),
+            $this->options['sourceMap'] ?? false,
+            $this->addMapping(...)
         );
     }
 
     public function formatRule(string $content, string $selector, int $nestingLevel): string
     {
-        $indent  = $this->getIndent($nestingLevel);
+        $indent  = $this->indent($nestingLevel);
         $content = rtrim($content, "\n");
 
         return "$indent$selector {\n$content\n$indent}\n";
     }
 
-    public function getIndent(int $level): string
+    public function getResultFormatter(): ResultFormatterInterface
     {
-        return str_repeat('  ', $level);
+        return $this->resultFormatter;
+    }
+
+    public function getVariableHandler(): VariableHandler
+    {
+        return $this->variableHandler;
+    }
+
+    public function getMixinHandler(): MixinHandler
+    {
+        return $this->mixinHandler;
+    }
+
+    public function getNestingHandler(): NestingHandler
+    {
+        return $this->nestingHandler;
+    }
+
+    public function getExtendHandler(): ExtendHandler
+    {
+        return $this->extendHandler;
+    }
+
+    public function getModuleHandler(): ModuleHandler
+    {
+        return $this->moduleHandler;
+    }
+
+    public function getFunctionHandler(): FunctionHandler
+    {
+        return $this->functionHandler;
+    }
+
+    public function getInterpolationEvaluator(): InterpolationEvaluator
+    {
+        return $this->interpolationEvaluator;
+    }
+
+    public function getPositionTracker(): PositionTracker
+    {
+        return $this->positionTracker;
+    }
+
+    public function getEnvironment(): Environment
+    {
+        return $this->environment;
+    }
+
+    public function getModuleCompiler(): ModuleCompiler
+    {
+        return $this->moduleCompiler;
+    }
+
+    public function addMapping(array $mapping): void
+    {
+        $this->mappings[] = $mapping;
     }
 
     private function generateSourceMapIfNeeded(string $compiled, string $content): string
     {
-        if (! $this->context->options['sourceMap'] || ! $this->context->options['sourceMapFile']) {
+        if (! $this->options['sourceMap'] || ! $this->options['sourceMapFile']) {
             return $compiled;
         }
 
         $sourceMapOptions = [];
 
-        if ($this->context->options['includeSources']) {
+        if ($this->options['includeSources']) {
             $sourceMapOptions['sourceContent']  = $content;
             $sourceMapOptions['includeSources'] = true;
         }
 
         $sourceMapOptions['outputLines'] = substr_count($compiled, "\n") + 1;
 
-        $sourceMap = $this->context->sourceMapGenerator->generate(
-            $this->context->mappings,
-            $this->context->options['sourceFile'],
-            $this->context->options['outputFile'],
+        $sourceMap = $this->sourceMapGenerator->generate(
+            $this->mappings,
+            $this->options['sourceFile'],
+            $this->options['outputFile'],
             $sourceMapOptions
         );
 
-        file_put_contents($this->context->options['sourceMapFile'], $sourceMap);
+        file_put_contents($this->options['sourceMapFile'], $sourceMap);
 
-        $compiled .= "\n/*# sourceMappingURL=" . $this->context->options['sourceMapFile'] . ' */';
+        $compiled .= "\n/*# sourceMappingURL=" . $this->options['sourceMapFile'] . ' */';
 
         return $compiled;
     }
@@ -272,7 +372,7 @@ class CompilerEngine implements CompilerEngineInterface
 
     private function compileFlowControlNode($node, string $parentSelector, int $nestingLevel): string
     {
-        return $this->context->flowControlCompiler->compile(
+        return $this->flowControlCompiler->compile(
             $node,
             $parentSelector,
             $nestingLevel,
@@ -283,25 +383,26 @@ class CompilerEngine implements CompilerEngineInterface
 
     private function compileAtRuleNode($node, string $parentSelector, int $nestingLevel): string
     {
-        $css = $this->context->ruleCompiler->compileRule(
+        $css = $this->ruleCompiler->compileRule(
             $node,
-            $this->context,
             $parentSelector,
             $nestingLevel,
             $this->evaluateInterpolationsInString(...),
             $this->compileDeclarations(...),
             $this->compileAst(...),
             $this->evaluateExpression(...),
+            $this->resultFormatter->format(...),
+            $this->mixinHandler->define(...),
         );
 
-        $this->context->positionTracker->updatePosition($css);
+        $this->positionTracker->updatePosition($css);
 
         return $css;
     }
 
     private function compileIncludeNode($node, string $parentSelector, int $nestingLevel): string
     {
-        return $this->context->mixinCompiler->compile(
+        return $this->mixinCompiler->compile(
             $node,
             $parentSelector,
             $nestingLevel,
@@ -311,14 +412,14 @@ class CompilerEngine implements CompilerEngineInterface
 
     private function compileImportAst(string $path, string $parentSelector, int $nestingLevel): string
     {
-        $result     = $this->context->moduleHandler->loadModule($path);
-        $moduleVars = $this->context->moduleHandler->getVariables($result['namespace']);
+        $result     = $this->moduleHandler->loadModule($path);
+        $moduleVars = $this->moduleHandler->getVariables($result['namespace']);
 
         foreach ($moduleVars as $name => $varNode) {
             if ($varNode instanceof VariableDeclarationNode) {
                 $value = $this->evaluateExpression($varNode->value);
 
-                $this->context->variableHandler->define($name, $value);
+                $this->variableHandler->define($name, $value);
             }
         }
 
@@ -327,6 +428,11 @@ class CompilerEngine implements CompilerEngineInterface
 
     private function evaluateInterpolationsInString(string $string): string
     {
-        return $this->context->interpolationEvaluator->evaluate($string, $this->evaluateExpression(...));
+        return $this->interpolationEvaluator->evaluate($string, $this->evaluateExpression(...));
+    }
+
+    private function indent(int $level): string
+    {
+        return str_repeat('  ', $level);
     }
 }

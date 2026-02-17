@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DartSass\Compilers\Strategies;
 
-use DartSass\Compilers\CompilerContext;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\ContainerNode;
 use DartSass\Parsers\Nodes\MediaNode;
@@ -34,7 +33,6 @@ abstract readonly class ConditionalRuleStrategy implements RuleCompilationStrate
 
     public function compile(
         ContainerNode|MediaNode|AstNode $node,
-        CompilerContext $context,
         string $parentSelector,
         int $currentNestingLevel,
         ...$params
@@ -42,8 +40,9 @@ abstract readonly class ConditionalRuleStrategy implements RuleCompilationStrate
         $evaluateInterpolations = $params[0] ?? null;
         $compileDeclarations    = $params[1] ?? null;
         $compileAst             = $params[2] ?? null;
+        $formatValue            = $params[4] ?? null;
 
-        if (! $evaluateInterpolations || ! $compileDeclarations || ! $compileAst) {
+        if (! $evaluateInterpolations || ! $compileDeclarations || ! $compileAst || ! $formatValue) {
             throw new InvalidArgumentException(
                 'Missing required parameters for ' . $this->getRuleName()->value . ' rule compilation'
             );
@@ -51,7 +50,7 @@ abstract readonly class ConditionalRuleStrategy implements RuleCompilationStrate
 
         $query = $node->query;
         $query = $evaluateInterpolations($query);
-        $query = $context->resultFormatter->format($query);
+        $query = $formatValue($query);
 
         $bodyNestingLevel = $currentNestingLevel + 1;
         $bodyDeclarations = $node->body['declarations'] ?? [];

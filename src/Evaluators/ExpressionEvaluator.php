@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace DartSass\Evaluators;
 
+use Closure;
 use DartSass\Exceptions\CompilationException;
+use DartSass\Handlers\FunctionHandler;
+use DartSass\Handlers\ModuleHandler;
+use DartSass\Handlers\VariableHandler;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\ConditionNode;
 use DartSass\Parsers\Nodes\CssCustomPropertyNode;
@@ -24,6 +28,7 @@ use DartSass\Parsers\Nodes\StringNode;
 use DartSass\Parsers\Nodes\UnaryNode;
 use DartSass\Parsers\Nodes\VariableNode;
 use DartSass\Utils\ArithmeticCalculator;
+use DartSass\Utils\ResultFormatterInterface;
 use DartSass\Utils\SpreadHelper;
 use DartSass\Utils\StringFormatter;
 use DartSass\Utils\ValueComparator;
@@ -43,8 +48,17 @@ use function str_starts_with;
 use function strtolower;
 use function trim;
 
-class ExpressionEvaluator extends AbstractEvaluator
+readonly class ExpressionEvaluator implements EvaluatorInterface
 {
+    public function __construct(
+        private VariableHandler          $variableHandler,
+        private ModuleHandler            $moduleHandler,
+        private FunctionHandler          $functionHandler,
+        private InterpolationEvaluator   $interpolationEvaluator,
+        private ResultFormatterInterface $resultFormatter,
+        private Closure                  $operationEvaluator
+    ) {}
+
     public function supports(mixed $expression): bool
     {
         if ($expression instanceof AstNode) {
@@ -61,7 +75,7 @@ class ExpressionEvaluator extends AbstractEvaluator
     public function evaluate(mixed $expression): mixed
     {
         if ($expression instanceof OperationNode) {
-            return $this->context->engine->evaluateExpression($expression);
+            return ($this->operationEvaluator)($expression);
         }
 
         if ($expression instanceof AstNode) {
@@ -119,17 +133,17 @@ class ExpressionEvaluator extends AbstractEvaluator
             $propertyName = '$' . $name;
 
             try {
-                return $this->context->moduleHandler->getProperty($namespace, $propertyName, $this->evaluate(...));
+                return $this->moduleHandler->getProperty($namespace, $propertyName, $this->evaluate(...));
             } catch (CompilationException) {
                 try {
-                    return $this->context->variableHandler->get($expr);
+                    return $this->variableHandler->get($expr);
                 } catch (CompilationException) {
                     throw new CompilationException("Undefined property: $propertyName in module $namespace");
                 }
             }
         }
 
-        return $this->context->variableHandler->get($expr);
+        return $this->variableHandler->get($expr);
     }
 
     private function tryParseNumericString(string $expr): string|array|float
@@ -183,7 +197,7 @@ class ExpressionEvaluator extends AbstractEvaluator
     private function evaluateStringNode(StringNode|AstNode $node): string
     {
         $value = $node->value;
-        $value = $this->context->interpolationEvaluator->evaluate($value, $this->evaluate(...));
+        $value = $this->interpolationEvaluator->evaluate($value, $this->evaluate(...));
 
         if (preg_match('/^[a-zA-Z_-][a-zA-Z0-9_-]*$/', $value)) {
             return $value;
@@ -234,7 +248,7 @@ class ExpressionEvaluator extends AbstractEvaluator
 
     private function evaluateVariableNode(VariableNode|AstNode $node): mixed
     {
-        return $this->evaluate($this->context->variableHandler->get($node->name));
+        return $this->evaluate($this->variableHandler->get($node->name));
     }
 
     private function evaluateCssCustomPropertyNode(CssCustomPropertyNode|AstNode $node): mixed
@@ -254,7 +268,7 @@ class ExpressionEvaluator extends AbstractEvaluator
         }
 
         if (is_string($namespace) && is_string($propertyName) && str_starts_with($propertyName, '$')) {
-            return $this->context->moduleHandler->getProperty($namespace, $propertyName, $this->evaluate(...));
+            return $this->moduleHandler->getProperty($namespace, $propertyName, $this->evaluate(...));
         }
 
         if (is_string($namespace) && ! str_starts_with($namespace, '$')) {
@@ -320,14 +334,14 @@ class ExpressionEvaluator extends AbstractEvaluator
 
     private function evaluateCalcFunction(array $args): mixed
     {
-        $evaluator = new CalcFunctionEvaluator($this->context->resultFormatter);
+        $evaluator = new CalcFunctionEvaluator($this->resultFormatter);
 
         return $evaluator->evaluate($args, $this->evaluate(...));
     }
 
     private function evaluateIfFunction(array $args): mixed
     {
-        $result = $this->context->functionHandler->call('if', $args);
+        $result = $this->functionHandler->call('if', $args);
 
         return $this->evaluate($result);
     }
@@ -336,7 +350,7 @@ class ExpressionEvaluator extends AbstractEvaluator
     {
         $args = $this->evaluateUrlArguments($args);
 
-        return $this->context->functionHandler->call('url', $args);
+        return $this->functionHandler->call('url', $args);
     }
 
     private function evaluateStandardFunction(string $name, array $args): mixed
@@ -346,7 +360,7 @@ class ExpressionEvaluator extends AbstractEvaluator
             $this->evaluate(...)
         );
 
-        return $this->context->functionHandler->call($name, $args);
+        return $this->functionHandler->call($name, $args);
     }
 
     private function hasSlashSeparator(array $args): bool
@@ -364,7 +378,7 @@ class ExpressionEvaluator extends AbstractEvaluator
     {
         $args = $this->evaluateArgumentsWithSlashSeparator($args);
 
-        return $this->context->functionHandler->call($name, $args);
+        return $this->functionHandler->call($name, $args);
     }
 
     private function evaluateUrlArguments(array $args): array
@@ -448,5 +462,10 @@ class ExpressionEvaluator extends AbstractEvaluator
         $negated = ArithmeticCalculator::negate($number);
 
         return $negated->getUnit() === null ? $negated->getValue() : $negated->toArray();
+    }
+
+    private function formatValue(mixed $value): string
+    {
+        return $this->resultFormatter->format($value);
     }
 }

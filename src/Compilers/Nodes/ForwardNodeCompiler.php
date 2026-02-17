@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DartSass\Compilers\Nodes;
 
-use DartSass\Compilers\CompilerContext;
+use DartSass\Compilers\CompilerEngineInterface;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\ForwardNode;
 use DartSass\Parsers\Nodes\NodeType;
@@ -23,13 +23,13 @@ class ForwardNodeCompiler extends AbstractNodeCompiler
 
     protected function compileNode(
         ForwardNode|AstNode $node,
-        CompilerContext $context,
+        CompilerEngineInterface $engine,
         string $parentSelector = '',
         int $nestingLevel = 0
     ): string {
-        $properties = $context->moduleHandler->forwardModule(
+        $properties = $engine->getModuleHandler()->forwardModule(
             $node->path,
-            fn($expr): mixed => $context->engine->evaluateExpression($expr),
+            fn($expr): mixed => $engine->evaluateExpression($expr),
             $node->namespace ?? null,
             $node->config ?? [],
             $node->hide ?? [],
@@ -37,7 +37,7 @@ class ForwardNodeCompiler extends AbstractNodeCompiler
         );
 
         foreach ($properties['variables'] as $varName => $varValue) {
-            $context->variableHandler->define($varName, $varValue, true);
+            $engine->getVariableHandler()->define($varName, $varValue, true);
         }
 
         return '';

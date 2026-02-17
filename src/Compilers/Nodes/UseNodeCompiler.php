@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DartSass\Compilers\Nodes;
 
-use DartSass\Compilers\CompilerContext;
+use DartSass\Compilers\CompilerEngineInterface;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Parsers\Nodes\UseNode;
@@ -26,37 +26,38 @@ class UseNodeCompiler extends AbstractNodeCompiler
 
     protected function compileNode(
         UseNode|AstNode $node,
-        CompilerContext $context,
+        CompilerEngineInterface $engine,
         string $parentSelector = '',
         int $nestingLevel = 0
     ): string {
         $path      = $node->path;
         $namespace = $node->namespace ?? null;
 
-        if (! $context->moduleHandler->isModuleLoaded($path)) {
-            $result          = $context->moduleHandler->loadModule($path, $namespace ?? '');
+        $moduleHandler = $engine->getModuleHandler();
+        if (! $moduleHandler->isModuleLoaded($path)) {
+            $result          = $moduleHandler->loadModule($path, $namespace ?? '');
             $actualNamespace = $result['namespace'];
 
-            $context->moduleCompiler->registerModuleMixins($actualNamespace);
+            $engine->getModuleCompiler()->registerModuleMixins($actualNamespace);
 
             // Register variables and mixins in current scope for @use without namespace
-            $moduleVars = $context->moduleHandler->getVariables($actualNamespace);
+            $moduleVars = $moduleHandler->getVariables($actualNamespace);
             foreach ($moduleVars as $name => $varNode) {
                 if ($varNode instanceof VariableDeclarationNode) {
-                    $value = $context->engine->evaluateExpression($varNode->value);
-                    $context->variableHandler->define($name, $value);
+                    $value = $engine->evaluateExpression($varNode->value);
+                    $engine->getVariableHandler()->define($name, $value);
                 } elseif (is_array($varNode) && isset($varNode['type']) && $varNode['type'] === 'mixin') {
-                    $context->mixinHandler->define($name, $varNode['args'], $varNode['body']);
+                    $engine->getMixinHandler()->define($name, $varNode['args'], $varNode['body']);
                 }
             }
 
-            return $context->moduleCompiler->compile(
+            return $engine->getModuleCompiler()->compile(
                 $result,
                 $actualNamespace,
                 $namespace,
                 $nestingLevel,
-                $context->engine->evaluateExpression(...),
-                $context->engine->compileAst(...)
+                $engine->evaluateExpression(...),
+                $engine->compileAst(...)
             );
         }
 

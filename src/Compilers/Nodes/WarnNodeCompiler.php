@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DartSass\Compilers\Nodes;
 
-use DartSass\Compilers\CompilerContext;
+use DartSass\Compilers\CompilerEngineInterface;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Parsers\Nodes\WarnNode;
@@ -26,15 +26,16 @@ class WarnNodeCompiler extends AbstractNodeCompiler
 
     protected function compileNode(
         WarnNode|AstNode $node,
-        CompilerContext $context,
+        CompilerEngineInterface $engine,
         string $parentSelector = '',
         int $nestingLevel = 0
     ): string {
-        $value = $context->engine->evaluateExpression($node->expression);
-        $formattedValue = $context->resultFormatter->format($value);
+        $value = $engine->evaluateExpression($node->expression);
+        $formattedValue = $engine->getResultFormatter()->format($value);
+        $options = $engine->getOptions();
 
         $this->logger->debug($formattedValue, [
-            'file' => $context->options['sourceFile'] ?? 'unknown',
+            'file' => $options['sourceFile'] ?? 'unknown',
             'line' => $node->line ?? 0,
         ]);
 

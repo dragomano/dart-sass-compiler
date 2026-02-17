@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DartSass\Compilers\Nodes;
 
-use DartSass\Compilers\CompilerContext;
+use DartSass\Compilers\CompilerEngineInterface;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Parsers\Nodes\VariableDeclarationNode;
@@ -23,15 +23,15 @@ class VariableNodeCompiler extends AbstractNodeCompiler
 
     protected function compileNode(
         VariableDeclarationNode|AstNode $node,
-        CompilerContext $context,
+        CompilerEngineInterface $engine,
         string $parentSelector = '',
         int $nestingLevel = 0
     ): string {
         $valueNode = $node->value;
 
-        $value = $context->engine->evaluateExpression($valueNode);
+        $value = $engine->evaluateExpression($valueNode);
 
-        $context->variableHandler->define(
+        $engine->getVariableHandler()->define(
             $node->name,
             $value,
             $node->global ?? false,

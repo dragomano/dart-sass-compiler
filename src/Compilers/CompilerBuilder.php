@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace DartSass\Compilers;
 
+use Closure;
 use DartSass\Evaluators\ExpressionEvaluator;
 use DartSass\Evaluators\InterpolationEvaluator;
 use DartSass\Evaluators\OperationEvaluator;
 use DartSass\Evaluators\UserFunctionEvaluator;
+use DartSass\Exceptions\CompilationException;
 use DartSass\Handlers\BuiltInModuleProvider;
 use DartSass\Handlers\Builtins\ColorModuleHandler;
 use DartSass\Handlers\Builtins\CssColorFunctionHandler;
@@ -39,6 +41,7 @@ use DartSass\Modules\MetaModule;
 use DartSass\Modules\SelectorModule;
 use DartSass\Modules\StringModule;
 use DartSass\Parsers\ParserFactory;
+use DartSass\Parsers\Syntax;
 use DartSass\Utils\LoggerInterface;
 use DartSass\Utils\OutputOptimizer;
 use DartSass\Utils\PositionTracker;
@@ -57,91 +60,150 @@ readonly class CompilerBuilder
 
     public function build(): CompilerEngineInterface
     {
-        $context = $this->createContext();
+        $parserFactory   = new ParserFactory();
+        $resultFormatter = new ResultFormatter(new ValueFormatter());
+        $positionTracker = new PositionTracker();
 
-        $this->initializeCore($context);
-        $this->initializeHandlers($context);
-        $this->initializeUtils($context);
-        $this->initializeEvaluators($context);
-        $this->initializeCompilers($context);
+        $environment     = new Environment();
+        $variableHandler = new VariableHandler($environment);
+        $mixinHandler    = new MixinHandler($environment, $variableHandler);
+        $nestingHandler  = new NestingHandler();
+        $extendHandler   = new ExtendHandler();
 
-        return new CompilerEngine($context, $this->logger ?? new StderrLogger());
-    }
-
-    private function createContext(): CompilerContext
-    {
-        return new CompilerContext($this->options);
-    }
-
-    private function initializeCore(CompilerContext $context): void
-    {
-        $context->loader          = $this->loader;
-        $context->parserFactory   = new ParserFactory();
-        $context->resultFormatter = new ResultFormatter(new ValueFormatter());
-        $context->positionTracker = new PositionTracker();
-    }
-
-    private function initializeHandlers(CompilerContext $context): void
-    {
-        $this->initializeVariableAndMixinHandlers($context);
-        $this->initializeModuleHandlers($context);
-        $this->initializeFunctionHandlers($context);
-    }
-
-    private function initializeVariableAndMixinHandlers(CompilerContext $context): void
-    {
-        $context->environment     = new Environment();
-        $context->variableHandler = new VariableHandler($context->environment);
-        $context->mixinHandler    = new MixinHandler($context);
-        $context->nestingHandler  = new NestingHandler();
-        $context->extendHandler   = new ExtendHandler();
-    }
-
-    private function initializeModuleHandlers(CompilerContext $context): void
-    {
-        $moduleLoader           = new ModuleLoader($context->loader, $context->parserFactory);
-        $builtInProvider        = new BuiltInModuleProvider();
-        $moduleForwarder        = new ModuleForwarder($moduleLoader);
-        $context->moduleHandler = new ModuleHandler($moduleLoader, $moduleForwarder, $builtInProvider);
-    }
-
-    private function initializeFunctionHandlers(CompilerContext $context): void
-    {
-        $customHandler  = new CustomFunctionHandler();
-        $moduleRegistry = $this->createModuleRegistry($context, $customHandler);
-
-        $this->registerMetaModule($moduleRegistry, $context);
-
-        $context->functionHandler = new FunctionHandler(
-            $context->environment,
-            $context->moduleHandler,
-            new FunctionRouter($moduleRegistry, $context->resultFormatter),
-            $customHandler,
-            new UserFunctionEvaluator($context->environment),
-            fn($expr): mixed => $context->engine->evaluateExpression($expr)
+        $moduleLoader  = new ModuleLoader($this->loader, $parserFactory);
+        $moduleHandler = new ModuleHandler(
+            $moduleLoader,
+            new ModuleForwarder($moduleLoader),
+            new BuiltInModuleProvider()
         );
+
+        $outputOptimizer    = new OutputOptimizer($this->options['style']);
+        $sourceMapGenerator = new SourceMapGenerator();
+
+        $runtime = new class () {
+            public ?CompilerEngineInterface $engine = null;
+        };
+
+        $evaluateExpression = function ($expr) use ($runtime): mixed {
+            if (! $runtime->engine instanceof CompilerEngineInterface) {
+                throw new CompilationException('Compiler engine is not available');
+            }
+
+            return $runtime->engine->evaluateExpression($expr);
+        };
+
+        $moduleRegistry = $this->createModuleRegistry($resultFormatter, $evaluateExpression);
+
+        $functionHandler = new FunctionHandler(
+            $environment,
+            $moduleHandler,
+            new FunctionRouter($moduleRegistry, $resultFormatter),
+            $this->createCustomHandler($moduleRegistry),
+            new UserFunctionEvaluator($environment),
+            $evaluateExpression
+        );
+
+        $metaModule = new MetaModule(
+            $moduleRegistry,
+            $mixinHandler,
+            $variableHandler,
+            $moduleHandler,
+            $functionHandler,
+            fn() => $runtime->engine?->getOptions() ?? $this->options,
+            function (string $content, Syntax $syntax) use ($runtime): string {
+                if (! $runtime->engine instanceof CompilerEngineInterface) {
+                    throw new CompilationException('Compiler engine is not available');
+                }
+
+                return $runtime->engine->compileString($content, $syntax);
+            },
+            $evaluateExpression
+        );
+        $moduleRegistry->register(new MetaModuleHandler($metaModule));
+
+        $interpolationEvaluator = new InterpolationEvaluator(
+            $parserFactory,
+            $resultFormatter
+        );
+
+        $expressionEvaluator = new ExpressionEvaluator(
+            $variableHandler,
+            $moduleHandler,
+            $functionHandler,
+            $interpolationEvaluator,
+            $resultFormatter,
+            $evaluateExpression
+        );
+
+        $operationEvaluator = new OperationEvaluator(
+            $resultFormatter,
+            $expressionEvaluator->evaluate(...)
+        );
+
+        $ruleCompiler        = new RuleCompiler();
+        $flowControlCompiler = new FlowControlCompiler($variableHandler, $environment);
+        $declarationCompiler = new DeclarationCompiler($resultFormatter, $positionTracker);
+        $mixinCompiler       = new MixinCompiler($mixinHandler, $moduleHandler);
+        $moduleCompiler      = new ModuleCompiler(
+            $environment,
+            $moduleHandler,
+            $variableHandler,
+            $mixinHandler
+        );
+
+        $engine = new CompilerEngine(
+            $this->options,
+            $this->loader,
+            $parserFactory,
+            $positionTracker,
+            $extendHandler,
+            $outputOptimizer,
+            $sourceMapGenerator,
+            $resultFormatter,
+            $interpolationEvaluator,
+            $operationEvaluator,
+            $expressionEvaluator,
+            $ruleCompiler,
+            $flowControlCompiler,
+            $declarationCompiler,
+            $mixinCompiler,
+            $moduleCompiler,
+            $moduleHandler,
+            $mixinHandler,
+            $nestingHandler,
+            $variableHandler,
+            $functionHandler,
+            $environment,
+            $this->logger ?? new StderrLogger()
+        );
+
+        $runtime->engine = $engine;
+
+        return $engine;
     }
 
     private function createModuleRegistry(
-        CompilerContext $context,
-        CustomFunctionHandler $customHandler
+        ResultFormatter $resultFormatter,
+        Closure $evaluateExpression
     ): ModuleRegistry {
         $registry = new ModuleRegistry();
 
-        $this->registerCoreHandlers($registry, $context);
-        $this->registerModuleHandlers($registry, $context);
-        $this->registerCustomHandlers($registry, $customHandler);
+        $this->registerCoreHandlers($registry, $resultFormatter, $evaluateExpression);
+        $this->registerModuleHandlers($registry, $resultFormatter);
 
         return $registry;
     }
 
-    private function registerCoreHandlers(ModuleRegistry $registry, CompilerContext $context): void
-    {
-        $registry->register(new IfFunctionHandler(fn($expr): mixed => $context->engine->evaluateExpression($expr)));
-        $registry->register(new UrlFunctionHandler($context->resultFormatter));
+    private function registerCoreHandlers(
+        ModuleRegistry $registry,
+        ResultFormatter $resultFormatter,
+        Closure $evaluateExpression
+    ): void {
+        $registry->register(new IfFunctionHandler($evaluateExpression));
+        $registry->register(new UrlFunctionHandler($resultFormatter));
     }
 
-    private function registerModuleHandlers(ModuleRegistry $registry, CompilerContext $context): void
+    private function registerModuleHandlers(ModuleRegistry $registry, ResultFormatter $resultFormatter): void
     {
         $cssColorHandler = new CssColorFunctionHandler();
 
@@ -150,59 +212,16 @@ readonly class CompilerBuilder
         $registry->register(new StringModuleHandler(new StringModule()));
         $registry->register(new ListModuleHandler(new ListModule()));
         $registry->register(new MapModuleHandler(new MapModule()));
-        $registry->register(new MathModuleHandler(new MathModule(), $context->resultFormatter));
+        $registry->register(new MathModuleHandler(new MathModule(), $resultFormatter));
         $registry->register(new SelectorModuleHandler(new SelectorModule()));
     }
 
-    private function registerCustomHandlers(
-        ModuleRegistry $registry,
-        CustomFunctionHandler $customFunctionHandler
-    ): void {
-        $registry->register($customFunctionHandler);
-
-        $customFunctionHandler->setRegistry($registry);
-    }
-
-    private function registerMetaModule(ModuleRegistry $registry, CompilerContext $context): void
+    private function createCustomHandler(ModuleRegistry $registry): CustomFunctionHandler
     {
-        $metaModule = new MetaModule(
-            $registry,
-            $context,
-            fn($expr): mixed => $context->engine->evaluateExpression($expr)
-        );
+        $customHandler = new CustomFunctionHandler();
+        $customHandler->setRegistry($registry);
+        $registry->register($customHandler);
 
-        $registry->register(new MetaModuleHandler($metaModule));
-    }
-
-    private function initializeUtils(CompilerContext $context): void
-    {
-        $context->outputOptimizer    = new OutputOptimizer($context->options['style']);
-        $context->sourceMapGenerator = new SourceMapGenerator();
-    }
-
-    private function initializeEvaluators(CompilerContext $context): void
-    {
-        $context->interpolationEvaluator = new InterpolationEvaluator($context);
-        $context->operationEvaluator     = new OperationEvaluator($context);
-        $context->expressionEvaluator    = new ExpressionEvaluator($context);
-    }
-
-    private function initializeCompilers(CompilerContext $context): void
-    {
-        $this->initializeCoreCompilers($context);
-        $this->initializeSpecializedCompilers($context);
-    }
-
-    private function initializeCoreCompilers(CompilerContext $context): void
-    {
-        $context->ruleCompiler        = new RuleCompiler();
-        $context->flowControlCompiler = new FlowControlCompiler($context->variableHandler, $context->environment);
-        $context->declarationCompiler = new DeclarationCompiler($context->resultFormatter, $context->positionTracker);
-    }
-
-    private function initializeSpecializedCompilers(CompilerContext $context): void
-    {
-        $context->mixinCompiler  = new MixinCompiler($context);
-        $context->moduleCompiler = new ModuleCompiler($context);
+        return $customHandler;
     }
 }

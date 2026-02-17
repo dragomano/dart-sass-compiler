@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DartSass\Compilers\Nodes;
 
-use DartSass\Compilers\CompilerContext;
+use DartSass\Compilers\CompilerEngineInterface;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\NodeType;
 
@@ -17,7 +17,7 @@ abstract class AbstractNodeCompiler implements NodeCompiler
 
     public function compile(
         AstNode $node,
-        CompilerContext $context,
+        CompilerEngineInterface $engine,
         string $parentSelector = '',
         int $nestingLevel = 0
     ): string {
@@ -25,7 +25,7 @@ abstract class AbstractNodeCompiler implements NodeCompiler
             return '';
         }
 
-        return $this->compileNode($node, $context, $parentSelector, $nestingLevel);
+        return $this->compileNode($node, $engine, $parentSelector, $nestingLevel);
     }
 
     abstract protected function getNodeClass(): string;
@@ -34,7 +34,7 @@ abstract class AbstractNodeCompiler implements NodeCompiler
 
     abstract protected function compileNode(
         AstNode $node,
-        CompilerContext $context,
+        CompilerEngineInterface $engine,
         string $parentSelector = '',
         int $nestingLevel = 0
     ): string;

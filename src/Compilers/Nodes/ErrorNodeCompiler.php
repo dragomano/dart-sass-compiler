@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DartSass\Compilers\Nodes;
 
-use DartSass\Compilers\CompilerContext;
+use DartSass\Compilers\CompilerEngineInterface;
 use DartSass\Exceptions\CompilationException;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\ErrorNode;
@@ -27,21 +27,22 @@ class ErrorNodeCompiler extends AbstractNodeCompiler
 
     protected function compileNode(
         ErrorNode|AstNode $node,
-        CompilerContext $context,
+        CompilerEngineInterface $engine,
         string $parentSelector = '',
         int $nestingLevel = 0
     ): string {
-        $value = $context->engine->evaluateExpression($node->expression);
-        $formattedValue = $context->resultFormatter->format($value);
+        $value = $engine->evaluateExpression($node->expression);
+        $formattedValue = $engine->getResultFormatter()->format($value);
+        $options = $engine->getOptions();
 
         $this->logger->error($formattedValue, [
-            'file' => $context->options['sourceFile'] ?? 'unknown',
+            'file' => $options['sourceFile'] ?? 'unknown',
             'line' => $node->line ?? 0,
         ]);
 
         throw new CompilationException(sprintf(
             'Error at %s:%d: %s',
-            $context->options['sourceFile'] ?? 'unknown',
+            $options['sourceFile'] ?? 'unknown',
             $node->line ?? 0,
             $formattedValue
         ));

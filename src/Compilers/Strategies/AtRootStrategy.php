@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DartSass\Compilers\Strategies;
 
-use DartSass\Compilers\CompilerContext;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\AtRootNode;
 use DartSass\Parsers\Nodes\NodeType;
@@ -28,7 +27,6 @@ readonly class AtRootStrategy implements RuleCompilationStrategy
 
     public function compile(
         AtRootNode|AstNode $node,
-        CompilerContext $context,
         string $parentSelector,
         int $currentNestingLevel,
         ...$params
