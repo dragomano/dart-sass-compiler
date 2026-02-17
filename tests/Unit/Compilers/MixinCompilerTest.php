@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use DartSass\Compilers\CompilerContext;
-use DartSass\Compilers\CompilerEngineInterface;
 use DartSass\Compilers\MixinCompiler;
 use DartSass\Exceptions\CompilationException;
 use DartSass\Handlers\MixinHandler;
@@ -17,14 +15,8 @@ use Tests\ReflectionAccessor;
 beforeEach(function () {
     $this->mixinHandler  = mock(MixinHandler::class);
     $this->moduleHandler = mock(ModuleHandler::class);
-    $this->context       = mock(CompilerContext::class);
-    $this->compiler      = mock(CompilerEngineInterface::class);
 
-    $this->context->mixinHandler  = $this->mixinHandler;
-    $this->context->moduleHandler = $this->moduleHandler;
-    $this->context->engine        = $this->compiler;
-
-    $this->mixinCompiler = new MixinCompiler($this->context);
+    $this->mixinCompiler = new MixinCompiler($this->mixinHandler, $this->moduleHandler);
     $this->accessor      = new ReflectionAccessor($this->mixinCompiler);
 });
 

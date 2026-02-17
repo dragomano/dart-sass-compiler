@@ -12,7 +12,7 @@ describe('Compiler', function () {
         ];
 
         $compiler = new Compiler($customOptions);
-        $options = $compiler->getContext()->options;
+        $options = $compiler->getOptions();
 
         expect($options)->toBeArray()
             ->and($options['style'])->toBe('compressed')
@@ -21,7 +21,7 @@ describe('Compiler', function () {
 
     it('returns default options when no options passed', function () {
         $compiler = new Compiler();
-        $options  = $compiler->getContext()->options;
+        $options  = $compiler->getOptions();
 
         expect($options)->toBeArray()
             ->and($options['style'])->toBe('expanded')
@@ -134,6 +134,6 @@ describe('Compiler', function () {
             ], // margin: 10px;
         ];
 
-        expect($compiler->getContext()->mappings)->toBe($expected);
+        expect($compiler->getMappings())->toBe($expected);
     });
 });

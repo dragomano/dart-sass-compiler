@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use DartSass\Compilers\CompilerContext;
 use DartSass\Evaluators\InterpolationEvaluator;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\ParserFactory;
@@ -13,14 +12,10 @@ use Tests\ReflectionAccessor;
 
 describe('InterpolationEvaluator', function () {
     beforeEach(function () {
-        $this->context       = mock(CompilerContext::class);
         $this->formatter     = mock(ResultFormatterInterface::class);
         $this->parserFactory = mock(ParserFactory::class);
 
-        $this->context->resultFormatter = $this->formatter;
-        $this->context->parserFactory   = $this->parserFactory;
-
-        $this->evaluator = new InterpolationEvaluator($this->context);
+        $this->evaluator = new InterpolationEvaluator($this->parserFactory, $this->formatter);
         $this->accessor  = new ReflectionAccessor($this->evaluator);
     });
 

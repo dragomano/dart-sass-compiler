@@ -2,10 +2,8 @@
 
 declare(strict_types=1);
 
-use DartSass\Compilers\CompilerContext;
 use DartSass\Compilers\Strategies\KeyframesRuleStrategy;
 use DartSass\Parsers\Nodes\KeyframesNode;
-use DartSass\Utils\ResultFormatterInterface;
 
 describe('KeyframesRuleStrategy', function () {
     it('throws InvalidArgumentException when evaluateExpression is missing', function () {
@@ -18,11 +16,7 @@ describe('KeyframesRuleStrategy', function () {
             ],
         ], 1);
 
-        $formatter = mock(ResultFormatterInterface::class);
-        $context = new CompilerContext([]);
-        $context->resultFormatter = $formatter;
-
-        expect(fn() => $strategy->compile($node, $context, '', 0))
+        expect(fn() => $strategy->compile($node, '', 0))
             ->toThrow(
                 InvalidArgumentException::class,
                 'Missing required parameters for keyframes rule compilation'

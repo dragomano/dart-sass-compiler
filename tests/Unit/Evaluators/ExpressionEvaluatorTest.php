@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use DartSass\Compilers\CompilerContext;
 use DartSass\Evaluators\ExpressionEvaluator;
 use DartSass\Evaluators\InterpolationEvaluator;
 use DartSass\Exceptions\CompilationException;
@@ -20,19 +19,36 @@ use DartSass\Parsers\Nodes\SelectorNode;
 use DartSass\Parsers\Nodes\StringNode;
 use DartSass\Parsers\Nodes\UnaryNode;
 use DartSass\Parsers\Nodes\VariableNode;
+use DartSass\Utils\ResultFormatterInterface;
 use DartSass\Utils\SpreadHelper;
 use DartSass\Values\SassList;
 use Tests\ReflectionAccessor;
 
 describe('ExpressionEvaluator', function () {
     beforeEach(function () {
-        $this->context   = mock(CompilerContext::class);
-        $this->evaluator = new ExpressionEvaluator($this->context);
-        $this->accessor  = new ReflectionAccessor($this->evaluator);
+        $this->variableHandler = mock(VariableHandler::class);
+        $this->moduleHandler = mock(ModuleHandler::class);
+        $this->functionHandler = mock(FunctionHandler::class);
+        $this->interpolationEvaluator = mock(InterpolationEvaluator::class);
+        $this->resultFormatter = mock(ResultFormatterInterface::class);
 
-        $this->context->expressionEvaluator = $this->evaluator;
-        $this->context->interpolationEvaluator = mock(InterpolationEvaluator::class);
-        $this->context->interpolationEvaluator->shouldReceive('evaluate')->andReturnUsing(fn($value) => $value);
+        $this->interpolationEvaluator
+            ->shouldReceive('evaluate')
+            ->andReturnUsing(fn($value) => $value);
+
+        $this->resultFormatter
+            ->shouldReceive('format')
+            ->andReturnUsing(fn($value) => is_string($value) ? $value : (string) $value);
+
+        $this->evaluator = new ExpressionEvaluator(
+            $this->variableHandler,
+            $this->moduleHandler,
+            $this->functionHandler,
+            $this->interpolationEvaluator,
+            $this->resultFormatter,
+            fn($expr): mixed => $this->evaluator->evaluate($expr)
+        );
+        $this->accessor  = new ReflectionAccessor($this->evaluator);
     });
 
     describe('supports()', function () {
@@ -74,12 +90,9 @@ describe('ExpressionEvaluator', function () {
             $propertyNode  = new VariableNode('$prop');
             $namespaceNode = new IdentifierNode('module');
 
-            $moduleHandler = mock(ModuleHandler::class);
-            $moduleHandler->shouldReceive('getProperty')
+            $this->moduleHandler->shouldReceive('getProperty')
                 ->with('module', '$prop', Mockery::type('callable'))
                 ->andReturn('value');
-
-            $this->context->moduleHandler = $moduleHandler;
 
             $node = new PropertyAccessNode($namespaceNode, $propertyNode);
 
@@ -92,12 +105,9 @@ describe('ExpressionEvaluator', function () {
             $propertyNode  = new IdentifierNode('$prop');
             $namespaceNode = new IdentifierNode('module');
 
-            $moduleHandler = mock(ModuleHandler::class);
-            $moduleHandler->shouldReceive('getProperty')
+            $this->moduleHandler->shouldReceive('getProperty')
                 ->with('module', '$prop', Mockery::type('callable'))
                 ->andReturn('value');
-
-            $this->context->moduleHandler = $moduleHandler;
 
             $node = new PropertyAccessNode($namespaceNode, $propertyNode);
 
@@ -161,12 +171,9 @@ describe('ExpressionEvaluator', function () {
             $propertyNode  = new IdentifierNode('prop');
             $namespaceNode = new IdentifierNode('$namespace');
 
-            $variableHandler = mock(VariableHandler::class);
-            $variableHandler->shouldReceive('get')
+            $this->variableHandler->shouldReceive('get')
                 ->with('$namespace')
                 ->andReturn('$namespace');
-
-            $this->context->variableHandler = $variableHandler;
 
             $node = new PropertyAccessNode($namespaceNode, $propertyNode);
 
@@ -203,12 +210,9 @@ describe('ExpressionEvaluator', function () {
 
     describe('evaluateFunctionExpression()', function () {
         it('calls evaluateFunctionWithSlashSeparator when hasSlashSeparator returns true', function () {
-            $functionHandler = mock(FunctionHandler::class);
-            $functionHandler->shouldReceive('call')
+            $this->functionHandler->shouldReceive('call')
                 ->with('hsl', [120, ['value' => 50.0, 'unit' => '%'], ['value' => 50.0, 'unit' => '%'], 0.5])
                 ->andReturn('hsl(120 50% 50% / 0.5)');
-
-            $this->context->functionHandler = $functionHandler;
 
             $leftNode      = new NumberNode(50, '%');
             $rightNode     = new NumberNode(0.5);
@@ -277,12 +281,9 @@ describe('ExpressionEvaluator', function () {
 
     describe('evaluateVariableString()', function () {
         it('successfully accesses property with namespace', function () {
-            $moduleHandler = mock(ModuleHandler::class);
-            $moduleHandler->shouldReceive('getProperty')
+            $this->moduleHandler->shouldReceive('getProperty')
                 ->with('$color', '$red', Mockery::type('callable'))
                 ->andReturn('#ff0000');
-
-            $this->context->moduleHandler = $moduleHandler;
 
             $result = $this->accessor->callMethod('evaluateVariableString', ['$color.red']);
 
@@ -290,18 +291,13 @@ describe('ExpressionEvaluator', function () {
         });
 
         it('falls back to variable when module property fails', function () {
-            $moduleHandler = mock(ModuleHandler::class);
-            $moduleHandler->shouldReceive('getProperty')
+            $this->moduleHandler->shouldReceive('getProperty')
                 ->with('$color', '$red', Mockery::type('callable'))
                 ->andThrow(new CompilationException('Property not found'));
 
-            $variableHandler = mock(VariableHandler::class);
-            $variableHandler->shouldReceive('get')
+            $this->variableHandler->shouldReceive('get')
                 ->with('$color.red')
                 ->andReturn('#ff0000');
-
-            $this->context->moduleHandler   = $moduleHandler;
-            $this->context->variableHandler = $variableHandler;
 
             $result = $this->accessor->callMethod('evaluateVariableString', ['$color.red']);
 
@@ -309,30 +305,22 @@ describe('ExpressionEvaluator', function () {
         });
 
         it('throws exception for undefined property', function () {
-            $moduleHandler = mock(ModuleHandler::class);
-            $moduleHandler->shouldReceive('getProperty')
+            $this->moduleHandler->shouldReceive('getProperty')
                 ->with('$color', '$red', Mockery::type('callable'))
                 ->andThrow(new CompilationException('Property not found'));
 
-            $variableHandler = mock(VariableHandler::class);
-            $variableHandler->shouldReceive('get')
+            $this->variableHandler->shouldReceive('get')
                 ->with('$color.red')
                 ->andThrow(new CompilationException('Variable not found'));
-
-            $this->context->moduleHandler   = $moduleHandler;
-            $this->context->variableHandler = $variableHandler;
 
             expect(fn() => $this->accessor->callMethod('evaluateVariableString', ['$color.red']))
                 ->toThrow(CompilationException::class, 'Undefined property: $red in module $color');
         });
 
         it('handles regular variable without dot', function () {
-            $variableHandler = mock(VariableHandler::class);
-            $variableHandler->shouldReceive('get')
+            $this->variableHandler->shouldReceive('get')
                 ->with('$myVar')
                 ->andReturn('value');
-
-            $this->context->variableHandler = $variableHandler;
 
             $result = $this->accessor->callMethod('evaluateVariableString', ['$myVar']);
 
@@ -500,12 +488,9 @@ describe('ExpressionEvaluator', function () {
 
     describe('evaluateFunctionWithSlashSeparator()', function () {
         it('evaluates function with slash separator correctly', function () {
-            $functionHandler = mock(FunctionHandler::class);
-            $functionHandler->shouldReceive('call')
+            $this->functionHandler->shouldReceive('call')
                 ->with('hsl', [120, ['value' => 50.0, 'unit' => '%'], ['value' => 50.0, 'unit' => '%'], 0.5])
                 ->andReturn('hsl(120 50% 50% / 0.5)');
-
-            $this->context->functionHandler = $functionHandler;
 
             $leftNode      = new NumberNode(50, '%');
             $rightNode     = new NumberNode(0.5);

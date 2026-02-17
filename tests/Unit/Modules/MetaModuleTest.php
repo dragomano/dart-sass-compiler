@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use DartSass\Compilers\CompilerContext;
 use DartSass\Compilers\CompilerEngineInterface;
 use DartSass\Exceptions\CompilationException;
 use DartSass\Handlers\Builtins\ModuleHandlerInterface;
@@ -31,15 +30,17 @@ beforeEach(function () {
         ->shouldReceive('getUserFunctions')
         ->andReturn(['customFunctions' => [], 'userDefinedFunctions' => []]);
 
-    $this->context                  = mock(CompilerContext::class);
-    $this->context->mixinHandler    = $this->mixinHandler;
-    $this->context->variableHandler = $this->variableHandler;
-    $this->context->moduleHandler   = $this->moduleHandler;
-    $this->context->functionHandler = $this->functionHandler;
-    $this->context->options         = [];
-    $this->context->engine          = mock(CompilerEngineInterface::class);
+    $this->engine = mock(CompilerEngineInterface::class);
 
-    $this->metaModule = new MetaModule($this->moduleRegistry, $this->context);
+    $this->metaModule = new MetaModule(
+        $this->moduleRegistry,
+        $this->mixinHandler,
+        $this->variableHandler,
+        $this->moduleHandler,
+        $this->functionHandler,
+        fn() => $this->engine->getOptions(),
+        fn(string $content, Syntax $syntax) => $this->engine->compileString($content, $syntax)
+    );
 });
 
 describe('MetaModule', function () {
@@ -151,6 +152,14 @@ describe('MetaModule', function () {
                 ->toThrow(CompilationException::class, 'load-css() argument must be a valid URL');
         });
 
+        it('uses http loader for valid absolute URL', function () {
+            $result = $this->metaModule->loadCss(['https://php.dragomano.ru/extra.css']);
+
+            expect($result)
+                ->toBeString()
+                ->not->toBe('');
+        });
+
         it('throws exception for wrong number of arguments', function () {
             expect(fn() => $this->metaModule->loadCss([]))
                 ->toThrow(CompilationException::class)
@@ -163,13 +172,13 @@ describe('MetaModule', function () {
             $testFileName = 'test_main.scss';
             $testFile     = $fixtureDir . DIRECTORY_SEPARATOR . $testFileName;
 
-            $this->context->options['sourceFile'] = $fixtureDir . DIRECTORY_SEPARATOR . 'source.scss';
+            $this->engine->shouldReceive('getOptions')
+                ->andReturn(['sourceFile' => $fixtureDir . DIRECTORY_SEPARATOR . 'source.scss']);
 
             expect(file_exists($testFile))->toBeTrue()
                 ->and(is_readable($testFile))->toBeTrue();
 
-            $this->context->engine = mock(CompilerEngineInterface::class);
-            $this->context->engine
+            $this->engine
                 ->shouldReceive('compileString')
                 ->withArgs(function ($content, $syntax) {
                     return str_contains($content, '$border-radius') && $syntax instanceof Syntax;
@@ -178,6 +187,21 @@ describe('MetaModule', function () {
 
             $result = $this->metaModule->loadCss([$testFileName]);
             expect($result)->toContain('border-radius: 5px');
+        });
+
+        it('throws exception when compiler options resolver returns invalid value', function () {
+            $metaModule = new MetaModule(
+                $this->moduleRegistry,
+                $this->mixinHandler,
+                $this->variableHandler,
+                $this->moduleHandler,
+                $this->functionHandler,
+                fn() => null,
+                fn(string $content, Syntax $syntax) => ''
+            );
+
+            expect(fn() => $metaModule->loadCss(['relative.scss']))
+                ->toThrow(CompilationException::class, 'Compiler options are not available');
         });
     });
 

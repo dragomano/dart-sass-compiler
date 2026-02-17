@@ -124,4 +124,12 @@ describe('Scope', function () {
             expect($scope->getVariable('test'))->toBe('original');
         });
     });
+
+    describe('removeMixin()', function () {
+        it('delegates removal to parent scope when mixin is absent locally', function () {
+            $this->parentScope->shouldReceive('removeMixin')->once()->with('sharedMixin');
+
+            $this->scope->removeMixin('sharedMixin');
+        });
+    });
 });

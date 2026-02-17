@@ -2,9 +2,6 @@
 
 declare(strict_types=1);
 
-use DartSass\Compilers\CompilerContext;
-use DartSass\Compilers\CompilerEngineInterface;
-use DartSass\Compilers\ModuleCompiler;
 use DartSass\Compilers\Nodes\UseNodeCompiler;
 use DartSass\Handlers\MixinHandler;
 use DartSass\Handlers\ModuleHandler;
@@ -14,31 +11,39 @@ use Tests\ReflectionAccessor;
 
 describe('UseNodeCompiler', function () {
     beforeEach(function () {
-        $this->compiler = new UseNodeCompiler();
+        $this->moduleHandler   = mock(ModuleHandler::class);
+        $this->variableHandler = mock(VariableHandler::class);
+        $this->mixinHandler    = mock(MixinHandler::class);
+
+        $this->compiler = new UseNodeCompiler(
+            $this->moduleHandler,
+            $this->variableHandler,
+            $this->mixinHandler,
+            fn(mixed $expr): mixed => $expr,
+            function (string $namespace): void {},
+            fn(array $result, string $actualNamespace, ?string $namespace, int $nestingLevel): string => ''
+        );
+
         $this->accessor = new ReflectionAccessor($this->compiler);
     });
 
     it('registers mixins in current scope when using @use without namespace', function () {
         $node = new UseNode('path/to/module', null, 0);
 
-        $context         = mock(CompilerContext::class);
-        $moduleHandler   = mock(ModuleHandler::class);
-        $variableHandler = mock(VariableHandler::class);
-        $mixinHandler    = mock(MixinHandler::class);
-        $engine          = mock(CompilerEngineInterface::class);
-        $moduleCompiler  = mock(ModuleCompiler::class);
+        $this->compiler = new UseNodeCompiler(
+            $this->moduleHandler,
+            $this->variableHandler,
+            $this->mixinHandler,
+            fn(mixed $expr): mixed => throw new RuntimeException('not expected'),
+            fn(string $namespace) => expect($namespace)->toBe('actualNamespace'),
+            fn(array $result, string $actualNamespace, ?string $namespace, int $nestingLevel): string => ''
+        );
 
-        $context->moduleHandler   = $moduleHandler;
-        $context->variableHandler = $variableHandler;
-        $context->mixinHandler    = $mixinHandler;
-        $context->engine          = $engine;
-        $context->moduleCompiler  = $moduleCompiler;
-
-        $moduleHandler->shouldReceive('isModuleLoaded')->with('path/to/module')
+        $this->moduleHandler->shouldReceive('isModuleLoaded')->with('path/to/module')
             ->andReturn(false);
-        $moduleHandler->shouldReceive('loadModule')->with('path/to/module', null)
+        $this->moduleHandler->shouldReceive('loadModule')->with('path/to/module', '')
             ->andReturn(['namespace' => 'actualNamespace', 'cssAst' => []]);
-        $moduleHandler->shouldReceive('getVariables')->with('actualNamespace')->andReturn([
+        $this->moduleHandler->shouldReceive('getVariables')->with('actualNamespace')->andReturn([
             'mixinName' => [
                 'type' => 'mixin',
                 'args' => ['arg1', 'arg2'],
@@ -46,12 +51,10 @@ describe('UseNodeCompiler', function () {
             ],
         ]);
 
-        $moduleCompiler->shouldReceive('registerModuleMixins')->with('actualNamespace');
-        $mixinHandler->shouldReceive('define')->with('mixinName', ['arg1', 'arg2'], ['some', 'body']);
-        $moduleCompiler->shouldReceive('compile')->andReturn('');
-
-        $result = $this->accessor->callMethod('compileNode', [$node, $context]);
+        $this->mixinHandler->shouldReceive('define')->with('mixinName', ['arg1', 'arg2'], ['some', 'body']);
+        $result = $this->accessor->callMethod('compileNode', [$node]);
 
         expect($result)->toBe('');
     });
+
 });

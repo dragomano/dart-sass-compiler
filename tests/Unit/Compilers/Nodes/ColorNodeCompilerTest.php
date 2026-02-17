@@ -2,10 +2,8 @@
 
 declare(strict_types=1);
 
-use DartSass\Compilers\CompilerContext;
 use DartSass\Compilers\Nodes\ColorNodeCompiler;
 use DartSass\Parsers\Nodes\ColorNode;
-use DartSass\Parsers\Nodes\NodeType;
 
 describe('ColorNodeCompiler', function () {
     beforeEach(function () {
@@ -16,18 +14,9 @@ describe('ColorNodeCompiler', function () {
         $node = mock(ColorNode::class);
         $node->shouldReceive('__toString')->andReturn('#ff0000');
 
-        $context = mock(CompilerContext::class);
-
-        $result = $this->compiler->compile($node, $context);
+        $result = $this->compiler->compile($node);
 
         expect($result)->toBe('#ff0000');
     });
 
-    it('can compile color node type', function () {
-        expect($this->compiler->canCompile(NodeType::COLOR))->toBeTrue();
-    });
-
-    it('cannot compile other node types', function () {
-        expect($this->compiler->canCompile(NodeType::RULE))->toBeFalse();
-    });
 });

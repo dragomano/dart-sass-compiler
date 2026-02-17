@@ -2,20 +2,12 @@
 
 declare(strict_types=1);
 
-use DartSass\Compilers\CompilerContext;
 use DartSass\Compilers\Strategies\MediaRuleStrategy;
 use DartSass\Parsers\Nodes\IdentifierNode;
 use DartSass\Parsers\Nodes\MediaNode;
 use DartSass\Parsers\Nodes\RuleNode;
-use DartSass\Utils\ResultFormatterInterface;
 
 describe('ConditionalRuleStrategy', function () {
-    beforeEach(function () {
-        $this->resultFormatter = mock(ResultFormatterInterface::class);
-        $this->context = new CompilerContext([]);
-        $this->context->resultFormatter = $this->resultFormatter;
-    });
-
     it('throws InvalidArgumentException when required parameters are missing', function () {
         $strategy = new MediaRuleStrategy();
 
@@ -24,7 +16,7 @@ describe('ConditionalRuleStrategy', function () {
             'nested'       => [],
         ], 1);
 
-        expect(fn() => $strategy->compile($node, $this->context, '', 0))
+        expect(fn() => $strategy->compile($node, '', 0))
             ->toThrow(
                 InvalidArgumentException::class,
                 'Missing required parameters for media rule compilation'
@@ -44,16 +36,15 @@ describe('ConditionalRuleStrategy', function () {
             'nested' => [],
         ], 1);
 
-        $this->resultFormatter->shouldReceive('format')->andReturn('screen');
-
         $result = $strategy->compile(
             $node,
-            $this->context,
             '',
             0,
             fn($query) => $query,
             fn() => "  color: red;\n",
-            fn() => ''
+            fn() => '',
+            null,
+            fn($value) => $value
         );
 
         expect($result)->toContain("@media screen {\n  color: red;\n}\n");
@@ -69,16 +60,15 @@ describe('ConditionalRuleStrategy', function () {
             'nested'       => [$nestedRule],
         ], 1);
 
-        $this->resultFormatter->shouldReceive('format')->andReturn('screen');
-
         $result = $strategy->compile(
             $node,
-            $this->context,
             '',
             0,
             fn($query) => $query,
             fn() => "    color: blue;\n",
-            fn() => "  .class1, .class2 {\n    color: blue;\n  }\n"
+            fn() => "  .class1, .class2 {\n    color: blue;\n  }\n",
+            null,
+            fn($value) => $value
         );
 
         expect($result)->toContain(".class1,\n  .class2 {");

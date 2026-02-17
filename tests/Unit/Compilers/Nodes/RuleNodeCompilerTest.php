@@ -2,30 +2,40 @@
 
 declare(strict_types=1);
 
-use DartSass\Compilers\CompilerContext;
 use DartSass\Compilers\Nodes\RuleNodeCompiler;
+use DartSass\Handlers\ExtendHandler;
+use DartSass\Handlers\NestingHandler;
 use DartSass\Parsers\Nodes\StringNode;
 use Tests\ReflectionAccessor;
 
 describe('RuleNodeCompiler', function () {
     beforeEach(function () {
-        $this->compiler = new RuleNodeCompiler();
+        $this->compiler = new RuleNodeCompiler(
+            mock(NestingHandler::class),
+            mock(ExtendHandler::class),
+            fn(string $value): string => $value,
+            function (): void {},
+            function (): void {},
+            fn(array $ast, string $parentSelector = '', int $nestingLevel = 0): string => '',
+            fn(array $declarations, string $parentSelector = '', int $nestingLevel = 0): string => '',
+            fn(): array => [],
+            fn(): array => ['line' => 1, 'column' => 0],
+            function (array $mapping): void {},
+            function (string $text): void {},
+            fn(mixed $value): string => (string) $value
+        );
         $this->accessor = new ReflectionAccessor($this->compiler);
     });
 
     it('returns empty string when string is null in evaluateInterpolationsInString', function () {
-        $context = mock(CompilerContext::class);
-
-        $result = $this->accessor->callMethod('evaluateInterpolationsInString', [null, $context]);
+        $result = $this->accessor->callMethod('evaluateInterpolationsInString', [null]);
 
         expect($result)->toBe('');
     });
 
     it('returns empty string when node is not instance of RuleNode', function () {
         $node    = new StringNode('test', 0);
-        $context = mock(CompilerContext::class);
-
-        $result = $this->compiler->compile($node, $context);
+        $result = $this->compiler->compile($node);
 
         expect($result)->toBe('');
     });

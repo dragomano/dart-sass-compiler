@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use DartSass\Compilers\CompilerContext;
-use DartSass\Compilers\CompilerEngineInterface;
 use DartSass\Compilers\Environment;
 use DartSass\Exceptions\CompilationException;
 use DartSass\Handlers\MixinHandler;
@@ -14,15 +12,21 @@ use Tests\ReflectionAccessor;
 
 beforeEach(function () {
     $this->environment     = new Environment();
-    $this->compilerEngine  = mock(CompilerEngineInterface::class);
-    $this->context         = mock(CompilerContext::class);
+    $this->compilerEngine  = mock();
     $this->variableHandler = mock(VariableHandler::class);
+    $this->mixinHandler = new MixinHandler($this->environment, $this->variableHandler);
+    $this->mixinHandler->setCompilerCallbacks(
+        fn(array $declarations, string $parentSelector = '', int $nestingLevel = 0): string
+            => $this->compilerEngine->compileDeclarations($declarations, $parentSelector, $nestingLevel),
+        fn(array $ast, string $parentSelector = '', int $nestingLevel = 0): string
+            => $this->compilerEngine->compileAst($ast, $parentSelector, $nestingLevel),
+        function (string $content, string $selector, int $nestingLevel): string {
+            $indent  = str_repeat('  ', $nestingLevel);
+            $content = rtrim($content, "\n");
 
-    $this->context->environment     = $this->environment;
-    $this->context->variableHandler = $this->variableHandler;
-    $this->context->engine          = $this->compilerEngine;
-
-    $this->mixinHandler = new MixinHandler($this->context);
+            return "$indent$selector {\n$content\n$indent}\n";
+        }
+    );
 });
 
 describe('MixinHandler', function () {
@@ -124,8 +128,6 @@ describe('MixinHandler', function () {
             $this->compilerEngine
                 ->shouldReceive('compileDeclarations')
                 ->andReturn('color: green; font-size: 14px;');
-
-            $this->compilerEngine->shouldReceive('formatRule')->andReturn('  font-size: 14px;');
 
             $result = $this->mixinHandler->include('contentMixin', [], $content, '.parent');
 
@@ -263,6 +265,14 @@ describe('MixinHandler', function () {
 
             expect($result)->toContain('color: red;');
         });
+
+        it('throws exception when engine is not set', function () {
+            $handlerWithoutEngine = new MixinHandler($this->environment, $this->variableHandler);
+            $handlerWithoutEngine->define('noEngineMixin', [], [['property' => 'color', 'value' => 'red']]);
+
+            expect(fn() => $handlerWithoutEngine->include('noEngineMixin', []))
+                ->toThrow(LogicException::class, 'MixinHandler compiler callbacks are not set.');
+        });
     });
 
     describe('removeMixin method', function () {
@@ -303,6 +313,24 @@ describe('MixinHandler', function () {
 
             expect($key)->toBeString()
                 ->and($key)->toContain('test');
+        });
+    });
+
+    describe('compiler callbacks guards', function () {
+        it('throws when compileAst callback is not set', function () {
+            $handlerWithoutCallbacks = new MixinHandler($this->environment, $this->variableHandler);
+            $accessor = new ReflectionAccessor($handlerWithoutCallbacks);
+
+            expect(fn() => $accessor->callMethod('compileAst', [[[]], '', 0]))
+                ->toThrow(LogicException::class, 'MixinHandler compiler callbacks are not set.');
+        });
+
+        it('throws when formatRule callback is not set', function () {
+            $handlerWithoutCallbacks = new MixinHandler($this->environment, $this->variableHandler);
+            $accessor = new ReflectionAccessor($handlerWithoutCallbacks);
+
+            expect(fn() => $accessor->callMethod('formatRule', ['', '.selector', 0]))
+                ->toThrow(LogicException::class, 'MixinHandler compiler callbacks are not set.');
         });
     });
 })->covers(MixinHandler::class);

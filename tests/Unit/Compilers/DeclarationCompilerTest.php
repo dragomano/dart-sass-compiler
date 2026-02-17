@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use DartSass\Compilers\CompilerContext;
 use DartSass\Compilers\DeclarationCompiler;
 use DartSass\Parsers\Nodes\CommentNode;
 use DartSass\Parsers\Nodes\IdentifierNode;
@@ -15,9 +14,6 @@ describe('DeclarationCompiler', function () {
         $this->resultFormatter     = mock(ResultFormatterInterface::class);
         $this->positionTracker     = mock(PositionTracker::class);
         $this->declarationCompiler = new DeclarationCompiler($this->resultFormatter, $this->positionTracker);
-        $this->context             = mock(CompilerContext::class);
-        $this->context->options    = ['sourceMap' => false];
-        $this->context->mappings   = [];
     });
 
     describe('compile method', function () {
@@ -50,9 +46,9 @@ describe('DeclarationCompiler', function () {
                 $declarations,
                 $parentSelector,
                 $nestingLevel,
-                $this->context,
                 $compileAst,
-                $expression
+                $expression,
+                fn(string $value): string => $value
             );
 
             expect($compileAstCalled)->toBeTrue()
@@ -77,9 +73,9 @@ describe('DeclarationCompiler', function () {
                 $declarations,
                 $parentSelector,
                 $nestingLevel,
-                $this->context,
                 $compileAst,
-                $expression
+                $expression,
+                fn(string $value): string => $value
             );
 
             expect($result)->toBe('');
@@ -117,9 +113,9 @@ describe('DeclarationCompiler', function () {
                 $declarations,
                 $parentSelector,
                 $nestingLevel,
-                $this->context,
                 $compileAst,
-                $expression
+                $expression,
+                fn(string $value): string => $value
             );
 
             expect($result)->toBe("color: red !important;\n");
@@ -143,9 +139,9 @@ describe('DeclarationCompiler', function () {
                 $declarations,
                 $parentSelector,
                 $nestingLevel,
-                $this->context,
                 $compileAst,
-                $expression
+                $expression,
+                fn(string $value): string => $value
             );
 
             expect($result)->toBe('');
