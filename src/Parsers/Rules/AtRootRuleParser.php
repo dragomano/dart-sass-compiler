@@ -40,7 +40,8 @@ class AtRootRuleParser extends AtRuleParser
             );
         }
 
-        $without = $with = null;
+        $without = null;
+        $with    = null;
 
         if ($this->peek('paren_open')) {
             $this->consume('paren_open');

@@ -237,7 +237,8 @@ readonly class OutputOptimizer
 
     private function optimizeBuffer(array $buffer): array
     {
-        $final = $propMap = [];
+        $final   = [];
+        $propMap = [];
 
         foreach ($buffer as $line) {
             $trimmed = trim($line);

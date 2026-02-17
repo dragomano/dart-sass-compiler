@@ -64,7 +64,8 @@ class GenericAtRuleParser extends AtRuleParser
 
     private function parseBlock(): array
     {
-        $declarations = $nested = [];
+        $declarations = [];
+        $nested       = [];
 
         while ($this->currentToken() && ! $this->peek('brace_close')) {
             if ($this->peek('at_rule')) {

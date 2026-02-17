@@ -42,8 +42,9 @@ class ForwardRuleParser extends AtRuleParser
         }
 
         $namespace = null;
-
-        $config = $hide = $show = [];
+        $config    = [];
+        $hide      = [];
+        $show      = [];
 
         while ($this->currentToken() && ! $this->peek('semicolon')) {
             if ($this->peek('identifier')) {

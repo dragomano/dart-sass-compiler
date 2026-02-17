@@ -8,7 +8,8 @@ trait BlockParsingHelper
 {
     protected function parseBlock(): array
     {
-        $declarations = $nested = [];
+        $declarations = [];
+        $nested       = [];
 
         $token = $this->currentToken();
 

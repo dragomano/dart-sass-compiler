@@ -4,36 +4,34 @@ declare(strict_types=1);
 
 namespace DartSass\Compilers\Nodes;
 
-use DartSass\Compilers\CompilerEngineInterface;
+use Closure;
 use DartSass\Exceptions\CompilationException;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\ErrorNode;
-use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Utils\LoggerInterface;
 
 class ErrorNodeCompiler extends AbstractNodeCompiler
 {
-    public function __construct(private readonly LoggerInterface $logger) {}
+    public function __construct(
+        private readonly LoggerInterface $logger,
+        private readonly Closure $evaluateExpression,
+        private readonly Closure $formatValue,
+        private readonly Closure $getOptions
+    ) {}
 
     protected function getNodeClass(): string
     {
         return ErrorNode::class;
     }
 
-    protected function getNodeType(): NodeType
-    {
-        return NodeType::ERROR;
-    }
-
     protected function compileNode(
         ErrorNode|AstNode $node,
-        CompilerEngineInterface $engine,
         string $parentSelector = '',
         int $nestingLevel = 0
     ): string {
-        $value = $engine->evaluateExpression($node->expression);
-        $formattedValue = $engine->getResultFormatter()->format($value);
-        $options = $engine->getOptions();
+        $value = ($this->evaluateExpression)($node->expression);
+        $formattedValue = ($this->formatValue)($value);
+        $options = ($this->getOptions)();
 
         $this->logger->error($formattedValue, [
             'file' => $options['sourceFile'] ?? 'unknown',

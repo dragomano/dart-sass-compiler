@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DartSass\Handlers;
 
-use DartSass\Compilers\CompilerEngineInterface;
+use Closure;
 use DartSass\Compilers\Environment;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\IdentifierNode;
@@ -27,11 +27,15 @@ use function trim;
 
 class MixinHandler
 {
-    private ?CompilerEngineInterface $engine = null;
+    private ?Closure $compileDeclarationsCallback = null;
+
+    private ?Closure $compileAstCallback = null;
+
+    private ?Closure $formatRuleCallback = null;
 
     private ?string $currentContent = null;
 
-    private static array $mixinCache = [];
+    private array $mixinCache = [];
 
     private const CACHE_LIMIT = 100;
 
@@ -40,9 +44,14 @@ class MixinHandler
         private readonly VariableHandler $variableHandler
     ) {}
 
-    public function setEngine(CompilerEngineInterface $engine): void
-    {
-        $this->engine = $engine;
+    public function setCompilerCallbacks(
+        callable $compileDeclarations,
+        callable $compileAst,
+        callable $formatRule
+    ): void {
+        $this->compileDeclarationsCallback = $compileDeclarations;
+        $this->compileAstCallback = $compileAst;
+        $this->formatRuleCallback = $formatRule;
     }
 
     public function define(string $name, array $args, array $body, bool $global = false): void
@@ -69,9 +78,9 @@ class MixinHandler
     ): string {
         $mixin = $this->environment->getCurrentScope()->getMixin($name);
 
-        $cacheKey = self::generateCacheKey($name, $args, $content);
-        if ($cacheKey !== '' && isset(self::$mixinCache[$cacheKey])) {
-            return self::$mixinCache[$cacheKey];
+        $cacheKey = $this->generateCacheKey($name, $args, $content);
+        if ($cacheKey !== '' && isset($this->mixinCache[$cacheKey])) {
+            return $this->mixinCache[$cacheKey];
         }
 
         $this->environment->enterScope();
@@ -85,7 +94,7 @@ class MixinHandler
             $css = $this->compileMixinBody($mixin['body'], $parentSelector);
             $css = $this->injectContent($css, $compiledContent);
 
-            self::storeCacheResult($cacheKey, $css);
+            $this->storeCacheResult($cacheKey, $css);
 
             return $css;
         } finally {
@@ -98,9 +107,12 @@ class MixinHandler
         return $this->environment->getCurrentScope()->getMixin($name);
     }
 
-    public function removeMixin(string $name): void {}
+    public function removeMixin(string $name): void
+    {
+        $this->environment->getCurrentScope()->removeMixin($name);
+    }
 
-    private static function generateCacheKey(string $name, array $args, ?array $content): string
+    private function generateCacheKey(string $name, array $args, ?array $content): string
     {
         try {
             $serializedArgs    = serialize($args);
@@ -198,14 +210,14 @@ class MixinHandler
 
         foreach ($content as $item) {
             if (is_array($item)) {
-                $declarationCss .= $this->getEngine()->compileDeclarations(
+                $declarationCss .= $this->compileDeclarations(
                     [$item],
                     nestingLevel: $nestingLevel + 2
                 );
             }
         }
 
-        $compiledContent = $this->getEngine()->formatRule($declarationCss, $parentSelector, $nestingLevel);
+        $compiledContent = $this->formatRule($declarationCss, $parentSelector, $nestingLevel);
 
         return preg_replace('/^}$/m', '  }', $compiledContent);
     }
@@ -216,7 +228,7 @@ class MixinHandler
 
         foreach ($content as $item) {
             if (is_array($item)) {
-                $compiledContent .= $this->getEngine()->compileDeclarations([$item], nestingLevel: 1);
+                $compiledContent .= $this->compileDeclarations([$item], nestingLevel: 1);
             }
         }
 
@@ -229,9 +241,9 @@ class MixinHandler
 
         foreach ($body as $item) {
             if (is_array($item)) {
-                $css .= $this->getEngine()->compileDeclarations([$item], nestingLevel: 1);
+                $css .= $this->compileDeclarations([$item], nestingLevel: 1);
             } elseif ($item instanceof AstNode) {
-                $css .= $this->getEngine()->compileAst([$item], $parentSelector);
+                $css .= $this->compileAst([$item], $parentSelector);
             }
         }
 
@@ -249,26 +261,44 @@ class MixinHandler
         return preg_replace('/@content\s*;?\s*{[^}]*}\s*/', $compiledContent, $css);
     }
 
-    private static function storeCacheResult(string $cacheKey, string $css): void
+    private function storeCacheResult(string $cacheKey, string $css): void
     {
         if ($cacheKey === '') {
             return;
         }
 
-        self::$mixinCache[$cacheKey] = $css;
+        $this->mixinCache[$cacheKey] = $css;
 
-        if (count(self::$mixinCache) > self::CACHE_LIMIT) {
-            $firstKey = array_key_first(self::$mixinCache);
-            unset(self::$mixinCache[$firstKey]);
+        if (count($this->mixinCache) > self::CACHE_LIMIT) {
+            $firstKey = array_key_first($this->mixinCache);
+            unset($this->mixinCache[$firstKey]);
         }
     }
 
-    private function getEngine(): CompilerEngineInterface
+    private function compileDeclarations(array $declarations, int $nestingLevel = 0): string
     {
-        if ($this->engine === null) {
-            throw new LogicException('MixinHandler engine is not set.');
+        if ($this->compileDeclarationsCallback === null) {
+            throw new LogicException('MixinHandler compiler callbacks are not set.');
         }
 
-        return $this->engine;
+        return ($this->compileDeclarationsCallback)($declarations, '', $nestingLevel);
+    }
+
+    private function compileAst(array $ast, string $parentSelector = ''): string
+    {
+        if ($this->compileAstCallback === null) {
+            throw new LogicException('MixinHandler compiler callbacks are not set.');
+        }
+
+        return ($this->compileAstCallback)($ast, $parentSelector, 0);
+    }
+
+    private function formatRule(string $content, string $selector, int $nestingLevel): string
+    {
+        if ($this->formatRuleCallback === null) {
+            throw new LogicException('MixinHandler compiler callbacks are not set.');
+        }
+
+        return ($this->formatRuleCallback)($content, $selector, $nestingLevel);
     }
 }

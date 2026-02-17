@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace DartSass\Compilers\Nodes;
 
-use DartSass\Compilers\CompilerEngineInterface;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\ColorNode;
-use DartSass\Parsers\Nodes\NodeType;
 
 class ColorNodeCompiler extends AbstractNodeCompiler
 {
@@ -16,14 +14,8 @@ class ColorNodeCompiler extends AbstractNodeCompiler
         return ColorNode::class;
     }
 
-    protected function getNodeType(): NodeType
-    {
-        return NodeType::COLOR;
-    }
-
     protected function compileNode(
         AstNode $node,
-        CompilerEngineInterface $engine,
         string $parentSelector = '',
         int $nestingLevel = 0
     ): string {

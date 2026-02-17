@@ -59,7 +59,8 @@ final class SpreadHelper
 
     private static function filter(array $args, array $usedKeys): array
     {
-        $pos = $keywords = [];
+        $pos      = [];
+        $keywords = [];
 
         foreach ($args as $key => $val) {
             if (in_array($key, $usedKeys, true)) {
