@@ -270,3 +270,17 @@ it('returns CSS unchanged for unsupported styles', function () {
 
     expect($result)->toEqualCss($css);
 });
+
+it('keeps non-property lines inside declaration blocks', function () {
+    $css = /** @lang text */ <<<'CSS'
+    .test {
+      some random text;
+      width: 10px;
+    }
+    CSS;
+
+    $optimizer = new OutputOptimizer('expanded');
+    $result = $optimizer->optimize($css);
+
+    expect($result)->toContain('some random text;');
+});

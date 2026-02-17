@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace DartSass\Compilers\Nodes;
 
-use DartSass\Compilers\CompilerContext;
+use Closure;
+use DartSass\Handlers\ExtendHandler;
+use DartSass\Handlers\NestingHandler;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\MediaNode;
 use DartSass\Parsers\Nodes\NodeType;
@@ -23,48 +25,59 @@ use function trim;
 
 class RuleNodeCompiler extends AbstractNodeCompiler
 {
+    public function __construct(
+        private readonly NestingHandler $nestingHandler,
+        private readonly ExtendHandler $extendHandler,
+        private readonly Closure $evaluateInterpolation,
+        private readonly Closure $enterScope,
+        private readonly Closure $exitScope,
+        private readonly Closure $compileAst,
+        private readonly Closure $compileDeclarations,
+        private readonly Closure $getOptions,
+        private readonly Closure $getCurrentPosition,
+        private readonly Closure $addMapping,
+        private readonly Closure $updatePosition,
+        private readonly Closure $formatValue
+    ) {}
+
     protected function getNodeClass(): string
     {
         return RuleNode::class;
     }
 
-    protected function getNodeType(): NodeType
-    {
-        return NodeType::RULE;
-    }
-
     protected function compileNode(
         RuleNode|AstNode $node,
-        CompilerContext $context,
         string $parentSelector = '',
         int $nestingLevel = 0
     ): string {
         $selectorString = $node->selector instanceof SelectorNode ? $node->selector->value : null;
-        $selectorString = $this->evaluateInterpolationsInString($selectorString, $context);
-        $selector       = $context->nestingHandler->resolveSelector($selectorString, $parentSelector);
+        $selectorString = $this->evaluateInterpolationsInString($selectorString);
+        $selector       = $this->nestingHandler->resolveSelector($selectorString, $parentSelector);
 
-        $context->environment->enterScope();
+        ($this->enterScope)();
 
-        [$includes, $nested, $postDecl] = $this->processNestedItems($node, $context, $selector, $nestingLevel);
+        [$includes, $nested, $postDecl] = $this->processNestedItems($node, $selector, $nestingLevel);
 
-        $ruleCss = $this->buildRule($node, $context, $selector, $nestingLevel, $includes, $postDecl);
+        $ruleCss = $this->buildRule($node, $selector, $nestingLevel, $includes, $postDecl);
 
-        $context->extendHandler->addDefinedSelector($selector);
-        $context->environment->exitScope();
+        $this->extendHandler->addDefinedSelector($selector);
+
+        ($this->exitScope)();
 
         return $ruleCss . $nested;
     }
 
     private function processNestedItems(
         RuleNode $node,
-        CompilerContext $context,
         string $selector,
         int $nestingLevel
     ): array {
-        $includes = $nested = $postDecl = '';
+        $includes = '';
+        $nested   = '';
+        $postDecl = '';
 
         foreach ($node->nested ?? [] as $item) {
-            $itemCss = $this->compileNestedItem($item, $context, $selector, $nestingLevel);
+            $itemCss = $this->compileNestedItem($item, $selector, $nestingLevel);
 
             if (in_array($item->type, [NodeType::IF, NodeType::EACH, NodeType::FOR, NodeType::WHILE], true)) {
                 $extracted = $this->extractDeclarations(trim($itemCss), $selector, $nestingLevel);
@@ -86,13 +99,12 @@ class RuleNodeCompiler extends AbstractNodeCompiler
 
     private function compileNestedItem(
         AstNode $item,
-        CompilerContext $context,
         string $selector,
         int $nestingLevel
     ): string {
         return match ($item->type) {
-            NodeType::MEDIA => $this->compileMediaNode($item, $selector, $nestingLevel, $context),
-            default         => $context->engine->compileAst([$item], $selector, $nestingLevel + 1),
+            NodeType::MEDIA => $this->compileMediaNode($item, $selector, $nestingLevel),
+            default         => ($this->compileAst)([$item], $selector, $nestingLevel + 1),
         };
     }
 
@@ -151,7 +163,6 @@ class RuleNodeCompiler extends AbstractNodeCompiler
 
     private function buildRule(
         RuleNode $node,
-        CompilerContext $context,
         string $selector,
         int $nestingLevel,
         string $includes,
@@ -160,29 +171,26 @@ class RuleNodeCompiler extends AbstractNodeCompiler
         $indent    = str_repeat('  ', $nestingLevel);
         $ruleStart = "$indent$selector {\n";
 
-        if ($context->options['sourceMap'] ?? false) {
-            $genPos = $context->positionTracker->getCurrentPosition();
+        if (($this->getOptions)()['sourceMap'] ?? false) {
+            $genPos = ($this->getCurrentPosition)();
             $orgPos = [
                 'line'   => max(0, ($node->line ?? 1) - 1),
                 'column' => max(0, ($node->column ?? 1) - 1),
             ];
 
-            $context->mappings[] = [
+            ($this->addMapping)([
                 'generated'   => ['line' => $genPos['line'] - 1, 'column' => $genPos['column']],
                 'original'    => ['line' => $orgPos['line'], 'column' => $orgPos['column']],
                 'sourceIndex' => 0,
-            ];
+            ]);
         }
 
-        $context->positionTracker->updatePosition($ruleStart);
+        ($this->updatePosition)($ruleStart);
 
-        $decl = $context->declarationCompiler->compile(
+        $decl = ($this->compileDeclarations)(
             $node->declarations ?? [],
             $selector,
             $nestingLevel + 1,
-            $context,
-            $context->engine->compileAst(...),
-            $context->engine->evaluateExpression(...)
         );
 
         $content = $includes . $decl . $postDecl;
@@ -192,7 +200,7 @@ class RuleNodeCompiler extends AbstractNodeCompiler
         }
 
         $ruleEnd = "$indent}\n";
-        $context->positionTracker->updatePosition($ruleEnd);
+        ($this->updatePosition)($ruleEnd);
 
         return $ruleStart . rtrim($content) . "\n" . $ruleEnd;
     }
@@ -200,18 +208,17 @@ class RuleNodeCompiler extends AbstractNodeCompiler
     private function compileMediaNode(
         MediaNode|AstNode $mediaNode,
         string $parentSelector,
-        int $nestingLevel,
-        CompilerContext $context
+        int $nestingLevel
     ): string {
-        $query        = $this->evaluateInterpolationsInString($mediaNode->query, $context);
-        $query        = $context->resultFormatter->format($query);
+        $query        = $this->evaluateInterpolationsInString($mediaNode->query);
+        $query        = ($this->formatValue)($query);
         $declarations = $mediaNode->body['declarations'] ?? [];
         $nested       = $mediaNode->body['nested'] ?? [];
 
         $includesCss = '';
         foreach ($nested as $item) {
             if ($item->type === NodeType::INCLUDE) {
-                $includesCss .= $context->engine->compileAst([$item], $parentSelector, $nestingLevel + 2);
+                $includesCss .= ($this->compileAst)([$item], $parentSelector, $nestingLevel + 2);
             }
         }
 
@@ -224,20 +231,17 @@ class RuleNodeCompiler extends AbstractNodeCompiler
 
             $css .= "$bodyIndent$parentSelector {\n";
             $css .= $includesCss;
-            $css .= $context->declarationCompiler->compile(
+            $css .= ($this->compileDeclarations)(
                 $declarations,
                 $parentSelector,
                 $nestingLevel + 2,
-                $context,
-                $context->engine->compileAst(...),
-                $context->engine->evaluateExpression(...)
             );
             $css .= "$bodyIndent}\n";
         }
 
         foreach ($nested as $item) {
             if ($item->type !== NodeType::INCLUDE) {
-                $css .= $context->engine->compileAst([$item], $parentSelector, $nestingLevel + 1);
+                $css .= ($this->compileAst)([$item], $parentSelector, $nestingLevel + 1);
             }
         }
 
@@ -246,12 +250,12 @@ class RuleNodeCompiler extends AbstractNodeCompiler
         return $css;
     }
 
-    private function evaluateInterpolationsInString(?string $string, CompilerContext $context): string
+    private function evaluateInterpolationsInString(?string $string): string
     {
         if ($string === null) {
             return '';
         }
 
-        return $context->interpolationEvaluator->evaluate($string, $context->engine->evaluateExpression(...));
+        return ($this->evaluateInterpolation)($string);
     }
 }

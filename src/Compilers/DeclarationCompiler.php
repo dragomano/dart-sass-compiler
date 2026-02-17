@@ -28,9 +28,11 @@ readonly class DeclarationCompiler
         array $declarations,
         string $parentSelector,
         int $nestingLevel,
-        CompilerContext $context,
         Closure $compileAst,
-        Closure $expression
+        Closure $expression,
+        Closure $interpolate,
+        bool $sourceMapEnabled = false,
+        ?Closure $addMapping = null
     ): string {
         $css = '';
 
@@ -42,7 +44,7 @@ readonly class DeclarationCompiler
 
                     if (str_starts_with($comment, '/*')) {
                         $content = substr($comment, 2, -2);
-                        $content = $context->interpolationEvaluator->evaluate($content, $expression);
+                        $content = $interpolate($content);
 
                         $commentCss = StringFormatter::concatMultiple([$indent, '/*' . $content . '*/', "\n"]);
 
@@ -76,7 +78,7 @@ readonly class DeclarationCompiler
 
                 $this->positionTracker->updatePosition($declarationCss);
 
-                if ($context->options['sourceMap'] ?? false) {
+                if ($sourceMapEnabled && $addMapping !== null) {
                     $generatedPosition = [
                         'line'   => $generatedPosition['line'] - 1,
                         'column' => $generatedPosition['column'] + strlen($indent),
@@ -87,11 +89,11 @@ readonly class DeclarationCompiler
                         'column' => max(0, ($value->column ?? 1) - 1),
                     ];
 
-                    $context->mappings[] = [
+                    $addMapping([
                         'generated'   => $generatedPosition,
                         'original'    => $originalPosition,
                         'sourceIndex' => 0,
-                    ];
+                    ]);
                 }
             }
         }

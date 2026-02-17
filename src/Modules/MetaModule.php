@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace DartSass\Modules;
 
 use Closure;
-use DartSass\Compilers\CompilerContext;
 use DartSass\Exceptions\CompilationException;
+use DartSass\Handlers\FunctionHandler;
+use DartSass\Handlers\MixinHandler;
+use DartSass\Handlers\ModuleHandler;
 use DartSass\Handlers\ModuleRegistry;
+use DartSass\Handlers\VariableHandler;
 use DartSass\Loaders\FileLoader;
 use DartSass\Loaders\HttpLoader;
 use DartSass\Parsers\Nodes\HexColorNode;
@@ -48,9 +51,14 @@ use const FILTER_VALIDATE_URL;
 class MetaModule extends AbstractModule
 {
     public function __construct(
-        private readonly ModuleRegistry  $moduleRegistry,
-        private readonly CompilerContext $context,
-        private readonly ?Closure        $evaluator = null
+        private readonly ModuleRegistry $moduleRegistry,
+        private readonly MixinHandler $mixinHandler,
+        private readonly VariableHandler $variableHandler,
+        private readonly ModuleHandler $moduleHandler,
+        private readonly FunctionHandler $functionHandler,
+        private readonly Closure $optionsResolver,
+        private readonly Closure $scssCompiler,
+        private readonly ?Closure $evaluator = null
     ) {}
 
     public function apply(array $args): string
@@ -64,11 +72,11 @@ class MetaModule extends AbstractModule
         }
 
         if (is_string($mixin)) {
-            if (! $this->context->mixinHandler->hasMixin($mixin)) {
+            if (! $this->mixinHandler->hasMixin($mixin)) {
                 throw new CompilationException("Unknown mixin: $mixin");
             }
 
-            return $this->context->mixinHandler->include($mixin, $args);
+            return $this->mixinHandler->include($mixin, $args);
         }
 
         throw new CompilationException('apply() first argument must be a SassMixin, mixin name or callable');
@@ -84,13 +92,12 @@ class MetaModule extends AbstractModule
 
         $isRelative = ! preg_match('#^(https?://|/)#i', $url);
 
-        $engine = $this->context->engine;
-
         if ($isRelative) {
+            $options = $this->resolveOptions();
             $loadPaths = [];
 
-            if (isset($this->context->options['sourceFile'])) {
-                $sourceFile = $this->context->options['sourceFile'];
+            if (isset($options['sourceFile'])) {
+                $sourceFile = $options['sourceFile'];
                 $currentDir = dirname($sourceFile);
 
                 if ($currentDir !== '.' && $currentDir !== '/') {
@@ -110,7 +117,7 @@ class MetaModule extends AbstractModule
         $content = $loader->load($url);
 
         if (str_ends_with($url, '.scss') || str_ends_with($url, '.sass')) {
-            return $engine->compileString($content, Syntax::fromPath($url, $content));
+            return ($this->scssCompiler)($content, Syntax::fromPath($url, $content));
         }
 
         return $content;
@@ -125,7 +132,7 @@ class MetaModule extends AbstractModule
         }
 
         if (is_string($mixin)) {
-            $mixinObj = new SassMixin($this->context->mixinHandler, $mixin);
+            $mixinObj = new SassMixin($this->mixinHandler, $mixin);
 
             return $mixinObj->acceptsContent();
         }
@@ -134,7 +141,7 @@ class MetaModule extends AbstractModule
             return false;
         }
 
-        $mixinObj = new SassMixin($this->context->mixinHandler, $mixin->mixinName);
+        $mixinObj = new SassMixin($this->mixinHandler, $mixin->mixinName);
 
         return $mixinObj->acceptsContent();
     }
@@ -197,7 +204,7 @@ class MetaModule extends AbstractModule
             }
 
             try {
-                return $this->context->functionHandler->call($function, $args);
+                return $this->functionHandler->call($function, $args);
             } catch (CompilationException) {
             }
 
@@ -211,7 +218,7 @@ class MetaModule extends AbstractModule
     {
         $this->validateArgs($args, 0, 'content-exists');
 
-        return $this->context->mixinHandler->hasContent();
+        return $this->mixinHandler->hasContent();
     }
 
     public function featureExists(array $args): bool
@@ -267,7 +274,7 @@ class MetaModule extends AbstractModule
         }
 
         if ($this->isUserDefinedFunction($functionName)) {
-            return new SassUserFunction($this->context->functionHandler, $functionName);
+            return new SassUserFunction($this->functionHandler, $functionName);
         }
 
         throw new CompilationException("Function $functionName not found");
@@ -281,28 +288,28 @@ class MetaModule extends AbstractModule
         $moduleName = $args[1] ?? null;
 
         if ($moduleName !== null) {
-            $moduleMixins = $this->context->moduleHandler->getMixins($moduleName);
+            $moduleMixins = $this->moduleHandler->getMixins($moduleName);
 
             if (isset($moduleMixins[$mixinName])) {
                 $tempName = $moduleName . '.' . $mixinName;
 
-                $this->context->mixinHandler->define(
+                $this->mixinHandler->define(
                     $tempName,
                     $moduleMixins[$mixinName]['args'] ?? [],
                     $moduleMixins[$mixinName]['body'] ?? []
                 );
 
-                return new SassMixin($this->context->mixinHandler, $tempName);
+                return new SassMixin($this->mixinHandler, $tempName);
             }
 
             throw new CompilationException("Mixin $mixinName not found in module $moduleName");
         }
 
-        if (! $this->context->mixinHandler->hasMixin($mixinName)) {
+        if (! $this->mixinHandler->hasMixin($mixinName)) {
             throw new CompilationException("Mixin $mixinName not found");
         }
 
-        return new SassMixin($this->context->mixinHandler, $mixinName);
+        return new SassMixin($this->mixinHandler, $mixinName);
     }
 
     public function globalVariableExists(array $args): bool
@@ -319,12 +326,12 @@ class MetaModule extends AbstractModule
         $variableName = '$' . $variableName;
 
         if ($moduleName !== null) {
-            $moduleVariables = $this->context->moduleHandler->getVariables($moduleName);
+            $moduleVariables = $this->moduleHandler->getVariables($moduleName);
 
             return isset($moduleVariables[$variableName]);
         }
 
-        return $this->context->variableHandler->globalExists($variableName);
+        return $this->variableHandler->globalExists($variableName);
     }
 
     public function inspect(array $args): string
@@ -456,12 +463,12 @@ class MetaModule extends AbstractModule
         }
 
         if ($moduleName !== null) {
-            $moduleMixins = $this->context->moduleHandler->getMixins($moduleName);
+            $moduleMixins = $this->moduleHandler->getMixins($moduleName);
 
             return isset($moduleMixins[$mixinName]);
         }
 
-        return $this->context->mixinHandler->hasMixin($mixinName);
+        return $this->mixinHandler->hasMixin($mixinName);
     }
 
     public function moduleFunctions(array $args): SassMap
@@ -495,13 +502,13 @@ class MetaModule extends AbstractModule
             throw new CompilationException('module-mixins() argument must be a string');
         }
 
-        $mixinsData = $this->context->moduleHandler->getMixins($moduleName);
+        $mixinsData = $this->moduleHandler->getMixins($moduleName);
 
         $mixins = [];
         foreach ($mixinsData as $name => $mixin) {
-            $this->context->mixinHandler->define($name, $mixin['args'] ?? [], $mixin['body'] ?? []);
+            $this->mixinHandler->define($name, $mixin['args'] ?? [], $mixin['body'] ?? []);
 
-            $mixins[$name] = new SassMixin($this->context->mixinHandler, $name);
+            $mixins[$name] = new SassMixin($this->mixinHandler, $name);
         }
 
         return new SassMap($mixins);
@@ -515,7 +522,7 @@ class MetaModule extends AbstractModule
             throw new CompilationException('module-variables() argument must be a string');
         }
 
-        $properties = $this->context->moduleHandler->getVariables($moduleName);
+        $properties = $this->moduleHandler->getVariables($moduleName);
 
         $variables = [];
         foreach ($properties as $name => $value) {
@@ -608,13 +615,13 @@ class MetaModule extends AbstractModule
         $variableName = '$' . $variableName;
 
         if ($moduleName !== null) {
-            $moduleVariables = $this->context->moduleHandler->getVariables($moduleName);
+            $moduleVariables = $this->moduleHandler->getVariables($moduleName);
 
             return isset($moduleVariables[$variableName]);
         }
 
         try {
-            $this->context->variableHandler->get($variableName);
+            $this->variableHandler->get($variableName);
 
             return true;
         } catch (CompilationException) {
@@ -624,6 +631,17 @@ class MetaModule extends AbstractModule
 
     private function isUserDefinedFunction(string $name): bool
     {
-        return $this->context->functionHandler->exists($name);
+        return $this->functionHandler->exists($name);
+    }
+
+    private function resolveOptions(): array
+    {
+        $options = ($this->optionsResolver)();
+
+        if (! is_array($options)) {
+            throw new CompilationException('Compiler options are not available');
+        }
+
+        return $options;
     }
 }

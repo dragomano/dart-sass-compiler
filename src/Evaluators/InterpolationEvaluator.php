@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace DartSass\Evaluators;
 
 use Closure;
-use DartSass\Compilers\CompilerContext;
+use DartSass\Parsers\ParserFactory;
 use DartSass\Parsers\Syntax;
+use DartSass\Utils\ResultFormatterInterface;
 use Exception;
 
 use function is_array;
@@ -18,7 +19,10 @@ use function trim;
 
 readonly class InterpolationEvaluator
 {
-    public function __construct(private CompilerContext $context) {}
+    public function __construct(
+        private ParserFactory $parserFactory,
+        private ResultFormatterInterface $resultFormatter
+    ) {}
 
     public function evaluate(string $string, Closure $expression): string
     {
@@ -52,7 +56,7 @@ readonly class InterpolationEvaluator
 
             // Evaluate expression
             try {
-                $parser = $this->context->parserFactory->create($content, Syntax::SCSS);
+                $parser = $this->parserFactory->create($content, Syntax::SCSS);
                 $ast    = $parser->parseExpression();
                 $value  = $expression($ast);
 
@@ -77,7 +81,7 @@ readonly class InterpolationEvaluator
                     $value = $this->evaluate($value, $expression);
                 }
 
-                return $this->context->resultFormatter->format($value);
+                return $this->resultFormatter->format($value);
             } catch (Exception) {
                 return $varName;
             }

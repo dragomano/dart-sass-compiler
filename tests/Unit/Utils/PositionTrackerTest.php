@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use DartSass\Utils\PositionTracker;
+use Tests\ReflectionAccessor;
 
 beforeEach(function () {
     $this->tracker = new PositionTracker();
@@ -141,6 +142,14 @@ it('returns zero for out of bounds lines', function () {
 
 it('returns zero for empty source code', function () {
     $tracker = new PositionTracker('');
+
+    expect($tracker->calculateIndentation(1))->toBe(0);
+});
+
+it('returns zero when internal lines cache is empty array', function () {
+    $tracker = new PositionTracker("line1\nline2");
+    $accessor = new ReflectionAccessor($tracker);
+    $accessor->setProperty('lines', []);
 
     expect($tracker->calculateIndentation(1))->toBe(0);
 });

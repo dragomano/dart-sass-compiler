@@ -15,7 +15,9 @@ class PositionTracker
 
     private int $currentColumn = 0;
 
-    private array $lines = [];
+    private string $sourceCode = '';
+
+    private ?array $lines = null;
 
     private array $indentations = [];
 
@@ -28,7 +30,8 @@ class PositionTracker
 
     public function setSourceCode(string $sourceCode): void
     {
-        $this->lines = explode("\n", $sourceCode);
+        $this->sourceCode = $sourceCode;
+        $this->lines = null;
         $this->indentations = [];
         $this->reset();
     }
@@ -72,7 +75,13 @@ class PositionTracker
 
     public function calculateIndentation(int $line): int
     {
-        if ($line < 1 || empty($this->lines)) {
+        if ($line < 1) {
+            return 0;
+        }
+
+        $this->initializeLines();
+
+        if ($this->lines === null || $this->lines === []) {
             return 0;
         }
 
@@ -82,11 +91,21 @@ class PositionTracker
 
         if (! isset($this->indentations[$line])) {
             $lineContent = $this->lines[$line - 1];
-            $trimmed = ltrim($lineContent, " \t");
+            $trimmed     = ltrim($lineContent, " \t");
+
             $this->indentations[$line] = strlen($lineContent) - strlen($trimmed);
         }
 
         return $this->indentations[$line];
+    }
+
+    private function initializeLines(): void
+    {
+        if ($this->lines !== null) {
+            return;
+        }
+
+        $this->lines = explode("\n", $this->sourceCode);
     }
 
     public function getState(): array

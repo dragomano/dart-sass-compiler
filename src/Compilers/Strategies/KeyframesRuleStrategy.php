@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DartSass\Compilers\Strategies;
 
-use DartSass\Compilers\CompilerContext;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\KeyframesNode;
 use DartSass\Parsers\Nodes\NodeType;
@@ -24,14 +23,14 @@ readonly class KeyframesRuleStrategy implements RuleCompilationStrategy
 
     public function compile(
         KeyframesNode|AstNode $node,
-        CompilerContext $context,
         string $parentSelector,
         int $currentNestingLevel,
         ...$params
     ): string {
-        $expression = $params[3] ?? $params[0] ?? null;
+        $expression = $params[3] ?? null;
+        $formatValue = $params[4] ?? null;
 
-        if (! $expression) {
+        if (! $expression || ! $formatValue) {
             throw new InvalidArgumentException('Missing required parameters for keyframes rule compilation');
         }
 
@@ -51,7 +50,7 @@ readonly class KeyframesRuleStrategy implements RuleCompilationStrategy
                 $value    = current($declaration);
 
                 $evaluatedValue = $expression($value);
-                $formattedValue = $context->resultFormatter->format($evaluatedValue);
+                $formattedValue = $formatValue($evaluatedValue);
                 $declarationCss = "$indent  $property: " . $formattedValue . ";\n";
 
                 $body .= $declarationCss;

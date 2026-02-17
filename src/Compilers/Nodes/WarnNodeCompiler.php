@@ -4,37 +4,36 @@ declare(strict_types=1);
 
 namespace DartSass\Compilers\Nodes;
 
-use DartSass\Compilers\CompilerContext;
+use Closure;
 use DartSass\Parsers\Nodes\AstNode;
-use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Parsers\Nodes\WarnNode;
 use DartSass\Utils\LoggerInterface;
 
 class WarnNodeCompiler extends AbstractNodeCompiler
 {
-    public function __construct(private readonly LoggerInterface $logger) {}
+    public function __construct(
+        private readonly LoggerInterface $logger,
+        private readonly Closure $evaluateExpression,
+        private readonly Closure $formatValue,
+        private readonly Closure $getOptions
+    ) {}
 
     protected function getNodeClass(): string
     {
         return WarnNode::class;
     }
 
-    protected function getNodeType(): NodeType
-    {
-        return NodeType::WARN;
-    }
-
     protected function compileNode(
         WarnNode|AstNode $node,
-        CompilerContext $context,
         string $parentSelector = '',
         int $nestingLevel = 0
     ): string {
-        $value = $context->engine->evaluateExpression($node->expression);
-        $formattedValue = $context->resultFormatter->format($value);
+        $value = ($this->evaluateExpression)($node->expression);
+        $formattedValue = ($this->formatValue)($value);
+        $options = ($this->getOptions)();
 
         $this->logger->debug($formattedValue, [
-            'file' => $context->options['sourceFile'] ?? 'unknown',
+            'file' => $options['sourceFile'] ?? 'unknown',
             'line' => $node->line ?? 0,
         ]);
 

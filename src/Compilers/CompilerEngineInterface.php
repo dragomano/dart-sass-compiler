@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace DartSass\Compilers;
 
-use DartSass\Compilers\Nodes\NodeCompiler;
-use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Parsers\Syntax;
 
 interface CompilerEngineInterface
@@ -14,19 +12,9 @@ interface CompilerEngineInterface
 
     public function compileFile(string $filePath): string;
 
-    public function evaluateExpression(mixed $expr): mixed;
-
     public function addFunction(string $name, callable $callback): void;
 
-    public function getContext(): CompilerContext;
+    public function getOptions(): array;
 
-    public function findNodeCompiler(NodeType $nodeType): ?NodeCompiler;
-
-    public function compileAst(array $ast, string $parentSelector = '', int $nestingLevel = 0): string;
-
-    public function compileDeclarations(array $declarations, string $parentSelector = '', int $nestingLevel = 0): string;
-
-    public function formatRule(string $content, string $selector, int $nestingLevel): string;
-
-    public function getIndent(int $level): string;
+    public function getMappings(): array;
 }

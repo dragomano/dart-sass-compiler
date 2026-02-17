@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace DartSass;
 
 use DartSass\Compilers\CompilerBuilder;
-use DartSass\Compilers\CompilerContext;
 use DartSass\Compilers\CompilerEngineInterface;
 use DartSass\Loaders\FileLoader;
 use DartSass\Loaders\LoaderInterface;
@@ -43,11 +42,6 @@ readonly class Compiler
         $this->engine = $builder->build();
     }
 
-    public function getContext(): CompilerContext
-    {
-        return $this->engine->getContext();
-    }
-
     public function compileString(string $string, ?Syntax $syntax = null): string
     {
         return $this->engine->compileString($string, $syntax);
@@ -61,5 +55,15 @@ readonly class Compiler
     public function addFunction(string $name, callable $callback): void
     {
         $this->engine->addFunction($name, $callback);
+    }
+
+    public function getOptions(): array
+    {
+        return $this->engine->getOptions();
+    }
+
+    public function getMappings(): array
+    {
+        return $this->engine->getMappings();
     }
 }

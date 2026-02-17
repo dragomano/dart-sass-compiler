@@ -83,4 +83,15 @@ describe('HttpLoader', function () {
         expect(fn() => $mockLoader->load('nonexistent.scss'))
             ->toThrow(CompilationException::class, 'Failed to load SCSS from URL: nonexistent.scss');
     });
+
+    it('loads existing CSS from real https URL', function () {
+        $loader = new HttpLoader();
+
+        $content = $loader->load('https://php.dragomano.ru/extra.css');
+
+        expect($content)
+            ->toBeString()
+            ->not->toBe('')
+            ->and($content)->toContain('{');
+    });
 });

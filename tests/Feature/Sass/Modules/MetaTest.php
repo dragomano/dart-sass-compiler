@@ -53,7 +53,7 @@ describe('sass:meta', function () {
         @use "sass:meta";
 
         .test {
-            content: meta.load-css("https://php.dragomano.ru/extra.css");
+            content: meta.load-css("tests/Feature/Sass/fixtures/extra.css");
         }
         SCSS;
 

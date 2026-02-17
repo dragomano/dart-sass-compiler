@@ -4,26 +4,34 @@ declare(strict_types=1);
 
 namespace DartSass\Evaluators;
 
+use Closure;
 use DartSass\Exceptions\CompilationException;
 use DartSass\Parsers\Nodes\OperationNode;
 use DartSass\Utils\ArithmeticCalculator;
 use DartSass\Utils\LazyEvaluatable;
 use DartSass\Utils\LazyValue;
+use DartSass\Utils\ResultFormatterInterface;
 use DartSass\Utils\StringFormatter;
 use DartSass\Utils\ValueComparator;
 use DartSass\Values\CalcValue;
 use DartSass\Values\SassNumber;
 
 use function in_array;
+use function is_array;
 use function is_numeric;
 use function is_string;
 use function str_contains;
 
-class OperationEvaluator extends AbstractEvaluator
+class OperationEvaluator implements EvaluatorInterface
 {
     private const COMPARISON_OPERATORS = ['==', '!=', '<', '>', '<=', '>=', 'and', 'or'];
 
     private const MULTIPLICATION_DIVISION_OPERATORS = ['*', '/'];
+
+    public function __construct(
+        private readonly ResultFormatterInterface $resultFormatter,
+        private readonly Closure $nodeEvaluator
+    ) {}
 
     public function supports(mixed $expression): bool
     {
@@ -33,8 +41,8 @@ class OperationEvaluator extends AbstractEvaluator
     public function evaluate(mixed $expression): string|bool|SassNumber
     {
         if ($expression instanceof OperationNode) {
-            $left     = $this->evaluateNode($expression->left);
-            $right    = $this->evaluateNode($expression->right);
+            $left     = ($this->nodeEvaluator)($expression->left);
+            $right    = ($this->nodeEvaluator)($expression->right);
             $operator = $expression->operator;
 
             return $this->evaluateOperation($left, $operator, $right);
@@ -147,5 +155,15 @@ class OperationEvaluator extends AbstractEvaluator
     private function formatStructuredValue(array $value): string
     {
         return StringFormatter::concat($value['value'], $value['unit'] ?? '');
+    }
+
+    private function formatValue(mixed $value): string
+    {
+        return $this->resultFormatter->format($value);
+    }
+
+    private function isStructuredValue(mixed $value): bool
+    {
+        return is_array($value) && isset($value['value']);
     }
 }

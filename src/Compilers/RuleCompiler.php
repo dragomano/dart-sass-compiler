@@ -52,7 +52,6 @@ class RuleCompiler
 
     public function compileRule(
         AstNode $node,
-        CompilerContext $context,
         string $parentSelector,
         int $currentNestingLevel,
         ...$params
@@ -61,7 +60,7 @@ class RuleCompiler
         $strategy = $this->findStrategy($ruleType);
 
         if ($strategy) {
-            return $strategy->compile($node, $context, $parentSelector, $currentNestingLevel, ...$params);
+            return $strategy->compile($node, $parentSelector, $currentNestingLevel, ...$params);
         }
 
         throw new InvalidArgumentException("Unknown rule type: $ruleType->value");

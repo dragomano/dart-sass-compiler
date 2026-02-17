@@ -118,6 +118,17 @@ class Scope
         return $this->parent?->hasMixin($name) ?? false;
     }
 
+    public function removeMixin(string $name): void
+    {
+        if (array_key_exists($name, $this->mixins)) {
+            unset($this->mixins[$name]);
+
+            return;
+        }
+
+        $this->parent?->removeMixin($name);
+    }
+
     public function setFunction(string $name, array $args, array $body, bool $global = false): void
     {
         $data = ['args' => $args, 'body' => $body];

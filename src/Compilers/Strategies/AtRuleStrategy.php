@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DartSass\Compilers\Strategies;
 
-use DartSass\Compilers\CompilerContext;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\AtRuleNode;
 use DartSass\Parsers\Nodes\NodeType;
@@ -26,13 +25,14 @@ readonly class AtRuleStrategy implements RuleCompilationStrategy
 
     public function compile(
         AtRuleNode|AstNode $node,
-        CompilerContext $context,
         string $parentSelector,
         int $currentNestingLevel,
         ...$params
     ): string {
+        $defineMixin         = $params[5] ?? null;
+
         if ($node->name === '@mixin') {
-            return $this->compileDefinition($node, $context);
+            return $this->compileDefinition($node, $defineMixin);
         }
 
         $expression          = $params[0] ?? null;
@@ -60,8 +60,12 @@ readonly class AtRuleStrategy implements RuleCompilationStrategy
         return "$indent$node->name$valuePart {\n$body\n$indent}\n";
     }
 
-    private function compileDefinition(AtRuleNode $node, CompilerContext $context): string
+    private function compileDefinition(AtRuleNode $node, ?callable $defineMixin): string
     {
+        if ($defineMixin === null) {
+            throw new InvalidArgumentException('Missing required parameters for at-rule compilation');
+        }
+
         $signature = trim($node->value ?? '');
         $name      = $signature;
         $args      = [];
@@ -84,7 +88,7 @@ readonly class AtRuleStrategy implements RuleCompilationStrategy
         $bodyNested       = $node->body['nested'] ?? [];
         $body             = array_merge($bodyDeclarations, $bodyNested);
 
-        $context->mixinHandler->define($name, $args, $body);
+        $defineMixin($name, $args, $body);
 
         return '';
     }

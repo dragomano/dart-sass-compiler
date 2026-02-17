@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use DartSass\Compilers\CompilerContext;
 use DartSass\Compilers\Strategies\AtRootStrategy;
 use DartSass\Parsers\Nodes\AtRootNode;
 
@@ -17,9 +16,7 @@ describe('AtRootStrategy', function () {
             'nested'       => [],
         ], 1);
 
-        $context = new CompilerContext([]);
-
-        expect(fn() => $this->strategy->compile($node, $context, '', 0))
+        expect(fn() => $this->strategy->compile($node, '', 0))
             ->toThrow(
                 InvalidArgumentException::class,
                 'Missing required parameters for at-root compilation'
@@ -32,8 +29,6 @@ describe('AtRootStrategy', function () {
             'nested'       => [],
         ], 1);
 
-        $context = new CompilerContext([]);
-
         $compileDeclarations = fn($declarations, $selector, $level) => implode('', array_map(
             fn($decl) => "    color: red;\n",
             $declarations
@@ -43,7 +38,6 @@ describe('AtRootStrategy', function () {
 
         $result = $this->strategy->compile(
             $node,
-            $context,
             '.parent @media screen',
             0,
             null,
@@ -60,15 +54,12 @@ describe('AtRootStrategy', function () {
             'nested'       => [],
         ], 1);
 
-        $context = new CompilerContext([]);
-
         $compileDeclarations = fn($declarations, $selector, $level) => "  color: red;\n";
 
         $compileAst = fn($nested, $selector, $level) => '';
 
         $result = $this->strategy->compile(
             $node,
-            $context,
             '',
             0,
             null,
@@ -85,8 +76,6 @@ describe('AtRootStrategy', function () {
             'nested'       => [],
         ], 1);
 
-        $context = new CompilerContext([]);
-
         $compileDeclarations = fn($declarations, $selector, $level) => implode('', array_map(
             fn($decl) => "    color: red;\n",
             $declarations
@@ -96,7 +85,6 @@ describe('AtRootStrategy', function () {
 
         $result = $this->strategy->compile(
             $node,
-            $context,
             '.parent @media screen',
             0,
             null,
@@ -113,8 +101,6 @@ describe('AtRootStrategy', function () {
             'nested'       => [],
         ], 1);
 
-        $context = new CompilerContext([]);
-
         $compileDeclarations = fn($declarations, $selector, $level) => implode('', array_map(
             fn($decl) => "    color: red;\n",
             $declarations
@@ -124,7 +110,6 @@ describe('AtRootStrategy', function () {
 
         $result = $this->strategy->compile(
             $node,
-            $context,
             '.parent,, .child',
             0,
             null,
@@ -141,8 +126,6 @@ describe('AtRootStrategy', function () {
             'nested'       => [],
         ], 1);
 
-        $context = new CompilerContext([]);
-
         $compileDeclarations = fn($declarations, $selector, $level) => implode('', array_map(
             fn($decl) => "    color: red;\n",
             $declarations
@@ -152,7 +135,6 @@ describe('AtRootStrategy', function () {
 
         $result = $this->strategy->compile(
             $node,
-            $context,
             '.parent:not(.hidden) @media (min-width: 768px)',
             0,
             null,
@@ -169,8 +151,6 @@ describe('AtRootStrategy', function () {
             'nested'       => [],
         ], 1);
 
-        $context = new CompilerContext([]);
-
         $compileDeclarations = fn($declarations, $selector, $level) => implode('', array_map(
             fn($decl) => "    color: red;\n",
             $declarations
@@ -180,7 +160,6 @@ describe('AtRootStrategy', function () {
 
         $result = $this->strategy->compile(
             $node,
-            $context,
             '.parent @media screen and (min-width: 768px)',
             0,
             null,
@@ -197,8 +176,6 @@ describe('AtRootStrategy', function () {
             'nested'       => [],
         ], 1);
 
-        $context = new CompilerContext([]);
-
         $compileDeclarations = fn($declarations, $selector, $level) => implode('', array_map(
             fn($decl) => "    color: red;\n",
             $declarations
@@ -208,7 +185,6 @@ describe('AtRootStrategy', function () {
 
         $result = $this->strategy->compile(
             $node,
-            $context,
             '.parent @media screen .child',
             0,
             null,

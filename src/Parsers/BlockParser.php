@@ -68,7 +68,9 @@ class BlockParser extends AbstractParser
      */
     public function parseBlock(): array
     {
-        $declarations = $nested = $items = [];
+        $declarations = [];
+        $nested       = [];
+        $items        = [];
 
         while (($token = $this->currentToken()) && $token->type !== 'brace_close') {
             $item = $this->parseBlockItem($token, $declarations, $nested);

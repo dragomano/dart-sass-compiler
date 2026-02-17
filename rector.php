@@ -21,7 +21,7 @@ try {
         ->withTypeCoverageLevel(10)
         ->withDeadCodeLevel(10)
         ->withCodeQualityLevel(10)
-        ->withCodingStyleLevel(9);
+        ->withCodingStyleLevel(10);
 } catch (InvalidConfigurationException $e) {
     echo $e->getMessage();
 }

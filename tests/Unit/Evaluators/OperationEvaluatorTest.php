@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use DartSass\Compilers\CompilerContext;
 use DartSass\Evaluators\ExpressionEvaluator;
 use DartSass\Evaluators\OperationEvaluator;
 use DartSass\Exceptions\CompilationException;
@@ -16,13 +15,15 @@ use Tests\ReflectionAccessor;
 
 describe('OperationEvaluator', function () {
     beforeEach(function () {
-        $this->context                      = mock(CompilerContext::class);
-        $this->expressionEvaluator          = mock(ExpressionEvaluator::class);
-        $this->resultFormatter              = mock(ResultFormatterInterface::class);
-        $this->context->expressionEvaluator = $this->expressionEvaluator;
-        $this->context->resultFormatter     = $this->resultFormatter;
-        $this->evaluator                    = new OperationEvaluator($this->context);
-        $this->accessor                     = new ReflectionAccessor($this->evaluator);
+        $this->expressionEvaluator = mock(ExpressionEvaluator::class);
+        $this->resultFormatter     = mock(ResultFormatterInterface::class);
+
+        $this->evaluator = new OperationEvaluator(
+            $this->resultFormatter,
+            fn($node): mixed => $this->expressionEvaluator->evaluate($node)
+        );
+
+        $this->accessor = new ReflectionAccessor($this->evaluator);
     });
 
     describe('supports()', function () {
