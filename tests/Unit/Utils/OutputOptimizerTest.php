@@ -284,3 +284,77 @@ it('keeps non-property lines inside declaration blocks', function () {
 
     expect($result)->toContain('some random text;');
 });
+
+dataset('separate rules cases', [
+    'two simple rules' => [
+        '.first { width: 10px; }' . "\n" . '.second { height: 20px; }',
+        '.first { width: 10px; }' . "\n\n" . '.second { height: 20px; }',
+    ],
+
+    'multiple rules' => [
+        '.first { width: 10px; }' . "\n" . '.second { height: 20px; }' . "\n" . '.third { margin: 0; }',
+        '.first { width: 10px; }' . "\n\n" . '.second { height: 20px; }' . "\n\n" . '.third { margin: 0; }',
+    ],
+
+    'nested rules' => [
+        '.parent { width: 10px; }' . "\n" . '.parent .child { height: 20px; }',
+        '.parent { width: 10px; }' . "\n\n" . '.parent .child { height: 20px; }',
+    ],
+
+    'at-rules' => [
+        '@media (min-width: 768px) { .test { width: 10px; } }' . "\n" . '.other { height: 20px; }',
+        '@media (min-width: 768px) { .test { width: 10px; } }' . "\n\n" . '.other { height: 20px; }',
+    ],
+
+    'single rule unchanged' => [
+        '.single { width: 10px; }',
+        '.single { width: 10px; }',
+    ],
+
+    'empty CSS unchanged' => [
+        '',
+        '',
+    ],
+
+    'multiline blocks' => [
+        ".first {\n  width: 10px;\n}\n.second {\n  height: 20px;\n}",
+        ".first {\n  width: 10px;\n}\n\n.second {\n  height: 20px;\n}",
+    ],
+
+    'multiline blocks with multiple properties' => [
+        ".first {\n  width: 10px;\n  height: 20px;\n}\n.second {\n  margin: 0;\n  padding: 5px;\n}",
+        ".first {\n  width: 10px;\n  height: 20px;\n}\n\n.second {\n  margin: 0;\n  padding: 5px;\n}",
+    ],
+
+    'multiline blocks with nested rules' => [
+        ".parent {\n  width: 10px;\n}\n.parent .child {\n  height: 20px;\n}",
+        ".parent {\n  width: 10px;\n}\n\n.parent .child {\n  height: 20px;\n}",
+    ],
+
+    'multiline blocks with at-rules' => [
+        "@media (min-width: 768px) {\n  .test {\n    width: 10px;\n  }\n}\n.other {\n  height: 20px;\n}",
+        "@media (min-width: 768px) {\n  .test {\n    width: 10px;\n  }\n}\n\n.other {\n  height: 20px;\n}",
+    ],
+
+    'mixed single-line and multiline blocks' => [
+        ".first { width: 10px; }\n.second {\n  height: 20px;\n}",
+        ".first { width: 10px; }\n\n.second {\n  height: 20px;\n}",
+    ],
+]);
+
+it('separates rule blocks when separateRules is enabled', function (string $input, string $expected) {
+    $optimizer = new OutputOptimizer('expanded', true);
+
+    $result = $optimizer->optimize($input);
+
+    expect($result)->toEqualCss($expected);
+})->with('separate rules cases');
+
+it('does not separate rule blocks when separateRules is disabled', function () {
+    $css = '.first { width: 10px; }' . "\n" . '.second { height: 20px; }';
+    $optimizer = new OutputOptimizer('expanded', false);
+
+    $result = $optimizer->optimize($css);
+
+    expect($result)->toEqualCss($css);
+});

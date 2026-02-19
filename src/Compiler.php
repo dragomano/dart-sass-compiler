@@ -31,6 +31,7 @@ readonly class Compiler
                 'sourceFile'     => 'input.scss',
                 'sourceMapFile'  => 'output.css.map',
                 'outputFile'     => 'output.css',
+                'separateRules'  => false,
             ],
             $options
         );

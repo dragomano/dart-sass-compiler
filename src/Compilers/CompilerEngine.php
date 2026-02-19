@@ -375,7 +375,7 @@ class CompilerEngine implements CompilerEngineInterface
         );
 
         $cache[$this] = [
-            'outputOptimizer'       => new OutputOptimizer($this->options['style']),
+            'outputOptimizer'       => new OutputOptimizer($this->options['style'], $this->options['separateRules'] ?? false),
             'sourceMapGenerator'    => new SourceMapGenerator(),
             'ruleCompiler'          => new RuleCompiler(),
             'flowControlCompiler'   => new FlowControlCompiler($this->variableHandler, $this->environment),

@@ -22,6 +22,7 @@ use function str_replace;
 use function str_starts_with;
 use function strtolower;
 use function substr;
+use function substr_count;
 use function trim;
 
 readonly class OutputOptimizer
@@ -63,7 +64,10 @@ readonly class OutputOptimizer
 
     private const ZERO_UNIT_REGEX = '/(?<![\w\-(])0(?:px|em|rem|pt|pc|in|cm|mm|vmin|vmax)(?=[;\s}]|$)/';
 
-    public function __construct(private string $style) {}
+    public function __construct(
+        private string $style,
+        private bool $separateRules = false
+    ) {}
 
     public function optimize(string $css): string
     {
@@ -71,8 +75,13 @@ readonly class OutputOptimizer
         $css = $this->removeRedundantProperties($css);
         $css = $this->applyStyleFormat($css);
         $css = preg_replace('/,+/', ',', $css);
+        $css = $this->optimizeZeroUnits($css);
 
-        return $this->optimizeZeroUnits($css);
+        if ($this->separateRules) {
+            $css = $this->separateRuleBlocks($css);
+        }
+
+        return $css;
     }
 
     private function addCharsetIfNeeded(string $css): string
@@ -317,5 +326,37 @@ readonly class OutputOptimizer
         }
 
         return implode("\n", $formatted);
+    }
+
+    private function separateRuleBlocks(string $css): string
+    {
+        $lines  = explode("\n", $css);
+        $result = [];
+        $depth  = 0;
+
+        $prevClosedAtRoot = false;
+
+        foreach ($lines as $line) {
+            $trimmed = trim($line);
+
+            if ($trimmed === '') {
+                continue;
+            }
+
+            $openBraces  = substr_count($trimmed, '{');
+            $closeBraces = substr_count($trimmed, '}');
+
+            if ($prevClosedAtRoot) {
+                $result[] = '';
+            }
+
+            $result[] = $line;
+
+            $depth += $openBraces - $closeBraces;
+
+            $prevClosedAtRoot = $depth === 0 && $closeBraces > 0;
+        }
+
+        return implode("\n", $result);
     }
 }
