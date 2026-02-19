@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Benchmarks;
 
+use Bugo\BenchmarkUtils\ScssGenerator;
 use Bugo\Sass\Compiler as EmbeddedCompiler;
 use DartSass\Compiler as SassCompiler;
 use Random\RandomException;

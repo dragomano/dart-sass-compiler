@@ -32,6 +32,7 @@
   },
   "require-dev": {
     "bugo/sass-embedded-php": "dev-main",
+    "bugo/scss-benchmark-utils": "dev-main",
     "dg/bypass-finals": "^1.9",
     "friendsofphp/php-cs-fixer": "^3.92",
     "mockery/mockery": "dev-bugfix/spy-generics",
