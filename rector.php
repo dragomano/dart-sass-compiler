@@ -9,7 +9,6 @@ use Rector\Php81\Rector\FuncCall\NullToStrictStringFuncCallArgRector;
 try {
     return RectorConfig::configure()
         ->withPaths([
-            __DIR__ . '/benchmarks',
             __DIR__ . '/src',
         ])
         ->withSkip([
