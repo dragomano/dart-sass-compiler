@@ -69,6 +69,8 @@ readonly class InterpolationEvaluator
 
     private function processInlineVariables(string $string, Closure $expression): string
     {
+        $string = $this->processVariableExpressions($string, $expression);
+
         return preg_replace_callback('/\$[a-zA-Z_-][a-zA-Z0-9_-]*/', function ($matches) use ($expression) {
             $varName = $matches[0];
 
@@ -76,7 +78,6 @@ readonly class InterpolationEvaluator
                 $value = $expression($varName);
                 $value = $this->unwrapQuotedValue($value);
 
-                // Handle nested interpolations in the value
                 if (str_contains($value, '#{')) {
                     $value = $this->evaluate($value, $expression);
                 }
@@ -84,6 +85,25 @@ readonly class InterpolationEvaluator
                 return $this->resultFormatter->format($value);
             } catch (Exception) {
                 return $varName;
+            }
+        }, $string);
+    }
+
+    private function processVariableExpressions(string $string, Closure $expression): string
+    {
+        $pattern = '/\$[a-zA-Z_-][a-zA-Z0-9_-]*\s*\+\s*[a-zA-Z0-9_-]+/';
+
+        return preg_replace_callback($pattern, function ($matches) use ($expression) {
+            $expr = $matches[0];
+
+            try {
+                $parser = $this->parserFactory->create($expr, Syntax::SCSS);
+                $ast    = $parser->parseExpression();
+                $value  = $expression($ast);
+
+                return $this->unwrapQuotedValue($value);
+            } catch (Exception) {
+                return $expr;
             }
         }, $string);
     }

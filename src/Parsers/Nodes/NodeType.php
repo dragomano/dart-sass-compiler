@@ -39,6 +39,7 @@ enum NodeType: string
     case RULE                = 'rule';
     case SELECTOR            = 'selector';
     case STRING              = 'string';
+    case SUPPORTS            = 'supports';
     case UNARY               = 'unary';
     case UNKNOWN             = 'unknown';
     case USE                 = 'use';

@@ -17,6 +17,7 @@ use DartSass\Parsers\Rules\GenericAtRuleParser;
 use DartSass\Parsers\Rules\IfRuleParser;
 use DartSass\Parsers\Rules\KeyframesRuleParser;
 use DartSass\Parsers\Rules\MediaRuleParser;
+use DartSass\Parsers\Rules\SupportsRuleParser;
 use DartSass\Parsers\Rules\UseRuleParser;
 use DartSass\Parsers\Rules\WarnRuleParser;
 use DartSass\Parsers\Rules\WhileRuleParser;
@@ -45,6 +46,13 @@ trait AtRuleParserFactory
             '@if'        => new IfRuleParser($stream, $this->parseExpression(...), $this->parseBlock(...)),
             '@each'      => new EachRuleParser($stream, $this->parseExpression(...), $this->parseBlock(...)),
             '@keyframes' => new KeyframesRuleParser($stream, $this->parseExpression(...)),
+            '@supports'  => new SupportsRuleParser(
+                $stream,
+                $this->parseAtRule(...),
+                $this->parseVariable(...),
+                $this->parseRule(...),
+                $this->parseDeclaration(...)
+            ),
             '@at-root'   => new AtRootRuleParser(
                 $stream,
                 $this->parseAtRule(...),

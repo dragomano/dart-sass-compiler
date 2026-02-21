@@ -269,11 +269,13 @@ class CompilerEngine implements CompilerEngineInterface
             NodeType::EACH,
             NodeType::FOR,
             NodeType::WHILE => $this->compileFlowControlNode($node, $parentSelector, $nestingLevel),
+            NodeType::SUPPORTS => $this->compileSupportsNode($node, $parentSelector, $nestingLevel),
             NodeType::MEDIA,
             NodeType::CONTAINER,
             NodeType::KEYFRAMES,
             NodeType::AT_RULE,
-            NodeType::AT_ROOT => $this->compileAtRuleNode($node, $parentSelector, $nestingLevel),
+            NodeType::AT_ROOT,
+            NodeType::SUPPORTS => $this->compileAtRuleNode($node, $parentSelector, $nestingLevel),
             NodeType::INCLUDE => $this->compileIncludeNode($node, $parentSelector, $nestingLevel),
             default => throw new CompilationException("Unknown AST node type: {$node->type->value}"),
         };
@@ -290,6 +292,27 @@ class CompilerEngine implements CompilerEngineInterface
             $this->evaluateExpression(...),
             $this->compileAst(...)
         );
+    }
+
+    private function compileSupportsNode($node, string $parentSelector, int $nestingLevel): string
+    {
+        $runtimeTools = $this->runtimeTools();
+
+        $css = $runtimeTools['ruleCompiler']->compileRule(
+            $node,
+            $parentSelector,
+            $nestingLevel,
+            $this->evaluateExpression(...),
+            $this->compileDeclarations(...),
+            $this->compileAst(...),
+            $this->evaluateInterpolation(...),
+            $runtimeTools['formatValue'],
+            $this->mixinHandler->define(...),
+        );
+
+        $this->positionTracker->updatePosition($css);
+
+        return $css;
     }
 
     private function compileAtRuleNode($node, string $parentSelector, int $nestingLevel): string

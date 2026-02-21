@@ -10,6 +10,7 @@ use DartSass\Compilers\Strategies\ContainerRuleStrategy;
 use DartSass\Compilers\Strategies\KeyframesRuleStrategy;
 use DartSass\Compilers\Strategies\MediaRuleStrategy;
 use DartSass\Compilers\Strategies\RuleCompilationStrategy;
+use DartSass\Compilers\Strategies\SupportsRuleStrategy;
 use DartSass\Parsers\Nodes\AstNode;
 use DartSass\Parsers\Nodes\NodeType;
 use InvalidArgumentException;
@@ -22,6 +23,7 @@ class RuleCompiler
         ContainerRuleStrategy::class,
         KeyframesRuleStrategy::class,
         MediaRuleStrategy::class,
+        SupportsRuleStrategy::class,
     ];
 
     private array $strategyInstances = [];

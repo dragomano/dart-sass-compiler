@@ -171,4 +171,72 @@ describe('InterpolationEvaluator', function () {
             expect($result)->toBe('outer inner-ast-result');
         });
     });
+
+    describe('processVariableExpressions()', function () {
+        it('processes variable expression with plus operator', function () {
+            $string = '$feature + 3';
+
+            $expression = function ($arg) {
+                if ($arg instanceof AstNode) {
+                    return 'feature23';
+                }
+
+                return $arg;
+            };
+
+            $parser = mock(ParserInterface::class);
+            $parser->expects()->parseExpression()->andReturn(mock(AstNode::class));
+
+            $this->parserFactory->expects()->create('$feature + 3', Syntax::SCSS)->andReturn($parser);
+
+            $result = $this->accessor->callMethod('processVariableExpressions', [$string, $expression]);
+
+            expect($result)->toBe('feature23');
+        });
+
+        it('handles exception during parsing', function () {
+            $string = '$badVar + 3';
+
+            $expression = function ($arg) {
+                throw new Exception('Parser error');
+            };
+
+            $this->parserFactory->allows()->create('$badVar + 3', Syntax::SCSS)->andThrow(new Exception('Parser error'));
+
+            $result = $this->accessor->callMethod('processVariableExpressions', [$string, $expression]);
+
+            expect($result)->toBe('$badVar + 3');
+        });
+
+        it('handles exception during expression evaluation', function () {
+            $string = '$feature + 3';
+
+            $expression = function ($arg) {
+                if ($arg instanceof AstNode) {
+                    throw new Exception('Evaluation error');
+                }
+
+                return $arg;
+            };
+
+            $parser = mock(ParserInterface::class);
+            $parser->allows()->parseExpression()->andReturn(mock(AstNode::class));
+
+            $this->parserFactory->allows()->create('$feature + 3', Syntax::SCSS)->andReturn($parser);
+
+            $result = $this->accessor->callMethod('processVariableExpressions', [$string, $expression]);
+
+            expect($result)->toBe('$feature + 3');
+        });
+
+        it('returns original string when no variable expressions found', function () {
+            $string = 'plain text without expressions';
+
+            $result = $this->accessor->callMethod('processVariableExpressions', [$string, function () {
+                return 'should not be called';
+            }]);
+
+            expect($result)->toBe('plain text without expressions');
+        });
+    });
 });
