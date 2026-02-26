@@ -101,7 +101,7 @@ var_dump($css);
 
 ## Хотите что-то добавить?
 
-Не забудьте протестировать (`composer run tests`) и привести в порядок (`composer run check`, `composer run fix`) свой код.
+Не забудьте протестировать (`composer run test`) и привести в порядок (`composer run check`, `composer run fix`) свой код.
 
 ## Дополнительные ресурсы
 

@@ -101,7 +101,7 @@ Paste the problematic code into the [sandbox](https://sass-lang.com/playground/)
 
 ## Want to add something?
 
-Don't forget to test (`composer run tests`) and lint/fix (`composer run check`, `composer run fix`) your code.
+Don't forget to test (`composer run test`) and lint/fix (`composer run check`, `composer run fix`) your code.
 
 ## Additional links
 
