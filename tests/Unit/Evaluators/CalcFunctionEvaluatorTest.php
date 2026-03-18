@@ -52,6 +52,51 @@ describe('CalcFunctionEvaluator', function () {
             expect($result)->toBe(5.0);
         });
 
+        it('computes division with unitless left and unit right inside calc', function () {
+            $left      = new NumberNode(6);
+            $right     = new NumberNode(2, 'px');
+            $operation = new OperationNode($left, '/', $right, 1);
+            $result    = $this->evaluator->evaluate([$operation], function ($node) {
+                if ($node instanceof NumberNode) {
+                    return new SassNumber($node->value, $node->unit);
+                }
+
+                return $node;
+            });
+
+            expect($result)->toEqual(['value' => 3.0, 'unit' => 'px']);
+        });
+
+        it('computes division with unit left and unitless right inside calc', function () {
+            $left      = new NumberNode(6, 'px');
+            $right     = new NumberNode(2);
+            $operation = new OperationNode($left, '/', $right, 1);
+            $result    = $this->evaluator->evaluate([$operation], function ($node) {
+                if ($node instanceof NumberNode) {
+                    return new SassNumber($node->value, $node->unit);
+                }
+
+                return $node;
+            });
+
+            expect($result)->toEqual(['value' => 3.0, 'unit' => 'px']);
+        });
+
+        it('computes division with same units inside calc', function () {
+            $left      = new NumberNode(6, 'px');
+            $right     = new NumberNode(2, 'px');
+            $operation = new OperationNode($left, '/', $right, 1);
+            $result    = $this->evaluator->evaluate([$operation], function ($node) {
+                if ($node instanceof NumberNode) {
+                    return new SassNumber($node->value, $node->unit);
+                }
+
+                return $node;
+            });
+
+            expect($result)->toBe(3.0);
+        });
+
         it('throws exception for unknown operator', function () {
             $left      = new NumberNode(10);
             $right     = new NumberNode(2);

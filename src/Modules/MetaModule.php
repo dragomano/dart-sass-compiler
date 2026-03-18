@@ -105,13 +105,13 @@ class MetaModule extends AbstractModule
                 }
             }
 
-            $loader  = new FileLoader($loadPaths);
+            $loader  = $this->createFileLoader($loadPaths);
         } else {
             if (! filter_var($url, FILTER_VALIDATE_URL)) {
                 throw new CompilationException('load-css() argument must be a valid URL');
             }
 
-            $loader  = new HttpLoader();
+            $loader  = $this->createHttpLoader();
         }
 
         $content = $loader->load($url);
@@ -627,6 +627,16 @@ class MetaModule extends AbstractModule
         } catch (CompilationException) {
             return false;
         }
+    }
+
+    protected function createFileLoader(array $loadPaths): FileLoader
+    {
+        return new FileLoader($loadPaths);
+    }
+
+    protected function createHttpLoader(): HttpLoader
+    {
+        return new HttpLoader();
     }
 
     private function isUserDefinedFunction(string $name): bool

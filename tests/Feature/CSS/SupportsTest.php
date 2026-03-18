@@ -147,7 +147,7 @@ it('handles @supports with nested parentheses and and', function () {
     $scss = '@supports (display: table-cell) and ((display: list-item) and (display:run-in)) { foo {a: b} }';
 
     $expected = /** @lang text */ <<<'CSS'
-    @supports (display: table-cell) and ((display: list-item) and (display: run-in)) {
+    @supports (display: table-cell) and (display: list-item) and (display: run-in) {
       foo {
         a: b;
       }
@@ -207,7 +207,7 @@ it('handles @supports with nested or', function () {
     $scss = '@supports (transform-style: preserve-3d) or ((-moz-transform-style: preserve-3d) or ((-o-transform-style: preserve-3d) or (-webkit-transform-style: preserve-3d))) { foo {a: b} }';
 
     $expected = /** @lang text */ <<<'CSS'
-    @supports (transform-style: preserve-3d) or ((-moz-transform-style: preserve-3d) or ((-o-transform-style: preserve-3d) or (-webkit-transform-style: preserve-3d))) {
+    @supports (transform-style: preserve-3d) or (-moz-transform-style: preserve-3d) or (-o-transform-style: preserve-3d) or (-webkit-transform-style: preserve-3d) {
       foo {
         a: b;
       }

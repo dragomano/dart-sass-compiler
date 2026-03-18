@@ -720,7 +720,7 @@ describe('sass:string', function () {
 
             $expected = /** @lang text */ <<<'CSS'
             .test {
-              result: "HELLO";
+              result: HELLO;
             }
             CSS;
 
@@ -826,7 +826,7 @@ describe('sass:string', function () {
 
             $expected = /** @lang text */ <<<'CSS'
             .test {
-              result: "hello";
+              result: hello;
             }
             CSS;
 
@@ -1282,7 +1282,7 @@ describe('global string functions', function () {
 
             $expected = /** @lang text */ <<<'CSS'
             .test {
-              result: "HELLO";
+              result: HELLO;
             }
             CSS;
 
@@ -1376,7 +1376,7 @@ describe('global string functions', function () {
 
             $expected = /** @lang text */ <<<'CSS'
             .test {
-              result: "hello";
+              result: hello;
             }
             CSS;
 

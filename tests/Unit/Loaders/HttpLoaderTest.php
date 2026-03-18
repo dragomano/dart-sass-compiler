@@ -84,14 +84,52 @@ describe('HttpLoader', function () {
             ->toThrow(CompilationException::class, 'Failed to load SCSS from URL: nonexistent.scss');
     });
 
-    it('loads existing CSS from real https URL', function () {
-        $loader = new HttpLoader();
+    it('loads existing CSS from absolute https URL without network dependency', function () {
+        $loader = new class () extends HttpLoader {
+            protected function fetch(string $url): ?string
+            {
+                if ($url === 'https://php.dragomano.ru/extra.css') {
+                    return '.remote { display: block; }';
+                }
+
+                return null;
+            }
+        };
 
         $content = $loader->load('https://php.dragomano.ru/extra.css');
 
         expect($content)
             ->toBeString()
             ->not->toBe('')
-            ->and($content)->toContain('{');
+            ->and($content)->toContain('.remote');
+    });
+
+    it('returns content from protected fetch()', function () {
+        $loader = new class () extends HttpLoader {
+            public function fetchPublic(string $url): ?string
+            {
+                return $this->fetch($url);
+            }
+        };
+
+        expect($loader->fetchPublic('data://text/plain,.test%20%7B%20color:%20red;%20%7D'))
+            ->toBe('.test { color: red; }');
+    });
+
+    it('returns null from protected fetch() when source cannot be read', function () {
+        $loader = new class () extends HttpLoader {
+            public function fetchPublic(string $url): ?string
+            {
+                set_error_handler(static fn() => true);
+
+                try {
+                    return $this->fetch($url);
+                } finally {
+                    restore_error_handler();
+                }
+            }
+        };
+
+        expect($loader->fetchPublic('file:///tmp/dart-sass-compiler-http-loader-missing.scss'))->toBeNull();
     });
 });

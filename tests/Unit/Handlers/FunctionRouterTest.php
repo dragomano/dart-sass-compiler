@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use DartSass\Exceptions\CompilationException;
 use DartSass\Handlers\Builtins\ModuleHandlerInterface;
+use DartSass\Handlers\Builtins\QuotedStringArgumentsInterface;
 use DartSass\Handlers\FunctionRouter;
 use DartSass\Handlers\ModuleRegistry;
 use DartSass\Utils\ResultFormatterInterface;
@@ -52,6 +53,27 @@ describe('FunctionRouter', function () {
             $result = $this->router->route('unknown.testFunction', []);
 
             expect($result)->toBe('formatted');
+        });
+    });
+
+    describe('shouldPreserveQuotedStringArguments method', function () {
+        it('returns true when handler supports quoted string arguments', function () {
+            $handler = mock(QuotedStringArgumentsInterface::class);
+            $handler->shouldReceive('shouldPreserveQuotedStringArguments')
+                ->with('quote')
+                ->andReturn(true);
+
+            $this->registry->shouldReceive('getHandler')->with('quote')->andReturn($handler);
+
+            expect($this->router->shouldPreserveQuotedStringArguments('quote'))->toBeTrue();
+        });
+
+        it('returns false when handler does not support quoted string arguments', function () {
+            $handler = mock(ModuleHandlerInterface::class);
+
+            $this->registry->shouldReceive('getHandler')->with('rgb')->andReturn($handler);
+
+            expect($this->router->shouldPreserveQuotedStringArguments('rgb'))->toBeFalse();
         });
     });
 });

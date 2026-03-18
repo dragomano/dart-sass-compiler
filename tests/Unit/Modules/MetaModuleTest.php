@@ -10,6 +10,7 @@ use DartSass\Handlers\MixinHandler;
 use DartSass\Handlers\ModuleHandler;
 use DartSass\Handlers\ModuleRegistry;
 use DartSass\Handlers\VariableHandler;
+use DartSass\Loaders\HttpLoader;
 use DartSass\Modules\MetaModule;
 use DartSass\Parsers\Syntax;
 use DartSass\Values\CalcValue;
@@ -153,11 +154,54 @@ describe('MetaModule', function () {
         });
 
         it('uses http loader for valid absolute URL', function () {
-            $result = $this->metaModule->loadCss(['https://php.dragomano.ru/extra.css']);
+            $metaModule = new class (
+                $this->moduleRegistry,
+                $this->mixinHandler,
+                $this->variableHandler,
+                $this->moduleHandler,
+                $this->functionHandler,
+                fn() => $this->engine->getOptions(),
+                fn(string $content, Syntax $syntax) => $this->engine->compileString($content, $syntax)
+            ) extends MetaModule {
+                protected function createHttpLoader(): HttpLoader
+                {
+                    return new class () extends HttpLoader {
+                        protected function fetch(string $url): ?string
+                        {
+                            if ($url === 'https://php.dragomano.ru/extra.css') {
+                                return '.remote { display: block; }';
+                            }
+
+                            return null;
+                        }
+                    };
+                }
+            };
+
+            $result = $metaModule->loadCss(['https://php.dragomano.ru/extra.css']);
 
             expect($result)
                 ->toBeString()
                 ->not->toBe('');
+        });
+
+        it('creates default http loader via factory method', function () {
+            $metaModule = new class (
+                $this->moduleRegistry,
+                $this->mixinHandler,
+                $this->variableHandler,
+                $this->moduleHandler,
+                $this->functionHandler,
+                fn() => $this->engine->getOptions(),
+                fn(string $content, Syntax $syntax) => $this->engine->compileString($content, $syntax)
+            ) extends MetaModule {
+                public function exposeCreateHttpLoader(): HttpLoader
+                {
+                    return $this->createHttpLoader();
+                }
+            };
+
+            expect($metaModule->exposeCreateHttpLoader())->toBeInstanceOf(HttpLoader::class);
         });
 
         it('throws exception for wrong number of arguments', function () {

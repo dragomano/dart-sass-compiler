@@ -5,10 +5,12 @@ declare(strict_types=1);
 use DartSass\Compilers\Strategies\SupportsRuleStrategy;
 use DartSass\Parsers\Nodes\NodeType;
 use DartSass\Parsers\Nodes\SupportsNode;
+use Tests\ReflectionAccessor;
 
 describe('SupportsRuleStrategy', function () {
     beforeEach(function () {
         $this->strategy = new SupportsRuleStrategy();
+        $this->accessor = new ReflectionAccessor($this->strategy);
     });
 
     describe('canHandle()', function () {
@@ -304,6 +306,93 @@ describe('SupportsRuleStrategy', function () {
 
             expect($result)->toContain('color: red')
                 ->and($result)->toContain('@supports (display: grid)');
+        });
+
+        it('flattens nested same-operator groups in query', function () {
+            $node = new SupportsNode('(display: table-cell) and ((display: list-item) and (display: run-in))', [
+                'declarations' => [],
+                'nested'       => [],
+            ], 1);
+
+            $evaluateExpression     = fn($q) => $q;
+            $compileDeclarations    = fn($decls, $selector, $level) => '';
+            $compileAst             = fn($nested, $selector, $level) => '';
+            $evaluateInterpolations = fn($q) => $q;
+            $formatValue            = fn($q) => $q;
+
+            $result = $this->strategy->compile(
+                $node,
+                '',
+                0,
+                $evaluateExpression,
+                $compileDeclarations,
+                $compileAst,
+                $evaluateInterpolations,
+                $formatValue
+            );
+
+            expect($result)->toContain(
+                '@supports (display: table-cell) and (display: list-item) and (display: run-in)'
+            );
+        });
+
+        it('preserves nested mixed-operator groups in query', function () {
+            $node = new SupportsNode('(display: table-cell) and ((display: list-item) or (display: run-in))', [
+                'declarations' => [],
+                'nested'       => [],
+            ], 1);
+
+            $evaluateExpression     = fn($q) => $q;
+            $compileDeclarations    = fn($decls, $selector, $level) => '';
+            $compileAst             = fn($nested, $selector, $level) => '';
+            $evaluateInterpolations = fn($q) => $q;
+            $formatValue            = fn($q) => $q;
+
+            $result = $this->strategy->compile(
+                $node,
+                '',
+                0,
+                $evaluateExpression,
+                $compileDeclarations,
+                $compileAst,
+                $evaluateInterpolations,
+                $formatValue
+            );
+
+            expect($result)->toContain(
+                '@supports (display: table-cell) and ((display: list-item) or (display: run-in))'
+            );
+        });
+    });
+
+    describe('internal helpers', function () {
+        it('flattens top-level logical parts recursively', function () {
+            $result = $this->accessor->callMethod(
+                'collectLogicalParts',
+                ['(display: grid) and (display: flex) and ((display: block) and (display: inline))', 'and']
+            );
+
+            expect($result)->toBe([
+                '(display: grid)',
+                '(display: flex)',
+                '(display: block)',
+                '(display: inline)',
+            ]);
+        });
+
+        it('returns raw expression when collectLogicalParts receives non-wrapped input', function () {
+            $result = $this->accessor->callMethod('collectLogicalParts', ['display: grid', 'and']);
+
+            expect($result)->toBe(['display: grid']);
+        });
+
+        it('returns false when expression is not wrapped in parentheses', function () {
+            expect($this->accessor->callMethod('isWrappedInParentheses', ['display: grid']))->toBeFalse();
+        });
+
+        it('returns false when parentheses close before expression end', function () {
+            expect($this->accessor->callMethod('isWrappedInParentheses', ['(display: grid) and (display: flex)']))
+                ->toBeFalse();
         });
     });
 });

@@ -32,12 +32,14 @@ it('compiles division with no left unit and right unit', function () {
     $scss = <<<'SCSS'
     body {
         width: 6 / 2px;
+        height: calc(6 / 2px);
     }
     SCSS;
 
-    $expected = <<<'CSS'
+    $expected = /** @lang text */ <<<'CSS'
     body {
-      width: 3px;
+      width: 6 / 2px;
+      height: 3px;
     }
     CSS;
 
@@ -83,12 +85,14 @@ it('compiles division with left unit and no right unit', function () {
     $scss = <<<'SCSS'
     body {
         width: 6px / 2;
+        height: calc(6px / 2);
     }
     SCSS;
 
-    $expected = <<<'CSS'
+    $expected = /** @lang text */ <<<'CSS'
     body {
-      width: 3px;
+      width: 6px / 2;
+      height: 3px;
     }
     CSS;
 
@@ -105,7 +109,7 @@ it('compiles addition with string operands using calc', function () {
 
     $expected = /** @lang text */ <<<'CSS'
     body {
-      content: helloworld;
+      content: "helloworld";
     }
     CSS;
 
@@ -122,7 +126,7 @@ it('compiles addition with numeric and string operands using calc', function () 
 
     $expected = /** @lang text */ <<<'CSS'
     body {
-      width: 10pxtest;
+      width: "10pxtest";
     }
     CSS;
 

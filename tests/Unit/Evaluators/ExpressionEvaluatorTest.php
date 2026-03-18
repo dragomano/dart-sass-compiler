@@ -206,6 +206,30 @@ describe('ExpressionEvaluator', function () {
 
             expect($result)->toBe('+');
         });
+
+        it('normalizes quoted identifier-like strings to raw values', function () {
+            $node = new StringNode('hello', quoted: true);
+
+            $result = $this->evaluator->evaluate($node);
+
+            expect($result)->toBe('hello');
+        });
+
+        it('preserves unquoted identifier-like strings as raw values', function () {
+            $node = new StringNode('hello', quoted: false);
+
+            $result = $this->evaluator->evaluate($node);
+
+            expect($result)->toBe('hello');
+        });
+
+        it('quotes unquoted non-identifier strings', function () {
+            $node = new StringNode('hello world', quoted: false);
+
+            $result = $this->evaluator->evaluate($node);
+
+            expect($result)->toBe('"hello world"');
+        });
     });
 
     describe('evaluateFunctionExpression()', function () {

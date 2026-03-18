@@ -252,6 +252,16 @@ describe('FunctionHandler', function () {
         });
     });
 
+    describe('shouldPreserveQuotedStringArguments method', function () {
+        it('delegates quoted string preservation lookup to router', function () {
+            $handler = mock(ModuleHandlerInterface::class);
+
+            $this->moduleRegistry->shouldReceive('getHandler')->with('rgb')->andReturn($handler);
+
+            expect($this->functionHandler->shouldPreserveQuotedStringArguments('rgb'))->toBeFalse();
+        });
+    });
+
     describe('user function management', function () {
         it('defines and retrieves user functions', function () {
             $this->customFunctionHandler->shouldReceive('getSupportedFunctions')
